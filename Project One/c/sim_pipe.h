@@ -28,25 +28,33 @@ typedef struct{
 	unsigned immediate; //immediate field
 	string label; //for conditional branches, label of the target instruction - used only for parsing/debugging purposes
 } instruction_t;
+typedef struct {
+  unsigned SP_REGISTERS[NUM_SP_REGISTERS];
+} pipeline_t;
+typedef struct {
 
-typedef struct{
+  // instruction memory
+  instruction_t instr_memory[PROGRAM_SIZE];
 
-	//instruction memory 
-	instruction_t instr_memory[PROGRAM_SIZE];
+  // base address in the instruction memory where the program is loaded
+  unsigned instr_base_address;
 
-	//base address in the instruction memory where the program is loaded
-	unsigned instr_base_address;
+  // data memory - should be initialize to all 0xFF
+  unsigned char *data_memory;
 
-	//data memory - should be initialize to all 0xFF
-	unsigned char *data_memory;
+  // memory size in bytes
+  unsigned data_memory_size;
 
-	//memory size in bytes
-	unsigned data_memory_size;
+  // memory latency in clock cycles
+  unsigned data_memory_latency;
 
-	//memory latency in clock cycles
-	unsigned data_memory_latency;
+  /* add all variables of the simulator (e.g., registers, etc.) here */
+  //General purpose registers
+  unsigned GP_Registers[NUM_GP_REGISTERS];
 
-	/* add all variables of the simulator (e.g., registers, etc.) here */
+  // Pipeline structure, array of special purpose registers, each stage has its own special purpose registers?
+  pipeline_t PIPELINE[NUM_STAGES];
+
 } sim_t;
 
 /* simulator */
@@ -119,5 +127,11 @@ void write_memory(unsigned address, unsigned value);
 
 //prints the values of the registers 
 void print_registers();
+
+//Clears general purpose registers
+void clear_registers();
+
+//Clears memory
+void clear_memory();
 
 #endif /*SIM_PIPE_H_*/

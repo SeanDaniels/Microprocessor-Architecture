@@ -11,10 +11,12 @@
 + Instruction memory
   - Input is instruction address
   - Output is instruction
-
+** ID/EX
+** EX/MEM
+** MEM/WB
 * Program Objects
 ** mips
-+ mips is an of type sim_t
++ mips is an object of type sim_t
 ** sim_t
 + sim_t is a struct with the following fields
   - instruction_t instr_memory[PROGRAM_SIZE]

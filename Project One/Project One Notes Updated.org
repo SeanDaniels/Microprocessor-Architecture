@@ -90,6 +90,27 @@ EOP
   - Number of instructions
   - Number of clock cycles run
   - Number of stalls
++ Implementing the core of the simulator
+  - Need 4 pipeline data structures
+    + IF/ID
+      - has field instruction register(IR)
+      - has field next program counter(NPC)[PC+4]
+    + ID/EX
+      - has field A -> Regfie[IF/ID.IR[src1]]
+      - has field B -> Regfie[IF/ID.IR[src2]]
+      - has field Immediate(IMM)
+      - has field NPC
+    + EX/MEM
+    + MEM/WB
+    void run(unsigned cycles){
+      for( number of clock cylces ){
+          /*IF Single Cycle*/
+          /*ID* Single Cycle*/
+          /*EXE* Single Cycle*/
+          /*MEM* Single Cycle*/
+          /*WB* Single Cycle*/
+      }
+    }
 ** Functions to init, terminate, and clear simulator
 + sim_pip/~sim_pip
 + reset

@@ -13,12 +13,15 @@ using namespace std;
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 16 
 #define NUM_STAGES 5
+#define NOT_DECLARED -1
 
 typedef enum {PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD} sp_register_t;
 
 typedef enum {LW, SW, ADD, ADDI, SUB, SUBI, XOR, BEQZ, BNEZ, BLTZ, BGTZ, BLEZ, BGEZ, JUMP, EOP, NOP} opcode_t;
 
 typedef enum {IF, ID, EXE, MEM, WB} stage_t;
+
+typedef enum {IF_ID, ID_EXE, EXE_MEM, MEM_WB} pipeline_stage_t;
 
 typedef struct{
 	opcode_t opcode; //opcode
@@ -28,9 +31,43 @@ typedef struct{
 	unsigned immediate; //immediate field
 	string label; //for conditional branches, label of the target instruction - used only for parsing/debugging purposes
 } instruction_t;
+
 typedef struct {
-  unsigned SP_REGISTERS[NUM_SP_REGISTERS];
+  instruction_t intruction_register;
+  unsigned IF_ID_SP_REG[2];
+  /*stage one is ir, npc, pc*/
+} IF_ID_stage_of_pipeline_t;
+
+typedef struct {
+  instruction_t intruction_register;
+  unsigned ID_EXE_SP_REG[4];
+  /*stage two is a, b, npc, ir, imm, */
+} ID_EXE_stage_of_pipeline_t;
+
+typedef struct {
+  instruction_t intruction_register;
+  unsigned EXE_MEM_SP_REG[3];
+  /*stage three is ir, aluOut, b, cond */
+} EXE_MEM_stage_of_pipeline_t;
+
+typedef struct {
+  instruction_t intruction_register;
+  unsigned MEM_WB_SP_REG[2];
+  /*stage four is ir, aluOut, LMD */
+} MEM_WB_stage_of_pipeline_t;
+
+typedef struct {
+  /*4 sets of 12 registers?? I don't want to do it this way, but the enum for sp_reg already exists*/
+  typedef enum {PC_1,NPC_1} stage_1; 
+  typedef enum {A_1,B_1,IMM_2,NPC_2} stage_2; 
+  typedef enum {B_2,ALU_OUT_1,COND} stage_3; 
+  typedef enum {ALU_OUT_2,LMD} stage_4; 
+  MEM_WB_stage_of_pipeline_t MEM_WB_Stage;
+  EXE_MEM_stage_of_pipeline_t EXE_MEM_Stage;
+  ID_EXE_stage_of_pipeline_t ID_EXE_Stage;
+  IF_ID_stage_of_pipeline_t IF_ID_Stage;
 } pipeline_t;
+
 typedef struct {
 
   // instruction memory
@@ -53,7 +90,7 @@ typedef struct {
   unsigned GP_Registers[NUM_GP_REGISTERS];
 
   // Pipeline structure, array of special purpose registers, each stage has its own special purpose registers?
-  pipeline_t PIPELINE[NUM_STAGES];
+  pipeline_t pipeline;
 
 } sim_t;
 

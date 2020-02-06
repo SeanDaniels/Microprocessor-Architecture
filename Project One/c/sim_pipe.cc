@@ -240,11 +240,36 @@ void sim_pipe_terminate(){
 void run(unsigned cycles){
     /* If cycles has argument, run for that number of cycles
      * if not, run asm to completion*/
-    instruction_t currentInstruction = mips.instr_memory[0];
-    mips.PIPELINE[IF].SP_REGISTERS[A] = mips.instr_memory[0].src1;
-    if (cycles) {
-      while (cycles) {
-      }
+    /* A full run for each instruction will look like the following
+     * at clock cycle 1:
+     * Fetch instruction, pass to IR of IF_ID stage
+     */
+    mips.pipeline.IF_ID_Stage.intruction_register = mips.instr_memory[0];
+    
+    unsigned cyclesRan = 0;
+    switch(cycles){
+        case NOT_DECLARED:
+          while (mips.pipeline.MEM_WB_Stage.intruction_register.opcode != EOP) {
+              //keep moving forward
+          }
+            break;
+        default:
+            while(cycles>0){
+                switch(cyclesRan){
+                    case 0:
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        break;
+                }
+
+            }
+            break;
     }
     //get instruction first instruction memory
     //Instruction fetch

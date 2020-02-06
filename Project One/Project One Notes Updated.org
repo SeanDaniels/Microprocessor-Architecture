@@ -122,8 +122,8 @@
       - has field instruction register(IR)
       - has field next program counter(NPC)[PC+4]
     + ID/EX
-      - has field A -> Regfie[IF/ID.IR[src1]]
-      - has field B -> Regfie[IF/ID.IR[src2]]
+      - has field A -> Regfile[IF/ID.IR[src1]]
+      - has field B -> Regfile[IF/ID.IR[src2]]
       - has field Immediate(IMM)
       - has field NPC
     + EX/MEM

@@ -119,7 +119,7 @@
           /*WB* Single Cycle*/
       }
     }
-      #+END_SRC
+#+END_SRC
 ** Functions to init, terminate, and clear simulator
 + sim_pip/~sim_pip
 + reset

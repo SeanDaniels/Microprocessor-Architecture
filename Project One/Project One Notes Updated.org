@@ -88,7 +88,24 @@
   - Code does not contain branches (no control hazards)
   - Code does not contain flow dependencies
 + Progressively add handling of hazards
-** What do I do in run()
+** Functions to init, terminate, and clear simulator
++ sim_pip/~sim_pip
++ reset
+** Function that models the cycle by cycle execution of the pipeline
++ run
+** Functions to init the registers and memory
++ set_gp_register
++ write_memory
+** Functions to inspect register/memory
++ get_gp_register
++ get_IPC
++ get_instructions_executed
++ get_clock_cycles
++ get_stalls
++ print_registers()
+** Parser
++load_program
+* What do I do in run()
 + Inspect:
   - Register file
   - Memory
@@ -120,20 +137,3 @@
       }
     }
 #+END_SRC
-** Functions to init, terminate, and clear simulator
-+ sim_pip/~sim_pip
-+ reset
-** Function that models the cycle by cycle execution of the pipeline
-+ run
-** Functions to init the registers and memory
-+ set_gp_register
-+ write_memory
-** Functions to inspect register/memory
-+ get_gp_register
-+ get_IPC
-+ get_instructions_executed
-+ get_clock_cycles
-+ get_stalls
-+ print_registers()
-** Parser
-+load_program

@@ -1,5 +1,5 @@
 #include "sim_pipe.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <cstring>
@@ -238,23 +238,42 @@ void sim_pipe_terminate(){
 
 /* body of the simulator */
 void run(unsigned cycles){
+    /* If cycles has argument, run for that number of cycles
+     * if not, run asm to completion*/
+    instruction_t currentInstruction = mips.instr_memory[0];
+    mips.PIPELINE[IF].SP_REGISTERS[A] = mips.instr_memory[0].src1;
+    if (cycles) {
+      while (cycles) {
+      }
+    }
+    //get instruction first instruction memory
+    //Instruction fetch
+    //Instruction decode
+    //Instruction execute
+    //Instruction memory
+    //Instruction write back
+    //
+
 }
 	
 /* reset the state of the pipeline simulator */
 void reset(){
+    clear_registers();
+    clear_memory();
 }
 
 //return value of special purpose register
 unsigned get_sp_register(sp_register_t reg, stage_t s){
-	return 0; //please modify
+    return mips.PIPELINE[s].SP_REGISTERS[reg];
 }
 
 //returns value of general purpose register
 int get_gp_register(unsigned reg){
-	return 0; //please modify
+	return mips.GP_Registers[reg]; //please modify
 }
 
 void set_gp_register(unsigned reg, int value){
+    mips.GP_Registers[reg] = value;
 }
 
 float get_IPC(){
@@ -272,4 +291,13 @@ unsigned get_stalls(){
 unsigned get_clock_cycles(){
         return 0; //please modify
 }
-
+void clear_registers() {
+    for(int i = 0; i<NUM_GP_REGISTERS;i++){
+        mips.GP_Registers[i] = UNDEFINED;
+    }
+}
+void clear_memory(){
+    for(int i = 0; i<PROGRAM_SIZE; i++){
+        mips.data_memory[PROGRAM_SIZE] = 0xFF;
+    }
+}

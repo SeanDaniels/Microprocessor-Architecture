@@ -102,6 +102,7 @@ EOP
       - has field NPC
     + EX/MEM
     + MEM/WB
+      #+BEGIN_SRC
     void run(unsigned cycles){
       for( number of clock cylces ){
           /*IF Single Cycle*/
@@ -111,6 +112,7 @@ EOP
           /*WB* Single Cycle*/
       }
     }
+      #+END_SRC
 ** Functions to init, terminate, and clear simulator
 + sim_pip/~sim_pip
 + reset

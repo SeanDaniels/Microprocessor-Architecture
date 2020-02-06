@@ -109,7 +109,7 @@
       - has field NPC
     + EX/MEM
     + MEM/WB
- #+BEGIN_SRC
+ #+BEGIN_SRC c
     void run(unsigned cycles){
       for( number of clock cylces ){
           /*IF Single Cycle*/

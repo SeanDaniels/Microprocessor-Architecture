@@ -1,8 +1,0 @@
-#+TITLE: Project One Notes
-* Due Date
-+ 2/21 Integer Pipeline
-+ 2/25 Floating Point Pipeline
-* Goal
-+ Design and implement c/c++ cycle-accurate simulator of a 5-stage MIPS-like pipelined processor
-* Testing
-+ Code will be tested on grendel.ece.ncsu.edu linux machine

@@ -1,0 +1,214 @@
+#+TITLE: Program Notes
+* General Notes
++ Run debugger, stop after load_program function, inspect 'mips' object
++ I think that the relevant information exists in the mips object (register
+  values, instructions, destinations..)
+* General Pipeline
+** IF/ID
+*** Some SP Register
++ PC + 4 OR some other instruction address (multiplexer output, not sure what the control line)
+*** Some other SP Register
++ Instruction memory
+  - Input is instruction address
+  - Output is instruction
+** ID/EX
+** EX/MEM
+** MEM/WB
+* Program Objects
+** mips
++ mips is an object of type sim_t
+** sim_t
++ sim_t is a struct with the following fields
+  - instruction_t instr_memory[PROGRAM_SIZE]
+  - unsigned instr_base_address
+  - unsigned char *data_memory
+  - unsigned data_memory_size
+  - unsigned data_memory_latency
+** instruction_t
++ instruction_t is a struct with the following fields
+  - opcode_t opcode
+  -
+* no_dep asm
+#+BEGIN_SRC :tangle yes :lang assembly
+ LW	R1 0(R0)
+ ADD	R2 R3 R4
+ ADDI	R3 R3 10
+ SUB	R4 R4 R1
+ SW  	R2 0(R0)
+ ADD	R1 R2 R3
+ SW	R4 4(R0)
+ ADD	R5 R5 R6
+ LW	R6 4(R0)
+ EOP
+#+END_SRC
+* Highlevel (from lecture)
++ Simulate the life of each instruction clock cycle by clock cycle
+** Assembly file loads into simulator
+  - Special purpose register show the value of the register at the beginning of
+    the stage
+*** What to do with the assembly file
++ At the end of clock cycle 0:
+  - Instruction 1 should be in ID stage
+  - Instruction 2 should be in IF stage
++ At the end of clock cycle 1
+  - Instruction 1 should be in EXE stage
+  - Instruction 2 should be in ID stage
+  - Instruction 3 should be in IF stage
++ At the end of clock cycle 3
+  - Instruction 1 should be in MEM stage
+  - Instruction 2 should be in ID stage
+  - Instruction 3 should be in IF stage
+
+** Simulator outputs:
++ Values in register file
++ Values in the pipeline registers
++ Content of memory
++ CPI
+** Stages
+*** IF
++ IF/ID
+*** ID
++ ID/EXE
+*** EXE
++ EXE/MEM
+*** MEM
++ MEM/WB
+*** WB
+** What do I need to model?
+32-bit register can be modeled through a 32 bit data type (unsigned data type)
+*** Register File
+*** Pipeline Registers
+*** Logic for implementing ALU
+** What is the flow of the program
++ Add to the code templates the date structures required to implement
+  - Pipeline register
+  - Register file
+  - Counters for the number of instructions executed, number of clock cycles,
+    number of stalls
++ Write the code that models pipeline execution assuming no hazards
+  - Data memory will provide data within the clock cylce (no structural hazards)
+  - Code does not contain branches (no control hazards)
+  - Code does not contain flow dependencies
++ Progressively add handling of hazards
+** Functions to init, terminate, and clear simulator
++ sim_pip/~sim_pip
++ reset
+** Function that models the cycle by cycle execution of the pipeline
++ run
+** Functions to init the registers and memory
++ set_gp_register
++ write_memory
+** Functions to inspect register/memory
++ get_gp_register
++ get_IPC
++ get_instructions_executed
++ get_clock_cycles
++ get_stalls
++ print_registers()
+** Parser
++load_program
+* What do I do in run()
++ Inspect:
+  - Register file
+  - Memory
+  - Pipeline registers
++ Value of:
+  - Number of instructions
+  - Number of clock cycles run
+  - Number of stalls
++ Implementing the core of the simulator
+  - Need 4 pipeline data structures
+    + IF/ID
+      - has field instruction register(IR)
+      - has field next program counter(NPC)[PC+4]
+    + ID/EX
+      - has field A -> Regfile[IF/ID.IR[src1]]
+      - has field B -> Regfile[IF/ID.IR[src2]]
+      - has field Immediate(IMM)
+      - has field NPC
+    + EX/MEM
+    + MEM/WB
+ #+BEGIN_SRC c
+    void run(unsigned cycles){
+      for( number of clock cylces ){
+          /*IF Single Cycle*/
+          /*ID* Single Cycle*/
+          /*EXE* Single Cycle*/
+          /*MEM* Single Cycle*/
+          /*WB* Single Cycle*/
+      }
+    }
+#+END_SRC
+* Running god damnit
++ Need some structure to keep track of what instructions need to be processed
+  #+BEGIN_SRC c
+int numberOfInstructionsInPipeline = x
+  #+END_SRC
++ Need some structure to hold the information in a way that allows it to be
+  cycled through at each clock cycle
+
+  #+BEGIN_SRC c
+int numberOfInstructionsInPipeline = x
+  #+END_SRC
++ So it would be like
+  - New clock cycle
+  - What is loaded in pipeline
+** Flow
+- Two routes for running
+  1. First entry into function
+     - Access MIPS structure
+     - Pull info
+     - Increment MIPS pointer
+     - Increment clock tick
+  2. Clock cycle increment
+     - Which cycles need to be run?
+       - Check state of processor
+     - if fetch needed, fetch
+     - if decode needed, decode
+     - if execute needed, execute
+     - if memory needed, memory
+     - if write back needed, write back
+*** Fetch
+#+BEGIN_SRC c
+void fetch(int nextInstruction = 0) {
+  /*Function to get the next instruction
+   ,*Next instruction will be provided by NPC of EXE_MEM Pipeline from run
+   ,*or will default to zero (first instruction)
+   ,*
+   ,*/
+  if(mips.instr_memory[nextInstruction].opcode!=EOP){
+  mips.pipeline[IF_ID].intruction_register = mips.instr_memory[nextInstruction];
+  mips.pipeline[IF_ID].SP_REGISTERS[PC] = mips.instr_base_address + 4;
+  mips.pipeline[IF_ID].SP_REGISTERS[NPC] = mips.instr_base_address + 4;
+  decodeNeeded++;
+  }
+  else{
+      //signal no more instructions to run function
+  }
+}
+#+END_SRC
+*** Decode
+#+BEGIN_SRC c
+void decode() {
+  /*Function to parse the register file into special purpose registers
+   ,*/
+   //get instruction register
+decodeNeeded--;
+  mips.pipeline[ID_EXE].intruction_register =
+      mips.pipeline[IF_ID].intruction_register;
+//get register A
+  mips.pipeline[ID_EXE].SP_REGISTERS[A] =
+      mips.pipeline[ID_EXE].intruction_register.src1;
+//get register B
+  mips.pipeline[ID_EXE].SP_REGISTERS[B] =
+      mips.pipeline[ID_EXE].intruction_register.src2;
+//get immediate register
+  mips.pipeline[ID_EXE].SP_REGISTERS[IMM] =
+      mips.pipeline[ID_EXE].intruction_register.immediate;
+//get NPC register
+  mips.pipeline[ID_EXE].SP_REGISTERS[NPC] =
+      mips.pipeline[IF_ID].SP_REGISTERS[NPC];
+executeNeeded++;
+}
+#+END_SRC
+*** Execute

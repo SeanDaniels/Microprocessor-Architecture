@@ -16,7 +16,9 @@ int decodeNeeded = 0;
 int executeNeeded = 0;
 int memoryNeeded = 0;
 int writeBackNeeded = 0;
-
+int processorKey[5] = {1,0,0,0,0};
+int processorKeyNext[5] = {0,0,0,0,0};
+unsigned instructionsExecuted = 0;
 // used for debugging purposes
 static const char *reg_names[NUM_SP_REGISTERS] = {
     "PC", "NPC", "IR", "A", "B", "IMM", "COND", "ALU_OUTPUT", "LMD"};
@@ -252,75 +254,120 @@ void sim_pipe_terminate() { delete[] mips.data_memory; }
    CODE TO BE COMPLETED
 
    ============================================================= */
-void fetch(int nextInstruction = 0, int fetchNeeded = 1) {
+void fetch(unsigned fetchInstruction) {
   /*Function to get the next instruction
    *Next instruction will be provided by NPC of EXE_MEM Pipeline from run
    *or will default to zero (first instruction)
    *
    */
-  if (mips.instr_memory[nextInstruction].opcode != EOP) {
+  if (mips.instr_memory[fetchInstruction].opcode != EOP) {
+    //get instruction
     mips.pipeline[IF_ID].intruction_register =
-        mips.instr_memory[nextInstruction];
-    mips.pipeline[IF_ID].SP_REGISTERS[PC] = mips.instr_base_address + 4;
-    mips.pipeline[IF_ID].SP_REGISTERS[NPC] = mips.instr_base_address + 4;
-    decodeNeeded++;
+        mips.instr_memory[fetchInstruction];
+    //Push values to sp registers
+    mips.pipeline[IF_ID].SP_REGISTERS[PC] = fetchInstruction;
+    mips.pipeline[IF_ID].SP_REGISTERS[NPC] = fetchInstruction + 4;
+    //update control array
+    processorKeyNext[1]++;
   }
   else
-    fetchNeeded = 0;
+    processorKeyNext[0] = 0;
 
 }
 void decode() {
   /*Function to parse the register file into special purpose registers
    */
-   //get instruction register
-  decodeNeeded--;
+   //forward instruction register from ID_EXE stage
   mips.pipeline[ID_EXE].intruction_register =
       mips.pipeline[IF_ID].intruction_register;
-//get register A
+  // get register A
   mips.pipeline[ID_EXE].SP_REGISTERS[A] =
       mips.pipeline[ID_EXE].intruction_register.src1;
-//get register B
+  // get register B
   mips.pipeline[ID_EXE].SP_REGISTERS[B] =
       mips.pipeline[ID_EXE].intruction_register.src2;
-//get immediate register 
+  // get immediate register
   mips.pipeline[ID_EXE].SP_REGISTERS[IMM] =
       mips.pipeline[ID_EXE].intruction_register.immediate;
-//get NPC register 
+  // get NPC register
   mips.pipeline[ID_EXE].SP_REGISTERS[NPC] =
       mips.pipeline[IF_ID].SP_REGISTERS[NPC];
-  executeNeeded++;
-  
+  //decrement number of decodes stages needed
+  processorKeyNext[1]--;
+  //increment number of execute stages needed
+  processorKeyNext[2]++;
 }
 void execute(){
-  executeNeeded--;
-  memoryNeeded++;
   /*
    *Conditional logic to determine what happens in execution unit
    *What are arguments of ALU:
    *If opcode is ADD, SUB, XOR, *LW, *SW:
    *Arguments are A and B (*Potentially + some offset)
    */
+   //take ALU action
+  mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT] =
+      alu(mips.pipeline[ID_EXE].intruction_register.opcode,
+          mips.pipeline[ID_EXE].SP_REGISTERS[A],
+          mips.pipeline[ID_EXE].SP_REGISTERS[B],
+          mips.pipeline[ID_EXE].SP_REGISTERS[IMM],
+          mips.pipeline[ID_EXE].SP_REGISTERS[NPC]);
+  // decrement number of execute stages needed
+  processorKeyNext[2]--;
+  // increment number of memory stages needed
+  processorKeyNext[3]++;
 }
-void memory(){
-  memoryNeeded--;
+void memory() {
+  //load memory from register
+  //propogate IR
+  mips.pipeline[MEM_WB].intruction_register =
+      mips.pipeline[EXE_MEM].intruction_register;
+  // propogate ALU output
+  mips.pipeline[MEM_WB].SP_REGISTERS[ALU_OUTPUT] =
+      mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT];
+  if(mips.pipeline[EXE_MEM].intruction_register.opcode == LW ||mips.pipeline[EXE_MEM].intruction_register.opcode == SW ){
+    //store memory or load memory
+    if(mips.pipeline[EXE_MEM].intruction_register.opcode == LW){
+      // I don't know how the registers are refr'd
+      // its not the dest or src, I actually need to save to address
+    }
+  }
 
-  
+  // decrement number of memory stages needed
+  processorKeyNext[3]--;
+  //Conditionally increment number of write back stages needed
+  processorKeyNext[4]++;
 }
 void write_back(){
+  //put whats in the alu output register into the destination that
+  //is in the destination register
+  //if load instruction, pass LMD to register
+  //if arithmatic, pass alu output
+  //either store word or load word happens in the memory stage, not sure which one
   writeBackNeeded--;
+  instructionsExecuted++;
 }
+
+void processorKeyUpdate(){
+  for(int i = 0; i<5; i++){
+    processorKey[i] = processorKeyNext[i];
+  }
+
+}
+
 /* body of the simulator */
 void run(unsigned cycles) {
   /* If cycles has argument, run for that number of cycles
    * if not, run asm to completion*/
-  /* A full run for each instruction will look like the following
-   * at clock cycle 1:
-   * Fetch instruction, pass to IR of IF_ID stage
-   */
-   /* Fetch what needs to be fetched, decode what needs to be decoded, etc */
-   /* Fetch initially needs to run, but after an EOP is recognized, fetch is not needed */
-  static int whichFetch=0;
-  static int fetchNeeded = 1;
+
+  /* Fetch initially needs to run, but after an EOP is recognized, fetch is
+  not needed */
+
+  //starting point for fetch reference
+  //increment in fetch function
+  static unsigned fetchInstruction = mips.instr_base_address;
+ 
+
+
   unsigned cyclesRan = 0;
   switch (cycles) {
   case NOT_DECLARED:
@@ -336,19 +383,27 @@ void run(unsigned cycles) {
     break;
   default:
     while (cyclesRan < cycles) {
-      if(fetchNeeded){
-        fetch(whichFetch);
+
+      /*If there is only one instruction in the pipeline, only one funciton
+       * will be called. If, however, multiple instructions have been fetched, the
+       * number of functions called also changes
+       * I'm struggline with implementing changing the number of actions taken within the while loop*/
+
+      //trying with this stupid array check and copy system
+      processorKeyUpdate();
+      if(processorKey[0]){
+        fetch(fetchInstruction);
       }
-      if(writeBackNeeded){
+      if(processorKey[4]){
         write_back();
       }
-      if(decodeNeeded){
+      if(processorKey[1]){
         decode();
       }
-      if(executeNeeded){
+      if(processorKey[2]){
         execute();
       }
-      if(memoryNeeded){
+      if(processorKey[3]){
         memory();
       }
       cyclesRan++;
@@ -388,7 +443,7 @@ float get_IPC() {
 }
 
 unsigned get_instructions_executed() {
-  return 0; // please modify
+  return instructionsExecuted; // please modify
 }
 
 unsigned get_stalls() {

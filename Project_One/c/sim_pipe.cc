@@ -304,6 +304,10 @@ void execute(){
    *If opcode is ADD, SUB, XOR, *LW, *SW:
    *Arguments are A and B (*Potentially + some offset)
    */
+   //Get conditional
+  if(mips.pipeline[IF_ID].intruction_register.opcode == BEQZ ||mips.pipeline[IF_ID].intruction_register.opcode == BNEZ ||mips.pipeline[IF_ID].intruction_register.opcode == BLTZ ||mips.pipeline[IF_ID].intruction_register.opcode == BGTZ ||mips.pipeline[IF_ID].intruction_register.opcode == BLEZ ||mips.pipeline[IF_ID].intruction_register.opcode == BGEZ ||){
+    
+  }
    //take ALU action
   mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT] =
       alu(mips.pipeline[ID_EXE].intruction_register.opcode,

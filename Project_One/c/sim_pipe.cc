@@ -17,7 +17,7 @@ int executeNeeded = 0;
 int memoryNeeded = 0;
 int writeBackNeeded = 0;
 int processorKey[5] = {1,0,0,0,0};
-int processorKeyNext[5] = {0,0,0,0,0};
+int processorKeyNext[5] = {1,0,0,0,0};
 unsigned instructionsExecuted = 0;
 // used for debugging purposes
 static const char *reg_names[NUM_SP_REGISTERS] = {
@@ -62,12 +62,18 @@ unsigned alu(unsigned opcode, unsigned a, unsigned b, unsigned imm,
   case LW:
   case SW:
     return (a + imm);
-  case BEQZ:
+    case BEQZ:
+      return(a==0);
   case BNEZ:
+    return(a!=0);
   case BGTZ:
+    return(a>0);
   case BGEZ:
+    return(a>=0);
   case BLTZ:
+    return(a<0);
   case BLEZ:
+    return(a<=0);
   case JUMP:
     return (npc + imm);
   default:
@@ -262,6 +268,7 @@ void fetch() {
 
   /* Create variable to hold PC */
   static unsigned fetchInstruction;
+  static int fetchInstructionIndex;
   /* Update PC, depending on first run criteria
    * If the fetch stage npc is null, this is the first run
    * will need to update to handle branch instructions */
@@ -271,9 +278,12 @@ void fetch() {
   else{
     fetchInstruction = mips.pipeline[IF_ID].SP_REGISTERS[NPC];
   }
-  // get instruction
+  /* create variable to be used as an index to pull instructions from
+   * instruction array */
+  fetchInstructionIndex = (fetchInstruction - 0x10000000) / 4;
+  /*fetch that instruction*/
   mips.pipeline[IF_ID].intruction_register =
-      mips.instr_memory[fetchInstruction];
+      mips.instr_memory[fetchInstructionIndex];
   //update program counter???
   mips.pipeline[IF_ID].SP_REGISTERS[PC] = fetchInstruction;
 
@@ -329,15 +339,6 @@ void execute(){
    *If opcode is ADD, SUB, XOR, *LW, *SW:
    *Arguments are A and B (*Potentially + some offset)
    */
-   //Get conditional
-  if (mips.pipeline[ID_EXE].intruction_register.opcode == BEQZ ||
-      mips.pipeline[ID_EXE].intruction_register.opcode == BNEZ ||
-      mips.pipeline[ID_EXE].intruction_register.opcode == BLTZ ||
-      mips.pipeline[ID_EXE].intruction_register.opcode == BGTZ ||
-      mips.pipeline[ID_EXE].intruction_register.opcode == BLEZ ||
-      mips.pipeline[ID_EXE].intruction_register.opcode == BGEZ ) {
-    //we have a conditional
-  }
   /* Forward instruction register */
   mips.pipeline[EXE_MEM].intruction_register = mips.pipeline[ID_EXE].intruction_register;
  /* Forward B*/
@@ -501,20 +502,20 @@ void run(unsigned cycles) {
 
       // trying with this stupid array check and copy system
       processorKeyUpdate();
-      if (processorKey[IF]) {
-        fetch();
-      }
       if (processorKey[WB]) {
         write_back();
       }
-      if (processorKey[ID]) {
-        decode();
+      if (processorKey[MEM]) {
+        memory();
       }
       if (processorKey[EXE]) {
         execute();
       }
-      if (processorKey[MEM]) {
-        memory();
+      if (processorKey[ID]) {
+        decode();
+      }
+      if (processorKey[IF]) {
+        fetch();
       }
       cyclesRan++;
     }

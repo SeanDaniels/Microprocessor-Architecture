@@ -25,7 +25,7 @@ typedef enum {IF, ID, EXE, MEM, WB} stage_t;
 typedef enum {IF_ID, ID_EXE, EXE_MEM, MEM_WB} pipeline_stage_t;
 
 typedef struct{
-	opcode_t opcode; //opcode
+	opcode_t opcode = NOP; //opcode
 	unsigned src1; //first source register in the assembly instruction (for SW, register to be written to memory)
 	unsigned src2; //second source register in the assembly instruction
 	unsigned dest; //destination register
@@ -35,7 +35,7 @@ typedef struct{
 
 typedef struct {
   instruction_t intruction_register;
-  unsigned SP_REGISTERS[NUM_SP_REGISTERS];
+  unsigned SP_REGISTERS[NUM_SP_REGISTERS] = {UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,};
   /*stage one is ir, npc, pc*/
   /*stage two is a, b, npc, ir, imm, */
   /*stage three is ir, aluOut, b, cond */

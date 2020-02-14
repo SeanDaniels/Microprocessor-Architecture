@@ -254,12 +254,14 @@ void sim_pipe_terminate() { delete[] mips.data_memory; }
    CODE TO BE COMPLETED
 
    ============================================================= */
-void fetch(unsigned fetchInstruction) {
+void fetch() {
   /*Function to get the next instruction
    *Next instruction will be provided by NPC of EXE_MEM Pipeline from run
    *or will default to zero (first instruction)
    *
    */
+   //if current instruction is branch, next instruction needs to wait in decode
+   //until this instruction is is ex_mem stage
   if (mips.instr_memory[fetchInstruction].opcode != EOP) {
     // get instruction
     mips.pipeline[IF_ID].intruction_register =

@@ -261,18 +261,24 @@ void fetch(unsigned fetchInstruction) {
    *
    */
   if (mips.instr_memory[fetchInstruction].opcode != EOP) {
-    //get instruction
+    // get instruction
     mips.pipeline[IF_ID].intruction_register =
         mips.instr_memory[fetchInstruction];
-    //Push values to sp registers
+    // Push values to sp registers
     mips.pipeline[IF_ID].SP_REGISTERS[PC] = fetchInstruction;
-    mips.pipeline[IF_ID].SP_REGISTERS[NPC] = fetchInstruction + 4;
-    //update control array
+    if (mips.pipeline[EXE_MEM].SP_REGISTERS[COND] == 1) {
+      // NPC = should be the branch target pretty sure this is the ALU output of
+      // previous instruction
+      mips.pipeline[IF_ID].SP_REGISTERS[NPC] =
+          mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT];
+    } else {
+      // follow normal piping procedures
+      mips.pipeline[IF_ID].SP_REGISTERS[NPC] = fetchInstruction + 4;
+    }
+    // update control array
     processorKeyNext[1]++;
-  }
-  else
+  } else
     processorKeyNext[0] = 0;
-
 }
 void decode() {
   /*Function to parse the register file into special purpose registers
@@ -282,13 +288,13 @@ void decode() {
       mips.pipeline[IF_ID].intruction_register;
   // get register A
   mips.pipeline[ID_EXE].SP_REGISTERS[A] =
-      mips.pipeline[ID_EXE].intruction_register.src1;
+      mips.pipeline[IF_ID].intruction_register.src1;
   // get register B
   mips.pipeline[ID_EXE].SP_REGISTERS[B] =
-      mips.pipeline[ID_EXE].intruction_register.src2;
+      mips.pipeline[IF_ID].intruction_register.src2;
   // get immediate register
   mips.pipeline[ID_EXE].SP_REGISTERS[IMM] =
-      mips.pipeline[ID_EXE].intruction_register.immediate;
+    mips.pipeline[IF_ID].intruction_register.immediate;
   // get NPC register
   mips.pipeline[ID_EXE].SP_REGISTERS[NPC] =
       mips.pipeline[IF_ID].SP_REGISTERS[NPC];
@@ -305,16 +311,56 @@ void execute(){
    *Arguments are A and B (*Potentially + some offset)
    */
    //Get conditional
-  if(mips.pipeline[IF_ID].intruction_register.opcode == BEQZ ||mips.pipeline[IF_ID].intruction_register.opcode == BNEZ ||mips.pipeline[IF_ID].intruction_register.opcode == BLTZ ||mips.pipeline[IF_ID].intruction_register.opcode == BGTZ ||mips.pipeline[IF_ID].intruction_register.opcode == BLEZ ||mips.pipeline[IF_ID].intruction_register.opcode == BGEZ ||){
-    
+  if (mips.pipeline[ID_EXE].intruction_register.opcode == BEQZ ||
+      mips.pipeline[ID_EXE].intruction_register.opcode == BNEZ ||
+      mips.pipeline[ID_EXE].intruction_register.opcode == BLTZ ||
+      mips.pipeline[ID_EXE].intruction_register.opcode == BGTZ ||
+      mips.pipeline[ID_EXE].intruction_register.opcode == BLEZ ||
+      mips.pipeline[ID_EXE].intruction_register.opcode == BGEZ ) {
+    //we have a conditional
   }
+  switch(mips.pipeline[ID_EXE].intruction_register.opcode){
+    case BEQZ:
+      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]==0){
+        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
+      }
+      break;
+    case BNEZ:
+      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]!=0){
+        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
+      }
+      break;
+    case BLTZ:
+      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]<0){
+        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
+      }
+      break;
+    case BGTZ:
+      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]>0){
+        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
+      }
+      break;
+    case BLEZ:
+      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]<=0){
+        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
+      }
+      break;
+    case BGEZ:
+      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]>=0){
+        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
+      }
+      break;
+    default:
+      mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT] =
+          alu(mips.pipeline[ID_EXE].intruction_register.opcode,
+              mips.pipeline[ID_EXE].SP_REGISTERS[A],
+              mips.pipeline[ID_EXE].SP_REGISTERS[B],
+              mips.pipeline[ID_EXE].SP_REGISTERS[IMM],
+              mips.pipeline[ID_EXE].SP_REGISTERS[NPC]);
+        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
+      break;
+    }
    //take ALU action
-  mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT] =
-      alu(mips.pipeline[ID_EXE].intruction_register.opcode,
-          mips.pipeline[ID_EXE].SP_REGISTERS[A],
-          mips.pipeline[ID_EXE].SP_REGISTERS[B],
-          mips.pipeline[ID_EXE].SP_REGISTERS[IMM],
-          mips.pipeline[ID_EXE].SP_REGISTERS[NPC]);
   // decrement number of execute stages needed
   processorKeyNext[2]--;
   // increment number of memory stages needed
@@ -331,8 +377,14 @@ void memory() {
   if(mips.pipeline[EXE_MEM].intruction_register.opcode == LW ||mips.pipeline[EXE_MEM].intruction_register.opcode == SW ){
     //store memory or load memory
     if(mips.pipeline[EXE_MEM].intruction_register.opcode == LW){
-      // I don't know how the registers are refr'd
-      // its not the dest or src, I actually need to save to address
+      //go to address stored passed from pipeline
+      //write info from address to other address passed from pipeline
+      //pass that to MEM_WB pipeline
+      //mips.pipeline[MEM_WB].SP_REGISTERS[LMD] = the data fetch
+    } else {
+      //here you are storing
+      //get value in register passed from pipeline, i think B
+      //write that value to address in a
     }
   }
 
@@ -341,12 +393,26 @@ void memory() {
   //Conditionally increment number of write back stages needed
   processorKeyNext[4]++;
 }
-void write_back(){
+void write_back() {
   //put whats in the alu output register into the destination that
   //is in the destination register
   //if load instruction, pass LMD to register
   //if arithmatic, pass alu output
   //either store word or load word happens in the memory stage, not sure which one
+  if (mips.pipeline[MEM_WB].intruction_register.opcode == LW ||
+      mips.pipeline[MEM_WB].intruction_register.opcode == ADD ||
+      mips.pipeline[MEM_WB].intruction_register.opcode == ADDI ||
+      mips.pipeline[MEM_WB].intruction_register.opcode == SUBI ||
+      mips.pipeline[MEM_WB].intruction_register.opcode == XOR) {
+    if (mips.pipeline[MEM_WB].intruction_register.opcode != LW) {
+      mips.pipeline[MEM_WB].intruction_register.dest =
+          mips.pipeline[MEM_WB].SP_REGISTERS[ALU_OUTPUT];
+    }
+    else{
+      mips.pipeline[MEM_WB].intruction_register.dest =
+          mips.pipeline[MEM_WB].SP_REGISTERS[LMD];
+    }
+  }
   writeBackNeeded--;
   instructionsExecuted++;
 }

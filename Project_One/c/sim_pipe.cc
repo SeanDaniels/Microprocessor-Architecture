@@ -256,31 +256,45 @@ void sim_pipe_terminate() { delete[] mips.data_memory; }
    ============================================================= */
 void fetch() {
   /*Function to get the next instruction
-   *Next instruction will be provided by NPC of EXE_MEM Pipeline from run
-   *or will default to zero (first instruction)
-   *
+   * if current instruction is branch, next instruction needs to wait in decode
+   * until this instruction is is ex_mem stage
    */
-   //if current instruction is branch, next instruction needs to wait in decode
-   //until this instruction is is ex_mem stage
-  if (mips.instr_memory[fetchInstruction].opcode != EOP) {
-    // get instruction
-    mips.pipeline[IF_ID].intruction_register =
-        mips.instr_memory[fetchInstruction];
+
+  /* Create variable to hold PC */
+  static unsigned fetchInstruction;
+  /* Update PC, depending on first run criteria
+   * If the fetch stage npc is null, this is the first run
+   * will need to update to handle branch instructions */
+  if(mips.pipeline[IF_ID].SP_REGISTERS[NPC] == UNDEFINED){
+    fetchInstruction = mips.instr_base_address;
+  }
+  else{
+    fetchInstruction = mips.pipeline[IF_ID].SP_REGISTERS[NPC];
+  }
+  // get instruction
+  mips.pipeline[IF_ID].intruction_register =
+      mips.instr_memory[fetchInstruction];
+  //update program counter???
+  mips.pipeline[IF_ID].SP_REGISTERS[PC] = fetchInstruction;
+
+  if (mips.pipeline[IF_ID].intruction_register.opcode != EOP) {
     // Push values to sp registers
-    mips.pipeline[IF_ID].SP_REGISTERS[PC] = fetchInstruction;
     if (mips.pipeline[EXE_MEM].SP_REGISTERS[COND] == 1) {
       // NPC = should be the branch target pretty sure this is the ALU output of
       // previous instruction
       mips.pipeline[IF_ID].SP_REGISTERS[NPC] =
           mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT];
-    } else {
+    }
+    else {
       // follow normal piping procedures
       mips.pipeline[IF_ID].SP_REGISTERS[NPC] = fetchInstruction + 4;
     }
     // update control array
-    processorKeyNext[1]++;
-  } else
-    processorKeyNext[0] = 0;
+  } else {
+    mips.pipeline[IF_ID].SP_REGISTERS[NPC] = UNDEFINED;
+    processorKeyNext[IF] = 0;
+  }
+    processorKeyNext[ID]++;
 }
 void decode() {
   /*Function to parse the register file into special purpose registers
@@ -288,9 +302,11 @@ void decode() {
    //forward instruction register from ID_EXE stage
   mips.pipeline[ID_EXE].intruction_register =
       mips.pipeline[IF_ID].intruction_register;
+
   // get register A
   mips.pipeline[ID_EXE].SP_REGISTERS[A] =
       mips.pipeline[IF_ID].intruction_register.src1;
+    
   // get register B
   mips.pipeline[ID_EXE].SP_REGISTERS[B] =
       mips.pipeline[IF_ID].intruction_register.src2;
@@ -300,10 +316,11 @@ void decode() {
   // get NPC register
   mips.pipeline[ID_EXE].SP_REGISTERS[NPC] =
       mips.pipeline[IF_ID].SP_REGISTERS[NPC];
+  
   //decrement number of decodes stages needed
-  processorKeyNext[1]--;
+  processorKeyNext[ID]--;
   //increment number of execute stages needed
-  processorKeyNext[2]++;
+  processorKeyNext[EXE]++;
 }
 void execute(){
   /*
@@ -321,36 +338,61 @@ void execute(){
       mips.pipeline[ID_EXE].intruction_register.opcode == BGEZ ) {
     //we have a conditional
   }
+  /* Forward instruction register */
+  mips.pipeline[EXE_MEM].intruction_register = mips.pipeline[ID_EXE].intruction_register;
+ /* Forward B*/
+  mips.pipeline[EXE_MEM].SP_REGISTERS[B] = mips.pipeline[ID_EXE].SP_REGISTERS[B];
+ /* Forward Imm*/
+  mips.pipeline[EXE_MEM].SP_REGISTERS[IMM] = mips.pipeline[ID_EXE].SP_REGISTERS[IMM];
+
   switch(mips.pipeline[ID_EXE].intruction_register.opcode){
     case BEQZ:
       if(mips.pipeline[ID_EXE].SP_REGISTERS[A]==0){
         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
       }
+      else {
+         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
+          }
       break;
     case BNEZ:
       if(mips.pipeline[ID_EXE].SP_REGISTERS[A]!=0){
         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
       }
+      else {
+         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
+          }
       break;
     case BLTZ:
       if(mips.pipeline[ID_EXE].SP_REGISTERS[A]<0){
         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
       }
+      else {
+         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
+          }
       break;
     case BGTZ:
       if(mips.pipeline[ID_EXE].SP_REGISTERS[A]>0){
         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
       }
+      else {
+         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
+          }
       break;
     case BLEZ:
       if(mips.pipeline[ID_EXE].SP_REGISTERS[A]<=0){
         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
       }
+      else {
+         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
+          }
       break;
     case BGEZ:
       if(mips.pipeline[ID_EXE].SP_REGISTERS[A]>=0){
         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
       }
+      else {
+         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
+          }
       break;
     default:
       mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT] =
@@ -364,9 +406,9 @@ void execute(){
     }
    //take ALU action
   // decrement number of execute stages needed
-  processorKeyNext[2]--;
+  processorKeyNext[EXE]--;
   // increment number of memory stages needed
-  processorKeyNext[3]++;
+  processorKeyNext[MEM]++;
 }
 void memory() {
   //load memory from register
@@ -391,9 +433,9 @@ void memory() {
   }
 
   // decrement number of memory stages needed
-  processorKeyNext[3]--;
+  processorKeyNext[MEM]--;
   //Conditionally increment number of write back stages needed
-  processorKeyNext[4]++;
+  processorKeyNext[WB]++;
 }
 void write_back() {
   //put whats in the alu output register into the destination that
@@ -409,13 +451,12 @@ void write_back() {
     if (mips.pipeline[MEM_WB].intruction_register.opcode != LW) {
       mips.pipeline[MEM_WB].intruction_register.dest =
           mips.pipeline[MEM_WB].SP_REGISTERS[ALU_OUTPUT];
-    }
-    else{
+    } else {
       mips.pipeline[MEM_WB].intruction_register.dest =
           mips.pipeline[MEM_WB].SP_REGISTERS[LMD];
     }
   }
-  writeBackNeeded--;
+  processorKeyNext[WB]++;
   instructionsExecuted++;
 }
 
@@ -428,54 +469,51 @@ void processorKeyUpdate(){
 
 /* body of the simulator */
 void run(unsigned cycles) {
-  /* If cycles has argument, run for that number of cycles
-   * if not, run asm to completion*/
-
-  /* Fetch initially needs to run, but after an EOP is recognized, fetch is
-  not needed */
-
-  //starting point for fetch reference
-  //increment in fetch function
-  static unsigned fetchInstruction = mips.instr_base_address;
- 
-
 
   unsigned cyclesRan = 0;
   switch (cycles) {
   case NOT_DECLARED:
-    //instruction_t instr = mips.instr_memory[i];
-    if (mips.pipeline[EXE_MEM].intruction_register.opcode == EOP){
-      break;
+    processorKeyUpdate();
+    if (processorKey[IF]) {
+      fetch();
     }
-    else {
-      fetch(cyclesRan);// keep moving forward
+    if (processorKey[WB]) {
+      write_back();
+    }
+    if (processorKey[ID]) {
       decode();
+    }
+    if (processorKey[EXE]) {
       execute();
+    }
+    if (processorKey[MEM]) {
+      memory();
     }
     break;
   default:
     while (cyclesRan < cycles) {
 
       /*If there is only one instruction in the pipeline, only one funciton
-       * will be called. If, however, multiple instructions have been fetched, the
-       * number of functions called also changes
-       * I'm struggline with implementing changing the number of actions taken within the while loop*/
+       * will be called. If, however, multiple instructions have been fetched,
+       * the number of functions called also changes I'm struggline with
+       * implementing changing the number of actions taken within the while
+       * loop*/
 
-      //trying with this stupid array check and copy system
+      // trying with this stupid array check and copy system
       processorKeyUpdate();
-      if(processorKey[0]){
-        fetch(fetchInstruction);
+      if (processorKey[IF]) {
+        fetch();
       }
-      if(processorKey[4]){
+      if (processorKey[WB]) {
         write_back();
       }
-      if(processorKey[1]){
+      if (processorKey[ID]) {
         decode();
       }
-      if(processorKey[2]){
+      if (processorKey[EXE]) {
         execute();
       }
-      if(processorKey[3]){
+      if (processorKey[MEM]) {
         memory();
       }
       cyclesRan++;

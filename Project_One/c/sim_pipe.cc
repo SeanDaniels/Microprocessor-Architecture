@@ -60,21 +60,14 @@ unsigned alu(unsigned opcode, unsigned a, unsigned b, unsigned imm,
   case XOR:
     return (a ^ b);
   case LW:
-    return (a + imm);
   case SW:
     return (a + imm);
   case BEQZ:
-   return someLogicToDetermineAddress;
   case BNEZ:
-    return someLogicToDetermineAddress;
   case BGTZ:
-    return someLogicToDetermineAddress;
   case BGEZ:
-    return someLogicToDetermineAddress;
   case BLTZ:
-    return someLogicToDetermineAddress;
   case BLEZ:
-    return someLogicToDetermineAddress;
   case JUMP:
     return (npc + imm);
   default:

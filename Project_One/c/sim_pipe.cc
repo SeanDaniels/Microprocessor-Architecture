@@ -60,20 +60,21 @@ unsigned alu(unsigned opcode, unsigned a, unsigned b, unsigned imm,
   case XOR:
     return (a ^ b);
   case LW:
+    return (a + imm);
   case SW:
     return (a + imm);
   case BEQZ:
-    return (a == 0);
+   return someLogicToDetermineAddress;
   case BNEZ:
-    return(a!=0);
+    return someLogicToDetermineAddress;
   case BGTZ:
-    return(a>0);
+    return someLogicToDetermineAddress;
   case BGEZ:
-    return(a>=0);
+    return someLogicToDetermineAddress;
   case BLTZ:
-    return(a<0);
+    return someLogicToDetermineAddress;
   case BLEZ:
-    return(a<=0);
+    return someLogicToDetermineAddress;
   case JUMP:
     return (npc + imm);
   default:
@@ -352,33 +353,26 @@ void decode() {
   processorKeyNext[EXE]++;
 }
 void execute(){
-  /*
-   *Conditional logic to determine what happens in execution unit
-   *What are arguments of ALU:
-   *If opcode is ADD, SUB, XOR, *LW, *SW:
-   *Arguments are A and B (*Potentially + some offset)
-   */
-  /* Forward instruction register */
-  stage_of_pipeline_t previousPipelineStage = mips.pipeline[ID_EXE];
-  stage_of_pipeline_t nextPipelineStage = mips.pipeline[EXE_MEM];
-  instruction_t currentInstruction = mips.pipeline[ID_EXE].intruction_register;
+  /*ID_EXE -> EXE_MEM*/
+  /* Forward instruction register from  */
+  mips.pipeline[EXE_MEM].intruction_register =  mips.pipeline[ID_EXE].intruction_register;
 
-  nextPipelineStage.intruction_register = currentInstruction;
  /* Forward B*/
-  nextPipelineStage.SP_REGISTERS[B] = previousPipelineStage.SP_REGISTERS[B];
-  //nextPipelineRegister[B] = previousPipelineRegister[B];
- // mips.pipeline[EXE_MEM].SP_REGISTERS[B] = mips.pipeline[ID_EXE].SP_REGISTERS[B];
+  mips.pipeline[EXE_MEM].SP_REGISTERS[B] =  mips.pipeline[ID_EXE].SP_REGISTERS[B];
  /* Forward Imm*/
-  nextPipelineStage.SP_REGISTERS[IMM] = previousPipelineStage.SP_REGISTERS[IMM];
-  //mips.pipeline[EXE_MEM].SP_REGISTERS[IMM] = mips.pipeline[ID_EXE].SP_REGISTERS[IMM];
+  mips.pipeline[EXE_MEM].SP_REGISTERS[IMM] =  mips.pipeline[ID_EXE].SP_REGISTERS[IMM];
+/* Generate conditional output */
+  mips.pipeline[EXE_MEM].SP_REGISTERS[COND] =
+      conditional_evaluation(mips.pipeline[ID_EXE].SP_REGISTERS[A],
+                             mips.pipeline[EXE_MEM].intruction_register.opcode);
 
-  if(currentInstruction.opcode == BEQZ || currentInstruction.opcode == BNEZ || currentInstruction.opcode == BLTZ || currentInstruction.opcode == BGTZ || currentInstruction.opcode == BLEZ || currentInstruction.opcode == BGEZ ){
-    nextPipelineStage.SP_REGISTERS[COND] = conditional_evaluation(previousPipelineStage.SP_REGISTERS[A], currentInstruction.opcode);
-  }
-  // take ALU action
-  nextPipelineStage.SP_REGISTERS[ALU_OUTPUT] =
-      alu(currentInstruction.opcode, previousPipelineStage.SP_REGISTERS[A], previousPipelineStage.SP_REGISTERS[B],
-          previousPipelineStage.SP_REGISTERS[IMM], previousPipelineStage.SP_REGISTERS[NPC]);
+  /*take ALU action*/
+  mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT] =
+      alu(mips.pipeline[EXE_MEM].intruction_register.opcode,
+          mips.pipeline[ID_EXE].SP_REGISTERS[A],
+          mips.pipeline[EXE_MEM].SP_REGISTERS[B],
+          mips.pipeline[EXE_MEM].SP_REGISTERS[IMM],
+          mips.pipeline[EXE_MEM].SP_REGISTERS[NPC]);
 
   // decrement number of execute stages needed
   processorKeyNext[EXE]--;
@@ -395,17 +389,24 @@ void memory() {
       mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT];
   if(mips.pipeline[EXE_MEM].intruction_register.opcode == LW ||mips.pipeline[EXE_MEM].intruction_register.opcode == SW ){
     //store memory or load memory
+      unsigned char *whatToLoad;
     if(mips.pipeline[EXE_MEM].intruction_register.opcode == LW){
-      //go to address stored passed from pipeline
-      //write info from address to other address passed from pipeline
-      //pass that to MEM_WB pipeline
-      //mips.pipeline[MEM_WB].SP_REGISTERS[LMD] = the data fetch
+      //get memory address, computed by ALU
+      unsigned whereToLoadFrom = mips.pipeline[MEM_WB].SP_REGISTERS[ALU_OUTPUT];
+      //pass character array from memory to temporary buffer
+      whatToLoad = &mips.data_memory[whereToLoadFrom];
+      //convert character array to inline integer
+      unsigned loadableData = char2int(whatToLoad);
+      //pass inline integer to LMD register, now ready for write back
+      mips.pipeline[MEM_WB].SP_REGISTERS[LMD] = loadableData;
     } else {
-      //here you are storing
-      //get value in register passed from pipeline, i think B
-      //write that value to address in a
+      //storing
+      int2char(mips.pipeline[EXE_MEM].SP_REGISTERS[B], mips.data_memory);
     }
   }
+  else {
+       mips.pipeline[MEM_WB].SP_REGISTERS[LMD] = 0xFF;
+      }
 
   // decrement number of memory stages needed
   processorKeyNext[MEM]--;
@@ -424,10 +425,12 @@ void write_back() {
       mips.pipeline[MEM_WB].intruction_register.opcode == SUBI ||
       mips.pipeline[MEM_WB].intruction_register.opcode == XOR) {
     if (mips.pipeline[MEM_WB].intruction_register.opcode != LW) {
-      mips.pipeline[MEM_WB].intruction_register.dest =
+      //write alu output to GP register array, indexed by instruction register destination
+      mips.GP_Registers[mips.pipeline[MEM_WB].intruction_register.dest] =
           mips.pipeline[MEM_WB].SP_REGISTERS[ALU_OUTPUT];
     } else {
-      mips.pipeline[MEM_WB].intruction_register.dest =
+      //write LMD output to GP register array, indexed by
+      mips.GP_Registers[mips.pipeline[MEM_WB].intruction_register.dest] =
           mips.pipeline[MEM_WB].SP_REGISTERS[LMD];
     }
   }

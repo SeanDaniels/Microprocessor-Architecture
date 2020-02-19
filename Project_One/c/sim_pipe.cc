@@ -62,8 +62,8 @@ unsigned alu(unsigned opcode, unsigned a, unsigned b, unsigned imm,
   case LW:
   case SW:
     return (a + imm);
-    case BEQZ:
-      return(a==0);
+  case BEQZ:
+    return (a == 0);
   case BNEZ:
     return(a!=0);
   case BGTZ:
@@ -260,6 +260,25 @@ void sim_pipe_terminate() { delete[] mips.data_memory; }
    CODE TO BE COMPLETED
 
    ============================================================= */
+/*Function to determine npc control for branch statements*/
+unsigned conditional_evaluation(unsigned evaluate, opcode_t condition){
+  switch (condition){
+  case BEQZ:
+    return (evaluate == 0);
+  case BNEZ:
+    return(evaluate!=0);
+  case BGTZ:
+    return(evaluate>0);
+  case BGEZ:
+    return(evaluate>=0);
+  case BLTZ:
+    return(evaluate<0);
+  case BLEZ:
+    return(evaluate<=0);
+  default:
+    return 0;
+  }
+}
 void fetch() {
   /*Function to get the next instruction
    * if current instruction is branch, next instruction needs to wait in decode
@@ -340,72 +359,27 @@ void execute(){
    *Arguments are A and B (*Potentially + some offset)
    */
   /* Forward instruction register */
-  mips.pipeline[EXE_MEM].intruction_register = mips.pipeline[ID_EXE].intruction_register;
- /* Forward B*/
-  mips.pipeline[EXE_MEM].SP_REGISTERS[B] = mips.pipeline[ID_EXE].SP_REGISTERS[B];
- /* Forward Imm*/
-  mips.pipeline[EXE_MEM].SP_REGISTERS[IMM] = mips.pipeline[ID_EXE].SP_REGISTERS[IMM];
+  stage_of_pipeline_t previousPipelineStage = mips.pipeline[ID_EXE];
+  stage_of_pipeline_t nextPipelineStage = mips.pipeline[EXE_MEM];
+  instruction_t currentInstruction = mips.pipeline[ID_EXE].intruction_register;
 
-  switch(mips.pipeline[ID_EXE].intruction_register.opcode){
-    case BEQZ:
-      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]==0){
-        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
-      }
-      else {
-         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
-          }
-      break;
-    case BNEZ:
-      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]!=0){
-        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
-      }
-      else {
-         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
-          }
-      break;
-    case BLTZ:
-      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]<0){
-        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
-      }
-      else {
-         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
-          }
-      break;
-    case BGTZ:
-      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]>0){
-        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
-      }
-      else {
-         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
-          }
-      break;
-    case BLEZ:
-      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]<=0){
-        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
-      }
-      else {
-         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
-          }
-      break;
-    case BGEZ:
-      if(mips.pipeline[ID_EXE].SP_REGISTERS[A]>=0){
-        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 1;
-      }
-      else {
-         mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
-          }
-      break;
-    default:
-      mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT] =
-          alu(mips.pipeline[ID_EXE].intruction_register.opcode,
-              mips.pipeline[ID_EXE].SP_REGISTERS[A],
-              mips.pipeline[ID_EXE].SP_REGISTERS[B],
-              mips.pipeline[ID_EXE].SP_REGISTERS[IMM],
-              mips.pipeline[ID_EXE].SP_REGISTERS[NPC]);
-        mips.pipeline[EXE_MEM].SP_REGISTERS[COND] = 0;
-      break;
-    }
-   //take ALU action
+  nextPipelineStage.intruction_register = currentInstruction;
+ /* Forward B*/
+  nextPipelineStage.SP_REGISTERS[B] = previousPipelineStage.SP_REGISTERS[B];
+  //nextPipelineRegister[B] = previousPipelineRegister[B];
+ // mips.pipeline[EXE_MEM].SP_REGISTERS[B] = mips.pipeline[ID_EXE].SP_REGISTERS[B];
+ /* Forward Imm*/
+  nextPipelineStage.SP_REGISTERS[IMM] = previousPipelineStage.SP_REGISTERS[IMM];
+  //mips.pipeline[EXE_MEM].SP_REGISTERS[IMM] = mips.pipeline[ID_EXE].SP_REGISTERS[IMM];
+
+  if(currentInstruction.opcode == BEQZ || currentInstruction.opcode == BNEZ || currentInstruction.opcode == BLTZ || currentInstruction.opcode == BGTZ || currentInstruction.opcode == BLEZ || currentInstruction.opcode == BGEZ ){
+    nextPipelineStage.SP_REGISTERS[COND] = conditional_evaluation(previousPipelineStage.SP_REGISTERS[A], currentInstruction.opcode);
+  }
+  // take ALU action
+  nextPipelineStage.SP_REGISTERS[ALU_OUTPUT] =
+      alu(currentInstruction.opcode, previousPipelineStage.SP_REGISTERS[A], previousPipelineStage.SP_REGISTERS[B],
+          previousPipelineStage.SP_REGISTERS[IMM], previousPipelineStage.SP_REGISTERS[NPC]);
+
   // decrement number of execute stages needed
   processorKeyNext[EXE]--;
   // increment number of memory stages needed

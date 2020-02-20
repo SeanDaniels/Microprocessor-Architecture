@@ -281,43 +281,39 @@ void fetch() {
 
   /* Create variable to hold PC */
   static unsigned fetchInstruction;
-  static int fetchInstructionIndex;
-  /* Update PC, depending on first run criteria
-   * If the fetch stage npc is null, this is the first run
-   * will need to update to handle branch instructions */
-  if(mips.pipeline[IF_ID].SP_REGISTERS[NPC] == UNDEFINED){
-    fetchInstruction = mips.instr_base_address;
+  static unsigned fetchInstructionIndex;
+//get the instruction
+//determine next instruction to fetch
+  unsigned branchingCond = mips.pipeline[EXE_MEM].SP_REGISTERS[COND];
+  fetchInstruction = mips.pipeline[IF_ID].SP_REGISTERS[PC];
+  switch (branchingCond) {
+  case 1:
+    /* if branch condition is zero, PC is now the ALU output of the branch instruction */
+      mips.pipeline[IF_ID].SP_REGISTERS[NPC] =
+          mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT];
+    break;
+    /*branchingCond = 0 or UNDEFINED*/
+  default:
+    mips.pipeline[IF_ID].SP_REGISTERS[PC] =
+        mips.pipeline[IF_ID].SP_REGISTERS[PC] + 4;
+    mips.pipeline[IF_ID].SP_REGISTERS[NPC] =
+        mips.pipeline[IF_ID].SP_REGISTERS[PC];
+    break;
   }
-  else{
-    fetchInstruction = mips.pipeline[IF_ID].SP_REGISTERS[NPC];
-  }
-  /* create variable to be used as an index to pull instructions from
-   * instruction array */
+  /* set fetchInstruction to a value that can be used as an index
+   * for instr_memory[] */
   fetchInstructionIndex = (fetchInstruction - 0x10000000) / 4;
   /*fetch that instruction*/
   mips.pipeline[IF_ID].intruction_register =
       mips.instr_memory[fetchInstructionIndex];
-  //update program counter???
-  mips.pipeline[IF_ID].SP_REGISTERS[PC] = fetchInstruction;
-
-  if (mips.pipeline[IF_ID].intruction_register.opcode != EOP) {
-    // Push values to sp registers
-    if (mips.pipeline[EXE_MEM].SP_REGISTERS[COND] == 1) {
-      // NPC = should be the branch target pretty sure this is the ALU output of
-      // previous instruction
-      mips.pipeline[IF_ID].SP_REGISTERS[NPC] =
-          mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT];
-    }
-    else {
-      // follow normal piping procedures
-      mips.pipeline[IF_ID].SP_REGISTERS[NPC] = fetchInstruction + 4;
-    }
-    // update control array
-  } else {
-    mips.pipeline[IF_ID].SP_REGISTERS[NPC] = UNDEFINED;
+  if(mips.pipeline[IF_ID].intruction_register.opcode==EOP){
+    mips.pipeline[IF_ID].SP_REGISTERS[PC] = UNDEFINED;
+    mips.pipeline[IF_ID].SP_REGISTERS[NPC] =
+        mips.pipeline[IF_ID].SP_REGISTERS[PC];
     processorKeyNext[IF] = 0;
-  }
+  } else {
     processorKeyNext[ID]++;
+  }
 }
 void decode() {
   /*Function to parse the register file into special purpose registers
@@ -325,17 +321,19 @@ void decode() {
    //forward instruction register from ID_EXE stage
   mips.pipeline[ID_EXE].intruction_register =
       mips.pipeline[IF_ID].intruction_register;
-
+  if (mips.pipeline[ID_EXE].intruction_register.opcode != EOP &&
+      mips.pipeline[ID_EXE].intruction_register.opcode != NOP) {
+    // get register A
+    mips.pipeline[ID_EXE].SP_REGISTERS[A] =
+        mips.pipeline[IF_ID].intruction_register.src1;
+    // get register B
+    mips.pipeline[ID_EXE].SP_REGISTERS[B] =
+        mips.pipeline[IF_ID].intruction_register.src2;
+    // get immediate register
+    mips.pipeline[ID_EXE].SP_REGISTERS[IMM] =
+        mips.pipeline[IF_ID].intruction_register.immediate;
+  }
   // get register A
-  mips.pipeline[ID_EXE].SP_REGISTERS[A] =
-      mips.pipeline[IF_ID].intruction_register.src1;
-    
-  // get register B
-  mips.pipeline[ID_EXE].SP_REGISTERS[B] =
-      mips.pipeline[IF_ID].intruction_register.src2;
-  // get immediate register
-  mips.pipeline[ID_EXE].SP_REGISTERS[IMM] =
-    mips.pipeline[IF_ID].intruction_register.immediate;
   // get NPC register
   mips.pipeline[ID_EXE].SP_REGISTERS[NPC] =
       mips.pipeline[IF_ID].SP_REGISTERS[NPC];
@@ -445,20 +443,20 @@ void run(unsigned cycles) {
   switch (cycles) {
   case NOT_DECLARED:
     processorKeyUpdate();
-    if (processorKey[IF]) {
-      fetch();
-    }
     if (processorKey[WB]) {
       write_back();
     }
-    if (processorKey[ID]) {
-      decode();
+    if (processorKey[MEM]) {
+      memory();
     }
     if (processorKey[EXE]) {
       execute();
     }
-    if (processorKey[MEM]) {
-      memory();
+    if (processorKey[ID]) {
+      decode();
+    }
+    if (processorKey[IF]) {
+      fetch();
     }
     break;
   default:
@@ -496,6 +494,7 @@ void run(unsigned cycles) {
 /* reset the state of the pipeline simulator */
 void reset() {
   clear_registers();
+  mips.pipeline[IF_ID].SP_REGISTERS[PC] = mips.instr_base_address;
   clear_memory();
 }
 
@@ -538,7 +537,10 @@ void clear_registers() {
   for (int i = 0; i < NUM_GP_REGISTERS; i++) {
     mips.GP_Registers[i] = UNDEFINED;
   }
-  for (int i = 0; i < NUM_SP_REGISTERS; i++) {
+  for (int i = 0; i < NUM_PIPELINE_STAGES; i++) {
+    for(int j = 0; j < NUM_SP_REGISTERS; i++){
+      mips.pipeline[i].SP_REGISTERS[j]=UNDEFINED;
+    }
   }
 }
 void clear_memory() {

@@ -212,3 +212,12 @@ executeNeeded++;
 }
 #+END_SRC
 *** Execute
+* Do tomorrow
++ Add logic to only pass instructionary necessary parameters to sp registers
+  for example:
+  + LW someReg somReg has A, IMM, NPC
+  + SW has A, IMM
+  + JUMP NPC,IMM
+  + Conditionals have A and imm
+  + ADD/SUB/XOR have A, B
+  + ADDI/SUBI have A, Immediate

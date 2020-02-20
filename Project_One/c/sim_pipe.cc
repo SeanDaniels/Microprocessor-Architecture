@@ -288,9 +288,10 @@ void fetch() {
   fetchInstruction = mips.pipeline[IF_ID].SP_REGISTERS[PC];
   switch (branchingCond) {
   case 1:
-    /* if branch condition is zero, PC is now the ALU output of the branch instruction */
-      mips.pipeline[IF_ID].SP_REGISTERS[NPC] =
-          mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT];
+    /* if branch condition is zero, PC is now the ALU output of the branch
+     * instruction */
+    mips.pipeline[IF_ID].SP_REGISTERS[NPC] =
+        mips.pipeline[EXE_MEM].SP_REGISTERS[ALU_OUTPUT];
     break;
     /*branchingCond = 0 or UNDEFINED*/
   default:
@@ -318,9 +319,12 @@ void fetch() {
 void decode() {
   /*Function to parse the register file into special purpose registers
    */
-   //forward instruction register from ID_EXE stage
+  /*forward instruction register from ID_EXE stage*/
   mips.pipeline[ID_EXE].intruction_register =
       mips.pipeline[IF_ID].intruction_register;
+  /*different functions pass different values through the sp registers. This is
+   * the start of conditional logic to determine which values should be pushed
+   * throug, but it is incomplete*/
   if (mips.pipeline[ID_EXE].intruction_register.opcode != EOP &&
       mips.pipeline[ID_EXE].intruction_register.opcode != NOP) {
     // get register A

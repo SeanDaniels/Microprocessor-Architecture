@@ -93,10 +93,10 @@ class sim_pipe {
     unsigned stalls = 0;
 
 /*number of clock cycles */
-    unsigned clock_cycles = 0;
+    float clock_cycles = 0;
 
 /*number of instructions executeds */
-    unsigned instructions_executed = 0;
+    float instructions_executed = 0;
 
   bool program_complete = false;
 public:

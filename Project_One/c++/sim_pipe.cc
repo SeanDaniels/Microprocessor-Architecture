@@ -310,7 +310,7 @@ void sim_pipe::fetch() {
   default:
     pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction + 4;
     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-        pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];
     break;
   }
   /*fetch that instruction*/
@@ -326,9 +326,9 @@ void sim_pipe::fetch() {
         pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
   /*Set fetcher to zero*/
     processorKeyNext[IF] = 0;
-  } else {
+  } 
     processorKeyNext[ID]++;
-  }
+  
 }
 void sim_pipe::decode()
 {
@@ -342,9 +342,19 @@ void sim_pipe::decode()
    * through, but it is incomplete*/
   switch (currentInstruction.opcode)
   {
+    case SW:
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = gp_registers[currentInstruction.src1];
+    /*don't pass B*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = gp_registers[currentInstruction.src2];
+    /*pass immediate reg*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = currentInstruction.immediate;
+    /*pass NPC (I don't think this value will change)*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
+        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+      break;
   case LW:
     /*don't pass A*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = currentInstruction.src1;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = gp_registers[currentInstruction.src1];
     /*don't pass B*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
     /*pass immediate reg*/
@@ -356,9 +366,9 @@ void sim_pipe::decode()
   case ADD:
   case SUB:
   case XOR:
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = currentInstruction.src1;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =gp_registers[currentInstruction.src1];
     /*don't pass B*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = currentInstruction.src2;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = gp_registers[currentInstruction.src2];
     /*pass immediate reg*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
     /*pass NPC (I don't think this value will change)*/
@@ -367,7 +377,7 @@ void sim_pipe::decode()
     break;
   case ADDI:
   case SUBI:
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = currentInstruction.src1;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = gp_registers[currentInstruction.src1];
     /*don't pass B*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
     /*pass immediate reg*/
@@ -485,6 +495,7 @@ void sim_pipe::write_back() {
   switch(currentOpcode){
     case LW:
     case ADD:
+    case SUB:
     case ADDI:
     case SUBI:
     case XOR:
@@ -498,21 +509,28 @@ void sim_pipe::write_back() {
     int registerIndex = currentInstruction.dest;
     switch(currentOpcode){
       case LW:
-        gp_registers[registerIndex] = currentALUOutput;
+        gp_registers[registerIndex] = currentLMD;
+        pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD] = UNDEFINED;
         break;
       default:
-        gp_registers[registerIndex] = currentLMD;
+        gp_registers[registerIndex] = currentALUOutput;
+        pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = UNDEFINED;
         break;
     }
   }
+  if(currentInstruction.opcode == EOP){
+    program_complete=true;
+  }
+  else{
+    instructions_executed++;
+  }
   processorKeyNext[WB]--;
-  instructions_executed++;
 }
 /* body of the simulator */
 void sim_pipe::run(unsigned cycles) {
   switch (cycles) {
   case CYCLES_NOT_DECLARED:
-    while (get_program_complete()) {
+    while (!program_complete) {
       processor_key_update();
       if (processorKey[WB]) {
         write_back();
@@ -530,8 +548,11 @@ void sim_pipe::run(unsigned cycles) {
         fetch();
       }
       clock_cycles++;
-      break;
     }
+    clock_cycles--;
+
+      break;
+    
   default:
     unsigned cyclesThisRun = 0;
     while (cyclesThisRun < cycles) {
@@ -587,7 +608,74 @@ void sim_pipe::reset() {
 unsigned sim_pipe::get_sp_register(sp_register_t reg, stage_t s) {
   /* pipeline object has 4 stages, processor has 5 stages. Return sp register of
    * pipeline object preceding the stage argument*/
-  return pipeline.stage[s].spRegisters[reg];
+  if(s == IF){
+    switch(reg){
+      case PC:
+        return pipeline.stage[s].spRegisters[PIPELINE_PC];
+       break;
+      default:
+        return UNDEFINED;
+        break;
+    }
+  }
+  if(s == ID){
+    switch(reg){
+      case NPC:
+        return pipeline.stage[s].spRegisters[IF_ID_NPC];
+       break;
+      default:
+        return UNDEFINED;
+        break;
+    }
+  }
+  if(s == EXE){
+    switch(reg){
+      case A:
+        return pipeline.stage[s].spRegisters[ID_EXE_A];
+        break;
+      case B:
+        return pipeline.stage[s].spRegisters[ID_EXE_B];
+        break;
+      case IMM:
+        return pipeline.stage[s].spRegisters[ID_EXE_IMM];
+        break;
+      case NPC:
+        return pipeline.stage[s].spRegisters[ID_EXE_NPC];
+        break;
+      default:
+        return UNDEFINED;
+        break;
+      }
+  }
+  if(s==MEM){
+    switch(reg){
+      case B:
+        return pipeline.stage[s].spRegisters[EXE_MEM_B];
+        break;
+      case ALU_OUTPUT:
+        return pipeline.stage[s].spRegisters[EXE_MEM_ALU_OUT];
+        break;
+      default:
+        return UNDEFINED;
+        break;
+    }
+  }
+  if(s==WB){
+    switch(reg){
+      case ALU_OUTPUT:
+        return pipeline.stage[s].spRegisters[MEM_WB_ALU_OUT];
+        break;
+      case LMD:
+        return pipeline.stage[s].spRegisters[MEM_WB_LMD];
+        break;
+      default:
+        return UNDEFINED;
+        break;
+    }
+  }
+  else{
+    return 0xff;
+  }
 }
 
 // returns value of general purpose register
@@ -600,7 +688,7 @@ void sim_pipe::set_gp_register(unsigned reg, int value) {
 }
 
 float sim_pipe::get_IPC() {
-  return 0; // please modify
+  return instructions_executed/clock_cycles; // please modify
 }
 
 unsigned sim_pipe::get_instructions_executed() {

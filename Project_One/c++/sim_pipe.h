@@ -14,6 +14,7 @@ using namespace std;
 #define NUM_OPCODES 16
 #define NUM_STAGES 5
 #define NUM_PIPELINE_STAGES 4
+#define CYCLES_NOT_DECLARED NULL
 typedef enum { PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD } sp_register_t;
 
 typedef enum {
@@ -96,6 +97,8 @@ class sim_pipe {
 
 /*number of instructions executeds */
     unsigned instructions_executed = 0;
+
+  bool program_complete = false;
 public:
   // instantiates the simulator with a data memory of given size (in bytes) and
   // latency (in clock cycles)
@@ -167,6 +170,16 @@ public:
 
   // prints the values of the registers
   void print_registers();
+
+    unsigned conditional_evaluation(unsigned evaluate, opcode_t condition);
+    void fetch();
+    void decode();
+    void execute();
+    void memory();
+    void write_back();
+    void processor_key_update();
+    void set_program_complete();
+    bool get_program_complete();
 };
 
 #endif /*SIM_PIPE_H_*/

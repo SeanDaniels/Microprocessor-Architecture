@@ -195,7 +195,7 @@ void sim_pipe::load_program(const char *filename, unsigned base_address) {
     }
     i++;
   }
-  pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] = instr_base_address;
+  pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = instr_base_address;
 }
 
 /* writes an integer value to data memory at the specified address (use
@@ -295,7 +295,10 @@ void sim_pipe::fetch() {
 //get the instruction
 //determine next instruction to fetch
   unsigned branchingCond = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND];
-  fetchInstruction = pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+  fetchInstruction = pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];
+  /* set fetchInstruction to a value that can be used as an index
+   * for instr_memory[] */
+  fetchInstructionIndex = (fetchInstruction - 0x10000000) / 4;
   switch (branchingCond) {
   case 1:
     /* if branch condition is zero, PC is now the ALU output of the branch
@@ -305,22 +308,23 @@ void sim_pipe::fetch() {
     break;
     /*branchingCond = 0 or UNDEFINED*/
   default:
-    pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] =
-        pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] + 4;
+    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction + 4;
     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
         pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
     break;
   }
-  /* set fetchInstruction to a value that can be used as an index
-   * for instr_memory[] */
-  fetchInstructionIndex = (fetchInstruction - 0x10000000) / 4;
   /*fetch that instruction*/
   pipeline.stage[IF_ID].parsedInstruction =
      instr_memory[fetchInstructionIndex];
-  if(pipeline.stage[IF_ID].parsedInstruction.opcode==EOP){
+
+  /*Handle EOP instruction*/
+  if (pipeline.stage[IF_ID].parsedInstruction.opcode == EOP) {
+  /*Set pc to undefined??*/
     pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] = UNDEFINED;
+  /*Set npc to undefined??*/
     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
         pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+  /*Set fetcher to zero*/
     processorKeyNext[IF] = 0;
   } else {
     processorKeyNext[ID]++;
@@ -583,14 +587,6 @@ void sim_pipe::reset() {
 unsigned sim_pipe::get_sp_register(sp_register_t reg, stage_t s) {
   /* pipeline object has 4 stages, processor has 5 stages. Return sp register of
    * pipeline object preceding the stage argument*/
-  switch(s){
-    case IF:
-      return pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
-      break;
-    case ID:
-      return pipeline.stage[ID_].spRegisters[PIPELINE_PC];
-      break;
-  }
   return pipeline.stage[s].spRegisters[reg];
 }
 

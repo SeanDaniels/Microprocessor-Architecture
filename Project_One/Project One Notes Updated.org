@@ -212,3 +212,12 @@ executeNeeded++;
   - Target is computed in execution stage
   - Require 2 stalls
   - Processor fetches the same instruction unitl the hazard is resolved
+* Pipeline notes
+- For output:
+  - at clock cycle 0, stage ID indicates a not null NPC value.
+- Before program runs:
+  - only if/id.pc register is shown at not null
+- At clock cycle 0:
+  - if/id.pc is incremented
+  - if/id id/ex.npc is /
+  - What does this mean????

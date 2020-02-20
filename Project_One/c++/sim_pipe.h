@@ -13,7 +13,6 @@ using namespace std;
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 16
 #define NUM_STAGES 5
-#define NUM_PIPELINE_STAGES 4
 #define CYCLES_NOT_DECLARED NULL
 typedef enum { PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD } sp_register_t;
 
@@ -37,8 +36,9 @@ typedef enum {
 } opcode_t;
 
 typedef enum { IF, ID, EXE, MEM, WB } stage_t;
-typedef enum {IF_ID,ID_EXE,EXE_MEM,MEM_WB} pipeline_stage_t;
-typedef enum {PIPELINE_PC,IF_ID_NPC} fetch_decode_stage_t;
+typedef enum {PRE_FETCH,IF_ID,ID_EXE,EXE_MEM,MEM_WB} pipeline_stage_t;
+typedef enum {PIPELINE_PC} pre_fetch_stage_t;
+typedef enum {IF_ID_NPC} fetch_decode_stage_t;
 typedef enum {ID_EXE_A, ID_EXE_B, ID_EXE_IMM, ID_EXE_NPC} decode_execute_stage_t;
 typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND} execute_memory_stage_t;
 typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD} memory_writeback_stage_t;
@@ -61,7 +61,7 @@ typedef struct {
 } pipeline_sp_t;
 
 typedef struct {
-    pipeline_sp_t stage[NUM_PIPELINE_STAGES];
+    pipeline_sp_t stage[NUM_STAGES];
 } pipeline_t;
 
 class sim_pipe {

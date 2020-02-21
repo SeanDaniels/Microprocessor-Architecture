@@ -228,7 +228,8 @@ void print_registers() {
       if ((sp_register_t)i != IR && (sp_register_t)i != COND &&
           get_sp_register((sp_register_t)i, (stage_t)s) != UNDEFINED)
         cout << reg_names[i] << " = " << dec
-             << get_sp_register((sp_register_t)i, (stage_t)s) << hex << " / 0x"
+             <<
+get_sp_register((sp_register_t)i, (stage_t)s) << hex << " / 0x"
              << get_sp_register((sp_register_t)i, (stage_t)s) << endl;
   }
   cout << "General purpose registers:" << endl;

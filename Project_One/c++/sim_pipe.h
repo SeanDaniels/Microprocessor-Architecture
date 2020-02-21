@@ -57,7 +57,7 @@ typedef struct {
 
 typedef struct {
     instruction_t parsedInstruction;
-    unsigned spRegisters[NUM_SP_REGISTERS];
+    unsigned spRegisters[NUM_SP_REGISTERS] = {UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED};
 } pipeline_sp_t;
 
 typedef struct {
@@ -107,6 +107,7 @@ public:
      - initialize the data memory to all 0xFF values
   */
   sim_pipe(unsigned data_mem_size, unsigned data_mem_latency);
+  
 
   // de-allocates the simulator
   ~sim_pipe();
@@ -171,15 +172,17 @@ public:
   // prints the values of the registers
   void print_registers();
 
-    unsigned conditional_evaluation(unsigned evaluate, opcode_t condition);
-    void fetch();
-    void decode();
-    void execute();
-    void memory();
-    void write_back();
-    void processor_key_update();
-    void set_program_complete();
-    bool get_program_complete();
+  unsigned conditional_evaluation(unsigned evaluate, opcode_t condition);
+  void fetch();
+  void decode();
+  void execute();
+  void memory();
+  void write_back();
+  void processor_key_update();
+  void set_program_complete();
+  bool get_program_complete();
+
+
 };
 
 #endif /*SIM_PIPE_H_*/

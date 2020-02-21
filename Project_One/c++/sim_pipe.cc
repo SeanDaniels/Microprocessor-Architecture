@@ -280,6 +280,19 @@ unsigned sim_pipe::conditional_evaluation(unsigned evaluate, opcode_t condition)
     return 0;
   }
 }
+bool is_branching_instruction(opcode_t a_opcode){
+  switch (a_opcode){
+  case BEQZ:
+  case BNEZ:
+  case BGTZ:
+  case BGEZ:
+  case BLTZ:
+  case BLEZ:
+    return true;
+  default:
+    return false;
+  }
+}
 bool sim_pipe::get_program_complete(){
   return program_complete;
 }
@@ -293,30 +306,83 @@ void sim_pipe::fetch() {
   /* Create variable to hold PC */
   static unsigned fetchInstruction;
   static unsigned fetchInstructionIndex;
-//get the instruction
-//determine next instruction to fetch
+  static unsigned valuePassedAsPC;
+  static instruction_t currentInstruction;
+  /*IDK if the following declaration will work */
+  static instruction_t stallInstruction={NOP};
+  static int stallsNeeded = 0;
+
+/*Determine next instruction to fetch: this is an issue b/c next instruction isn't alwasy immediately available
+ * For example, if the instruction we just fetched is a branching instruction, the next fetch won't be known for two clock cycles
+ * Current structure hinges on a pulling of an instruction to determine what instruction should be pulled next.*/
+
   unsigned branchingCond = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND];
-  fetchInstruction = pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];
-  /* set fetchInstruction to a value that can be used as an index
-   * for instr_memory[] */
-  fetchInstructionIndex = (fetchInstruction - 0x10000000) / 4;
-  switch (branchingCond) {
-  case 1:
-    /* if branch condition is zero, PC is now the ALU output of the branch
-     * instruction */
-    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-        pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
-    break;
-    /*branchingCond = 0 or UNDEFINED*/
-  default:
-    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction + 4;
-    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];
-    break;
+  if(stallsNeeded){
+    currentInstruction = stallInstruction;
   }
-  /*fetch that instruction*/
+  else{
+    fetchInstruction = pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];
+    /* set fetchInstruction to a value that can be used as an index
+     * for instr_memory[] */
+    fetchInstructionIndex = (fetchInstruction - 0x10000000) / 4;
+    currentInstruction = instr_memory[fetchInstructionIndex];
+  }
+
+  /* Must check for branch instructions */
+  if(is_branching_instruction(currentInstruction.opcode)){
+    /* insert stalls */
+    stallsNeeded = 2;
+    /******if stall is needed, values is set here******/
+    /* All branching conditions require two stalls. How to insert stall? next
+     * instruction should be NOP. NOP instruction only needs opcode */
+  }
+
+  /*<<Determining PC>>*/
+  /* switch on opcode */
+  switch(currentInstruction.opcode){
+  /* if NOP, check/decrement stalls */
+    case NOP:
+    /******And immediately decrmenented here. Will this be a problem????******/
+      /* if stalls are still needed, next instruction needs to be another stall */
+      if (!stallsNeeded--) {
+        /******I don't think so. The logic still make sense. The number of
+         * stalls is decrmented as a stall is inserted******/
+        // pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+        if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
+          /*get label*/
+          string someString = pipeline.stage[EXE_MEM].parsedInstruction.label;
+          /*parse label to usable address
+           * "valuePassedAsPC = someParsingResult" */
+
+        }
+        /*if conditional evaluated as false, the next fetch should be
+           instruction immediately after the branch instruction, I think its the
+           branch instructions NPC*/
+        else {
+          /* need to make sure that when NOP is propogated through pipeline, the
+           * pipeline registers are held static */
+          valuePassedAsPC = pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC];
+        }
+      }
+      /* if no additional stalls are needed, conditional evaluation is ready,
+         branch instructions target address can be determined */
+      break;
+    default:
+        /*Determining PC for a non branching instruction*/
+      valuePassedAsPC = fetchInstruction + 4;
+      break;
+  }
+  /*Update PC register*/
+    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
+  /*Update NPC register*/
+    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+
+
+  /*fetch that instruction
+     instr_memory[fetchInstructionIndex];
   pipeline.stage[IF_ID].parsedInstruction =
      instr_memory[fetchInstructionIndex];
+*/
 
   /*Handle EOP instruction*/
   if (pipeline.stage[IF_ID].parsedInstruction.opcode == EOP) {
@@ -329,7 +395,23 @@ void sim_pipe::fetch() {
     processorKeyNext[IF] = 0;
   } 
     processorKeyNext[ID]++;
-  
+
+  ///////////////////BEFORE CONDITIONAL HAZARDS WERE ADDRESSED//////////////////////
+  // switch (branchingCond) {                                                     //
+  // case 1:                                                                      //
+  //   /* if branch condition is zero, PC is now the ALU output of the branch     //
+  //    * instruction */                                                          //
+  //   pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =                             //
+  //       pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];                  //
+  //   break;                                                                     //
+  //   /*branchingCond = 0 or UNDEFINED*/                                         //
+  // default:                                                                     //
+  //   pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction + 4; //
+  //   pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =                             //
+  //     pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];                      //
+  //   break;                                                                     //
+  // }                                                                            //
+  //////////////////////////////////////////////////////////////////////////////////
 }
 void sim_pipe::decode()
 {

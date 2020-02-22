@@ -280,8 +280,35 @@ unsigned sim_pipe::conditional_evaluation(unsigned evaluate, opcode_t condition)
     return 0;
   }
 }
+
 bool sim_pipe::get_program_complete(){
   return program_complete;
+}
+
+kind_of_instruction_t
+sim_pipe::instruction_type_check(instruction_t checkedInstruction) {
+  switch (checkedInstruction.opcode) {
+  case ADD:
+  case ADDI:
+  case SUB:
+  case SUBI:
+  case XOR:
+    return ARITH_INSTR;
+  case LW:
+  case SW:
+    return LWSW_INSTR;
+  case BEQZ:
+  case BNEZ:
+  case BGTZ:
+  case BGEZ:
+  case BLTZ:
+  case BLEZ:
+  case JUMP:
+    return COND_INSTR;
+  case EOP:
+  case NOP:
+    return NOPEOP_INSTR;
+  }
 }
 
 void sim_pipe::fetch() {
@@ -331,16 +358,116 @@ void sim_pipe::fetch() {
     processorKeyNext[ID]++;
   
 }
+/*Function to check if flow dependencies exist in the pipeline (at this point, only checked for arith. functions)*/
 bool sim_pipe::data_dep_check(instruction_t checkedInstruction){
+  /*array to hold instructions that exist further down the pipeline. I believe
+   * that the only pipeline registers I'm concerned with are the decode/execute
+   * register and execute/memory register. The memory/writeback register will
+   * already have been processed by the time this check happens*/
   instruction_t pipelineInstructions[2];
   pipelineInstructions[0] = pipeline.stage[ID_EXE].parsedInstruction;
   pipelineInstructions[1] = pipeline.stage[EXE_MEM].parsedInstruction;
+  /* Loop through entries in pipeline instruction array
+   */
   for(int i = 0; i< 2; i++){
+    /* if either of the following pipeline register's destination (write back location) contain either argument found in the current instruction, a flow hazard exists */
     if(pipelineInstructions[i].dest == (checkedInstruction.src1 || checkedInstruction.src2)){
       return true;
     }
   }
   return false;
+}
+void sim_pipe::normal_decode(instruction_t currentInstruction) {
+  pipeline.stage[ID_EXE].parsedInstruction = currentInstruction;
+  /*different functions pass different values through the sp registers. This
+   * is the start of conditional logic to determine which values should be
+   * pushed through, but it is incomplete*/
+  switch (currentInstruction.opcode) {
+  case SW:
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] =
+        gp_registers[currentInstruction.src1];
+    /*don't pass B*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
+        gp_registers[currentInstruction.src2];
+    /*pass immediate reg*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
+        currentInstruction.immediate;
+    /*pass NPC (I don't think this value will change)*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
+        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+    break;
+  case LW:
+    /*don't pass A*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
+        gp_registers[currentInstruction.src1];
+    /*don't pass B*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
+    /*pass immediate reg*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
+        currentInstruction.immediate;
+    /*pass NPC (I don't think this value will change)*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
+        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+    break;
+  case ADD:
+  case SUB:
+  case XOR:
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
+        gp_registers[currentInstruction.src1];
+    /*don't pass B*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] =
+        gp_registers[currentInstruction.src2];
+    /*pass immediate reg*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
+    /*pass NPC (I don't think this value will change)*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
+        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+    break;
+  case ADDI:
+  case SUBI:
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
+        gp_registers[currentInstruction.src1];
+    /*don't pass B*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
+    /*pass immediate reg*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
+        currentInstruction.immediate;
+    /*pass NPC (I don't think this value will change)*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
+        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+    break;
+  case BEQZ:
+  case BGEZ:
+  case BGTZ:
+  case BLEZ:
+  case BLTZ:
+  case BNEZ:
+  case JUMP:
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = currentInstruction.src1;
+    /*don't pass B*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
+    /*pass immediate reg*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
+        currentInstruction.immediate;
+    /*pass NPC (I don't think this value will change)*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
+        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+    break;
+  default:
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = UNDEFINED;
+    /*don't pass B*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
+    /*pass immediate reg*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
+    /*pass NPC (I don't think this value will change)*/
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
+        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+    break;
+  }
+  // decrement number of decodes stages needed
+  processorKeyNext[ID]--;
+  // increment number of execute stages needed
+  processorKeyNext[EXE]++;
 }
 
 void sim_pipe::decode()
@@ -348,110 +475,42 @@ void sim_pipe::decode()
   /*Function to parse the register file into special purpose registers
    */
   /*forward instruction register from ID_EXE stage*/
+  /*Create bool variable to hold status of dep condition*/
   static bool depLock = false;
+  /*Create bool variable to hold status of dep condition*/
+  static bool arithLock = false;
+  /*Create bool variable to hold status of dep condition*/
+  static bool loadStoreLock = false;
+  /*Create variable to hold current instruction*/
   static instruction_t currentInstruction;
+  /*If the pipeline isn't already locked, chech for dependency*/
   if (!depLock) {
+    /*If the current instruction is arith.*/
     instruction_t currentInstruction = pipeline.stage[IF_ID].parsedInstruction;
-    if (currentInstruction.opcode == ADDI ||
-        currentInstruction.opcode == SUBI || currentInstruction.opcode == XOR ||
-        currentInstruction.opcode == ADD || currentInstruction.opcode == SUB ||
-        currentInstruction.opcode == XOR) {
-      data_dep_check(currentInstruction);
+    switch(instruction_type_check(currentInstruction)){
+      /*arith locks require a different hazard solution than load locks. arith locks are cleared after write back (later), load locks are cleared after mem (earlier)*/
+      case ARITH_INSTR:
+        arithLock = data_dep_check(currentInstruction);
+        break;
+      case LWSW_INSTR:
+        loadStoreLock = data_dep_check(currentInstruction);
+        break;
+      default:
+        break;
+    }
+    if(!arithLock && !loadStoreLock){
+      /*create function to handle normal decode*/
+      normal_decode(currentInstruction);
+    }
+    else{
+      /*handle stall decode*/
     }
   }
-  if(!depLock){
-    pipeline.stage[ID_EXE].parsedInstruction = currentInstruction;
-    /*different functions pass different values through the sp registers. This
-     * is the start of conditional logic to determine which values should be
-     * pushed through, but it is incomplete*/
-    switch (currentInstruction.opcode) {
-    case SW:
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] =
-          gp_registers[currentInstruction.src1];
-      /*don't pass B*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
-          gp_registers[currentInstruction.src2];
-      /*pass immediate reg*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
-          currentInstruction.immediate;
-      /*pass NPC (I don't think this value will change)*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
-          pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-      break;
-    case LW:
-      /*don't pass A*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
-          gp_registers[currentInstruction.src1];
-      /*don't pass B*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
-      /*pass immediate reg*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
-          currentInstruction.immediate;
-      /*pass NPC (I don't think this value will change)*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
-          pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-      break;
-    case ADD:
-    case SUB:
-    case XOR:
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
-          gp_registers[currentInstruction.src1];
-      /*don't pass B*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] =
-          gp_registers[currentInstruction.src2];
-      /*pass immediate reg*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
-      /*pass NPC (I don't think this value will change)*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
-          pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-      break;
-    case ADDI:
-    case SUBI:
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
-          gp_registers[currentInstruction.src1];
-      /*don't pass B*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
-      /*pass immediate reg*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
-          currentInstruction.immediate;
-      /*pass NPC (I don't think this value will change)*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
-          pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-      break;
-    case BEQZ:
-    case BGEZ:
-    case BGTZ:
-    case BLEZ:
-    case BLTZ:
-    case BNEZ:
-    case JUMP:
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = currentInstruction.src1;
-      /*don't pass B*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
-      /*pass immediate reg*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
-          currentInstruction.immediate;
-      /*pass NPC (I don't think this value will change)*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
-          pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-      break;
-    default:
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = UNDEFINED;
-      /*don't pass B*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
-      /*pass immediate reg*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
-      /*pass NPC (I don't think this value will change)*/
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
-          pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-      break;
-    }
-    // decrement number of decodes stages needed
-    processorKeyNext[ID]--;
-    // increment number of execute stages needed
-    processorKeyNext[EXE]++;
+  /*add what to do if being held in stall pattern*/
+  else{
+    /* Logic to break out of dep lock */
   }
-  // data dep check
+
 }
 void sim_pipe::execute() {
   /*ID_EXE -> EXE_MEM*/

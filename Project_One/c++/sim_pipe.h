@@ -42,6 +42,7 @@ typedef enum {IF_ID_NPC} fetch_decode_stage_t;
 typedef enum {ID_EXE_A, ID_EXE_B, ID_EXE_IMM, ID_EXE_NPC} decode_execute_stage_t;
 typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND} execute_memory_stage_t;
 typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD} memory_writeback_stage_t;
+typedef enum {ARITH_INSTR, COND_INSTR, LWSW_INSTR, NOPEOP_INSTR} kind_of_instruction_t;
 
 typedef struct {
   opcode_t opcode; // opcode
@@ -174,16 +175,19 @@ public:
 
   unsigned conditional_evaluation(unsigned evaluate, opcode_t condition);
   void fetch();
+  /*function to determine which type of decode needs to be done*/
   void decode();
+  /*function to handle a decode when the pipeline isn't locked*/
+  void normal_decode(instruction_t currentInstruction);
   void execute();
   void memory();
   void write_back();
   void processor_key_update();
   void set_program_complete();
   bool get_program_complete();
-    bool data_dep_check(instruction_t checkedInstruction);
-
-
+  bool data_dep_check(instruction_t checkedInstruction);
+  kind_of_instruction_t
+  instruction_type_check(instruction_t checkedInstruction);
 };
 
 #endif /*SIM_PIPE_H_*/

@@ -181,6 +181,7 @@ public:
   void processor_key_update();
   void set_program_complete();
   bool get_program_complete();
+    bool data_dep_check(instruction_t checkedInstruction);
 
 
 };

@@ -233,3 +233,32 @@ SW	R4 4(R0) -> 6 -> data_memory[4]
 ADD	R5 R5 R6 -> R5 = 5 + 6
 LW	R6 4(R0) -> R6 = data_memory[4]
 EOP
+* Data Dependencies
+- Output Dependencies
+- Anti Dependencies
+- Flow Dependencies (*only one that matters*)
+  - RAW hazard
+  -
+     | SomeInstruction | *R1*    | R2   | R3      |                                                                                |
+     | someInstruction | someReg | *R1* | *or R1* | R1 can't be pulled until prevous instruction is complete instruction  WB stage |
+  - Psuedo code:
+    in decode stage:
+    if(either argument of instruction == the destination of any instructions in pipeline){
+        dataDepStall = true;
+        if(instruction in question is an arithmatic instruction){
+            dataDepStallNeeded =  how far away is instruction from writeback?
+            IF_ID stages need to remain unchanged until dep is cleared (dont
+            fetch one more instruction)
+            processorKeyNext[0] = 0 until dep is cleared
+            pass NOP instruction to IDE_EXE stage
+            decodeLock = true;
+        }
+        next fetch can still happen
+        but decode has to stall
+        lock decode stage
+        if(instruction is lw){
+            how far away is instruction from mem stage
+        }
+    }
+- Only one that matters is RAW hazard
+- RAW hazard comes from

@@ -351,9 +351,13 @@ void sim_pipe::fetch() {
         if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
           /*get label*/
           string someString = pipeline.stage[EXE_MEM].parsedInstruction.label;
-          /*parse label to usable address
-           * "valuePassedAsPC = someParsingResult" */
-
+          /*compare label to labels in instruction memory*/
+          for(int i = 0; i<PROGRAM_SIZE;i++){
+            if(instr_memory[i].label==someString){
+          /*convert index to usable form*/
+              valuePassedAsPC = (i*4)+0x10000000;
+            }
+          }
         }
         /*if conditional evaluated as false, the next fetch should be
            instruction immediately after the branch instruction, I think its the

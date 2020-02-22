@@ -378,7 +378,10 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction){
       /* should go ahead and just return the number of stalls needed here */
       /* i = 0 would mean that the pending instruction is in id/exe stage, meaning 2 stall are necessary */
       /* i = 1 would mean that the pending instruction is in exe/mem stage, meaning 1 stall is necessary */
+      if(checkedInstruction.opcode!=SW){
       return 2 - i;
+      }
+      return 0;
     }
   }
   return 0;
@@ -528,6 +531,13 @@ void sim_pipe::decode()
     break;
   case LWSW_INSTR:
     stallsNeeded = data_dep_check(currentInstruction);
+    /*I'm pretty sure load instructions clear at mem stage */
+    /*actually not sure about that*/
+    ////////////////////////////////////
+    // if(stallsNeeded){              //
+    //   stallsNeeded=stallsNeeded-1; //
+    // }                              //
+    ////////////////////////////////////
     stalls+=stallsNeeded;
     break;
   default:
@@ -745,9 +755,10 @@ void sim_pipe::reset() {
         data_memory[i] = 0xFF;
     }
     /* Clear sp registers */
-    for(int i = 0; i<NUM_STAGES-1;i++){
+    for(int i = 1; i<NUM_STAGES;i++){
         for(int j = 0; j< NUM_SP_REGISTERS; j++){
           pipeline.stage[i].spRegisters[j] = UNDEFINED;
+          pipeline.stage[i].parsedInstruction = {NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
         }
     }
 

@@ -72,7 +72,7 @@ class sim_pipe {
   /* Add the data members required by your simulator's implementation here */
 
   // instruction memory
-  instruction_t instr_memory[PROGRAM_SIZE];
+  instruction_t instr_memory[PROGRAM_SIZE] = {NOP};
 
   // base address in the instruction memory where the program is loaded
   unsigned instr_base_address;

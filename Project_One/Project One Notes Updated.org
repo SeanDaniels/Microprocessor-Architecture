@@ -199,7 +199,7 @@ executeNeeded++;
 }
 #+END_SRC
 *** Execute
-* Do Today
+* Do 2-21 222
 + Add logic to only pass instructionary necessary parameters to sp registers
   for example:
   + LW someReg somReg has A, IMM, NPC
@@ -211,7 +211,7 @@ executeNeeded++;
 + Control hazards:
   - Target is computed in execution stage
   - Require 2 stalls
-  - Processor fetches the same instruction unitl the hazard is resolved
+  - Processor fetches the same instruction unitl the hazard is resolv
 * Pipeline notes
 - For output:
   - at clock cycle 0, stage ID indicates a not null NPC value.
@@ -249,3 +249,7 @@ SW	     R3 0(R1)
 ADDI 	R1 R1 4
 BNEZ	R2 T1
 EOP
+* Do Today
+- Check dependency checker
+- Figure out stall insertion
+- Figure out pipeline locker

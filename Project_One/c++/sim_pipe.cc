@@ -367,6 +367,15 @@ void sim_pipe::fetch() {
       /* if no additional stalls are needed, conditional evaluation is ready,
          branch instructions target address can be determined */
       break;
+      case EOP:
+        /*Set pc to undefined??*/
+        pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] = UNDEFINED;
+        /*Set npc to undefined??*/
+        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
+            pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+        /*Set fetcher to zero*/
+        processorKeyNext[IF] = 0;
+        break;
     default:
         /*Determining PC for a non branching instruction*/
       valuePassedAsPC = fetchInstruction + 4;
@@ -378,24 +387,24 @@ void sim_pipe::fetch() {
     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
 
 
-  /*fetch that instruction
-     instr_memory[fetchInstructionIndex];
-  pipeline.stage[IF_ID].parsedInstruction =
-     instr_memory[fetchInstructionIndex];
-*/
 
-  /*Handle EOP instruction*/
-  if (pipeline.stage[IF_ID].parsedInstruction.opcode == EOP) {
-  /*Set pc to undefined??*/
-    pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] = UNDEFINED;
-  /*Set npc to undefined??*/
-    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-        pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
-  /*Set fetcher to zero*/
-    processorKeyNext[IF] = 0;
-  } 
+    pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+
+
     processorKeyNext[ID]++;
 
+  ///////////////////////////////////////////////////////////////////
+  // /*Handle EOP instruction*/                                    //
+  // if (pipeline.stage[IF_ID].parsedInstruction.opcode == EOP) {  //
+  // /*Set pc to undefined??*/                                     //
+  //   pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] = UNDEFINED; //
+  // /*Set npc to undefined??*/                                    //
+  //   pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =              //
+  //       pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];         //
+  // /*Set fetcher to zero*/                                       //
+  //   processorKeyNext[IF] = 0;                                   //
+  // }                                                             //
+  ///////////////////////////////////////////////////////////////////
   ///////////////////BEFORE CONDITIONAL HAZARDS WERE ADDRESSED//////////////////////
   // switch (branchingCond) {                                                     //
   // case 1:                                                                      //

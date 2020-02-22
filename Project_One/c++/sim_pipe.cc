@@ -359,7 +359,8 @@ void sim_pipe::fetch() {
   
 }
 /*Function to check if flow dependencies exist in the pipeline (at this point, only checked for arith. functions)*/
-bool sim_pipe::data_dep_check(instruction_t checkedInstruction){
+int sim_pipe::data_dep_check(instruction_t checkedInstruction){
+
   /*array to hold instructions that exist further down the pipeline. I believe
    * that the only pipeline registers I'm concerned with are the decode/execute
    * register and execute/memory register. The memory/writeback register will
@@ -372,10 +373,14 @@ bool sim_pipe::data_dep_check(instruction_t checkedInstruction){
   for(int i = 0; i< 2; i++){
     /* if either of the following pipeline register's destination (write back location) contain either argument found in the current instruction, a flow hazard exists */
     if(pipelineInstructions[i].dest == (checkedInstruction.src1 || checkedInstruction.src2)){
-      return true;
+      /*return integer value of stage that the pending instruction is in*/
+      /* should go ahead and just return the number of stalls needed here */
+      /* i = 0 would mean that the pending instruction is in id/exe stage, meaning 2 stall are necessary */
+      /* i = 1 would mean that the pending instruction is in exe/mem stage, meaning 1 stall is necessary */
+      return 2 - i;
     }
   }
-  return false;
+  return 0;
 }
 void sim_pipe::normal_decode(instruction_t currentInstruction) {
   pipeline.stage[ID_EXE].parsedInstruction = currentInstruction;
@@ -469,6 +474,18 @@ void sim_pipe::normal_decode(instruction_t currentInstruction) {
   // increment number of execute stages needed
   processorKeyNext[EXE]++;
 }
+void sim_pipe::lock_decode(instruction_t stallInstruction) {
+  /*Pass NOP instruction*/
+  pipeline.stage[ID_EXE].parsedInstruction = stallInstruction;
+  /*Set everything else to undefined*/
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = UNDEFINED;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] = UNDEFINED;
+  /*I think I leave this on to propogate the NOP instruction*/
+  processorKeyNext[EXE]++;
+
+}
 
 void sim_pipe::decode()
 {
@@ -478,12 +495,15 @@ void sim_pipe::decode()
   /*Create bool variable to hold status of dep condition*/
   static bool depLock = false;
   /*Create bool variable to hold status of dep condition*/
-  static bool arithLock = false;
+  static int arithLock = 0;
   /*Create bool variable to hold status of dep condition*/
-  static bool loadStoreLock = false;
+  static int loadStoreLock = 0;
   /*Create variable to hold current instruction*/
   static instruction_t currentInstruction;
+  /*Create variable to hold stall instruction*/
+  static instruction_t stallInstruction = {NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
   /*If the pipeline isn't already locked, chech for dependency*/
+  /*RESTRUCTURING: no need to check for dep lock, because */
   if (!depLock) {
     /*If the current instruction is arith.*/
     instruction_t currentInstruction = pipeline.stage[IF_ID].parsedInstruction;
@@ -504,10 +524,51 @@ void sim_pipe::decode()
     }
     else{
       /*handle stall decode*/
+      depLock = true;
+      /*turn fetcher off*/
+      /*Try turning it off immediately to match bechi's output*/
+      processorKey[IF] = 0;
+      processorKeyNext[IF] = 0;
+      /*Normally, fetcher controls decoder. Circumvent that by toggling decoder on here*/
+      /* Decoder is only decremented in normal decode stage */
+      //processorKeyNext[ID]++;
+      if(arithLock){
+        /*increment object stall counter*/
+        stalls = stalls + arithLock;
+        /*call lock decode function*/
+        lock_decode(stallInstruction);
+        arithLock--;
+        /*will still run this cycles fetch, but not the next ones*/
+        /*arith lock could be at max two, I'm trying to determine when to decrement*/
+        /*stall number depending on stage of pending instruction*/
+        /*number of stall needed = distance from write back*/
+        /*if stage is id/exe, need 2 stalls ???? */
+        /*if stage is exe/need 1 stall ???? */
+      }
+      else{}
     }
   }
   /*add what to do if being held in stall pattern*/
   else{
+    /*decrement lock counter, depending on which type of stall is being handled*/
+    if(arithLock--){
+      if(!arithLock){
+        /*turn dep lock off*/
+        depLock = false;
+        /*turn fetch back on*/
+        processorKeyNext[IF] = 1;
+        /* I think decrement decoder */
+        processorKeyNext[ID] = 1;
+      }
+      /*do some function that pipes NOP*/
+
+    } else {
+      if(loadStoreLock--){
+        if(!loadStoreLock)
+        depLock = false;
+      }
+    }
+
     /* Logic to break out of dep lock */
   }
 

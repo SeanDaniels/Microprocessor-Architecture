@@ -179,13 +179,17 @@ public:
   void decode();
   /*function to handle a decode when the pipeline isn't locked*/
   void normal_decode(instruction_t currentInstruction);
+  /*function to handle a decode when the pipeline is locked*/
+  void lock_decode(instruction_t currentInstruction);
   void execute();
   void memory();
   void write_back();
   void processor_key_update();
   void set_program_complete();
   bool get_program_complete();
-  bool data_dep_check(instruction_t checkedInstruction);
+    /*function to determine if a data dep exists*/
+  int data_dep_check(instruction_t checkedInstruction);
+    /*function to determine what kind of instruction is being processed*/
   kind_of_instruction_t
   instruction_type_check(instruction_t checkedInstruction);
 };

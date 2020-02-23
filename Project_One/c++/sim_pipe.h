@@ -194,6 +194,8 @@ public:
     /*function to determine what kind of instruction is being processed*/
   kind_of_instruction_t
   instruction_type_check(instruction_t checkedInstruction);
+  /*function to handle branch NOP insertions*/
+  void branch_fetch();
 };
 
 #endif /*SIM_PIPE_H_*/

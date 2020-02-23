@@ -15,8 +15,8 @@ int decodeNeeded = 0;
 int executeNeeded = 0;
 int memoryNeeded = 0;
 int writeBackNeeded = 0;
-int processorKey[6] = {1,0,0,0,0,0};
-int processorKeyNext[6] = {1,0,0,0,0,0};
+int processorKey[7] = {1,0,0,0,0,0,0};
+int processorKeyNext[7] = {1,0,0,0,0,0,0};
 int stallsNeeded = 0;
 // used for debugging purposes
 static const char *reg_names[NUM_SP_REGISTERS] = {
@@ -256,7 +256,7 @@ sim_pipe::~sim_pipe() { delete[] data_memory; }
 
    ============================================================= */
 void sim_pipe::processor_key_update(){
-  for (int i = 0; i < NUM_STAGES+1; i++) {
+  for (int i = 0; i < NUM_STAGES+2; i++) {
     processorKey[i] = processorKeyNext[i];
   }
 }
@@ -311,6 +311,63 @@ sim_pipe::instruction_type_check(instruction_t checkedInstruction) {
     return NOPEOP_INSTR;
   }
 }
+
+void sim_pipe::branch_fetch() {
+  /* Need some way to control this better. This setup would call this over and
+   * over for any given branch */
+  /*Set counter for stalls added*/
+  static int insertions = 0;
+  static unsigned potentialNPC;
+  static unsigned immediate;
+  /*PASS NOP*/
+  pipeline.stage[IF_ID].parsedInstruction = {NOP,       UNDEFINED, UNDEFINED,
+                                             UNDEFINED, UNDEFINED, ""};
+  /*forward NOP NPC*/
+  /*If this is first insertion call*/
+  if (!insertions) {
+    potentialNPC = pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+  }
+  /*increment insertion counter*/
+  insertions++;
+  /*If more insertions are needed*/
+  if (insertions != 2) {
+    processorKeyNext[IF] = 0;
+    processorKey[IF] = 0;
+    processorKeyNext[6] = 1;
+  }
+  /*If the required amount of insertions*/
+  if (insertions == 2) {
+    /*check value of conditional*/
+    if (instruction_type_check(pipeline.stage[EXE_MEM].parsedInstruction) ==
+        COND_INSTR) {
+      /*Really just an error check for debugging*/
+      if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
+        /*If condition evaluated true*/
+        /*get label*/
+        string someString = pipeline.stage[EXE_MEM].parsedInstruction.label;
+        immediate = pipeline.stage[EXE_MEM].parsedInstruction.immediate;
+        immediate = (immediate + 4 - 0xFFFFFFE0) / 4;
+        immediate = (immediate * 4) + 0x10000000;
+        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = immediate;
+      }
+      else {
+      /*conditon evaluated false*/
+      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = potentialNPC;
+      /*now go fetch that instruction*/
+      }
+    } 
+  insertions = 0;
+  processorKey[IF] = 1;
+  processorKeyNext[IF] = 1;
+  processorKeyNext[6] = 0;  
+  processorKeyNext[ID]--;
+  }
+  /*reset counter, turn normal fetcher back on*/
+ 
+
+  processorKeyNext[ID]++;
+}
+
 void sim_pipe::fetch(){
   /*Function to get the next instruction
    * if current instruction is branch, next instruction needs to wait in decode
@@ -330,86 +387,133 @@ void sim_pipe::fetch(){
  * For example, if the instruction we just fetched is a branching instruction, the next fetch won't be known for two clock cycles
  * Current structure hinges on a pulling of an instruction to determine what instruction should be pulled next.*/
 
+/*Arith/Load/Store Instructions*/
+  /*Get current PC*/
   fetchInstruction = pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];
+  /*Set NPC*/
+  valuePassedAsPC = fetchInstruction+4;
   /* set fetchInstruction to a value that can be used as an index
      * for instr_memory[] */
-  if(fetchInstruction!=UNDEFINED){
-    fetchInstructionIndex = (fetchInstruction - 0x10000000) / 4;
-    currentInstruction = instr_memory[fetchInstructionIndex];
-  }
-  else{
-    currentInstruction = stallInstruction;
-  }
-  /* Must check for branch instructions */
+  fetchInstructionIndex = (fetchInstruction-0x10000000)/4;
+  /*get current instruction*/
+  currentInstruction = instr_memory[fetchInstructionIndex];
+  /*Check if branch*/
   if(instruction_type_check(currentInstruction)==COND_INSTR){
-    /* If branch instruction, insert stalls */
-    /* save RAW NPC */
-    valuePassedAsPC = UNDEFINED;
-    potentialNPC = fetchInstruction+4;
-    stallsNeeded = 2;
+    /*If current instruction is a branching one, turn fetch off, let some other function handle this*/
+    /* Still want to pass this current instruction forward */
+    pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+    /*push NPC to first pipeline register*/
+    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+    /*Maybe update Pipeline PC here, so its ready when this fetcher gets turned back on?*/
+    //branch_fetch();
+    processorKeyNext[0] = 0;
+    processorKeyNext[6] = 1;
+    stalls=stalls+1;
   }
-
-  /*<<Determining PC>>*/
-  /* switch on opcode */
-  switch(currentInstruction.opcode){
-  /* if NOP, check/decrement stalls */
-    case NOP:
-    /******And immediately decrmenented here. Will this be a problem????******/
-      /* if stalls are still needed, next instruction needs to be another stall */
-      if(pipeline.stage[ID_EXE].parsedInstruction.opcode == NOP){
-        //currentInstruction = pipeline.stage[ID_EXE].parsedInstruction;
-        if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
-          /*get label*/
-          string someString = pipeline.stage[EXE_MEM].parsedInstruction.label;
-          /*compare label to labels in instruction memory*/
-          for(int i = 0; i<PROGRAM_SIZE;i++){
-            if(instr_memory[i].label==someString){
-          /*convert index to usable form*/
-              valuePassedAsPC = (i*4)+0x10000000;
-              continue;
-            }
-          }
-          pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
-          /*Update NPC register*/
-
-          pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
-        }
-        else{
-          valuePassedAsPC = potentialNPC;
-        }
-
-      }
-      /* if no additional stalls are needed, conditional evaluation is ready,
-         branch instructions target address can be determined */
-         pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC]=UNDEFINED;
-      break;
-      case EOP:
-        /*Set pc to undefined??*/
-        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
-        /*Set npc to undefined??*/
-        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-            pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
-        /*Set fetcher to zero*/
-        processorKeyNext[IF] = 0;
-        pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
-        break;
-        case BNEZ:
-        case BEQZ:
-        case BLTZ:
-        case BGTZ:
-        case BGEZ:
-          pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = UNDEFINED;
-          break;
-    default:
-        /*Determining PC for a non branching instruction*/
-       valuePassedAsPC = fetchInstruction + 4;
-       pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
-      pipeline.stage[IF_ID].parsedInstruction=currentInstruction;
-      pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
-      break;
+  /*Arith/Load/Store instruction*/
+  else if(currentInstruction.opcode!=EOP){
+    pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+    /*push NPC to first pipeline register*/
+    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+    /*Set PC for next fetch*/
+    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
   }
-  /*Update PC register*/
+  /*Check if EOP*/
+  else{
+    /*EOP instructions*/
+    /*Set pc to undefined??*/
+    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
+    /*Set npc to undefined??*/
+    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
+        pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+    /*Set fetcher to zero*/
+    pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+    processorKeyNext[IF] = 0;
+    //pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+  }
+  /*push instruction to first pipeline register forward*/
     processorKeyNext[ID]++;
+
+}
+
+/////////////////////////////////////////////////////////////
+// The following doesnt work, so I am commenting it out    //
+/////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////
+  // /*EOP instructions*/                                                   //
+  // /*Set pc to undefined??*/                                              //
+  // pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction; //
+  // /*Set npc to undefined??*/                                             //
+  // pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =                         //
+  //     pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];                    //
+  // /*Set fetcher to zero*/                                                //
+  // processorKeyNext[IF] = 0;                                              //
+  // pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;        //
+  ////////////////////////////////////////////////////////////////////////////
+
+
+  // /*<<Determining PC>>*/
+  // /* switch on opcode */
+  // switch(currentInstruction.opcode){
+  // /* if NOP, check/decrement stalls */
+  //   case NOP:
+  //   /******And immediately decrmenented here. Will this be a problem????******/
+  //     /* if stalls are still needed, next instruction needs to be another stall */
+  //     if(pipeline.stage[ID_EXE].parsedInstruction.opcode == NOP){
+  //       //currentInstruction = pipeline.stage[ID_EXE].parsedInstruction;
+  //       if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
+  //         /*get label*/
+  //         string someString = pipeline.stage[EXE_MEM].parsedInstruction.label;
+  //         /*compare label to labels in instruction memory*/
+  //         for(int i = 0; i<PROGRAM_SIZE;i++){
+  //           if(instr_memory[i].label==someString){
+  //         /*convert index to usable form*/
+  //             valuePassedAsPC = (i*4)+0x10000000;
+  //             continue;
+  //           }
+  //         }
+  //         pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
+  //         /*Update NPC register*/
+
+  //         pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+  //       }
+  //       else{
+  //         valuePassedAsPC = potentialNPC;
+  //       }
+
+  //     }
+  //     /* if no additional stalls are needed, conditional evaluation is ready,
+  //        branch instructions target address can be determined */
+  //        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC]=UNDEFINED;
+  //     break;
+  //     case EOP:
+  //       /*Set pc to undefined??*/
+  //       pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
+  //       /*Set npc to undefined??*/
+  //       pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
+  //           pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+  //       /*Set fetcher to zero*/
+  //       processorKeyNext[IF] = 0;
+  //       pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+  //       break;
+  //       case BNEZ:
+  //       case BEQZ:
+  //       case BLTZ:
+  //       case BGTZ:
+  //       case BGEZ:
+  //         pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = UNDEFINED;
+  //         break;
+  //   default:
+  //       /*Determining PC for a non branching instruction*/
+  //      valuePassedAsPC = fetchInstruction + 4;
+  //      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
+  //     pipeline.stage[IF_ID].parsedInstruction=currentInstruction;
+  //     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+  //     break;
+  // }
+  /*Update PC register*/
 
     ///////////////////////////////////////////////////////////////////
     // /*Handle EOP instruction*/                                    //
@@ -440,7 +544,7 @@ void sim_pipe::fetch(){
     //   break; //
     // } //
     //////////////////////////////////////////////////////////////////////////////////
-}
+
 /*Function to check if flow dependencies exist in the pipeline (at this point, only checked for arith. functions)*/
 int sim_pipe::data_dep_check(instruction_t checkedInstruction){
   /*array to hold instructions that exist further down the pipeline. I believe
@@ -464,6 +568,7 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction){
       if(pipelineInstructions[i].opcode!=SW){
       return 2 - i;
       }
+      /*This probably shouldn't work, must clean*/
       if(pipelineInstructions[i].opcode==SW){
         if(i == 0){
           return 0;
@@ -544,7 +649,7 @@ void sim_pipe::normal_decode(instruction_t currentInstruction) {
   case BLTZ:
   case BNEZ:
   case JUMP:
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = currentInstruction.src1;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = gp_registers[currentInstruction.src1];
     /*don't pass B*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
     /*pass immediate reg*/
@@ -800,6 +905,9 @@ void sim_pipe::run(unsigned cycles) {
       if (processorKey[ID]) {
         decode();
       }
+      if (processorKey[6]) {
+        branch_fetch();
+      }
       if (processorKey[IF]) {
         fetch();
       }
@@ -831,6 +939,9 @@ void sim_pipe::run(unsigned cycles) {
       }
       if (processorKey[ID]) {
         decode();
+      }
+      if (processorKey[6]) {
+        branch_fetch();
       }
       if (processorKey[IF]) {
         fetch();

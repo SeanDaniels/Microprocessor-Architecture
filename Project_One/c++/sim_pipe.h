@@ -13,6 +13,7 @@ using namespace std;
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 16
 #define NUM_STAGES 5
+#define MY_NUM_STAGES 6;
 #define CYCLES_NOT_DECLARED NULL
 typedef enum { PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD } sp_register_t;
 
@@ -36,6 +37,7 @@ typedef enum {
 } opcode_t;
 
 typedef enum { IF, ID, EXE, MEM, WB } stage_t;
+typedef enum {IF_M,ID_M,EXE_M,MEM_M,WB_M,LD_M} my_stage_t;
 typedef enum {PRE_FETCH,IF_ID,ID_EXE,EXE_MEM,MEM_WB} pipeline_stage_t;
 typedef enum {PIPELINE_PC} pre_fetch_stage_t;
 typedef enum {IF_ID_NPC} fetch_decode_stage_t;
@@ -180,7 +182,7 @@ public:
   /*function to handle a decode when the pipeline isn't locked*/
   void normal_decode(instruction_t currentInstruction);
   /*function to handle a decode when the pipeline is locked*/
-  void lock_decode(instruction_t currentInstruction);
+  void lock_decode();
   void execute();
   void memory();
   void write_back();

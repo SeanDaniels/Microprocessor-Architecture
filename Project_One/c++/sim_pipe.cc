@@ -15,8 +15,9 @@ int decodeNeeded = 0;
 int executeNeeded = 0;
 int memoryNeeded = 0;
 int writeBackNeeded = 0;
-int processorKey[5] = {1,0,0,0,0};
-int processorKeyNext[5] = {1,0,0,0,0};
+int processorKey[6] = {1,0,0,0,0,0};
+int processorKeyNext[6] = {1,0,0,0,0,0};
+int stallsNeeded = 0;
 // used for debugging purposes
 static const char *reg_names[NUM_SP_REGISTERS] = {
     "PC", "NPC", "IR", "A", "B", "IMM", "COND", "ALU_OUTPUT", "LMD"};
@@ -255,7 +256,7 @@ sim_pipe::~sim_pipe() { delete[] data_memory; }
 
    ============================================================= */
 void sim_pipe::processor_key_update(){
-  for (int i = 0; i < NUM_STAGES; i++) {
+  for (int i = 0; i < NUM_STAGES+1; i++) {
     processorKey[i] = processorKeyNext[i];
   }
 }
@@ -348,10 +349,9 @@ void sim_pipe::fetch() {
   /*Handle EOP instruction*/
   if (pipeline.stage[IF_ID].parsedInstruction.opcode == EOP) {
   /*Set pc to undefined??*/
-    pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] = UNDEFINED;
+    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
   /*Set npc to undefined??*/
-    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-        pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = fetchInstruction;
   /*Set fetcher to zero*/
     processorKeyNext[IF] = 0;
   } 
@@ -360,19 +360,20 @@ void sim_pipe::fetch() {
 }
 /*Function to check if flow dependencies exist in the pipeline (at this point, only checked for arith. functions)*/
 int sim_pipe::data_dep_check(instruction_t checkedInstruction){
-
   /*array to hold instructions that exist further down the pipeline. I believe
    * that the only pipeline registers I'm concerned with are the decode/execute
    * register and execute/memory register. The memory/writeback register will
    * already have been processed by the time this check happens*/
   instruction_t pipelineInstructions[2];
-  pipelineInstructions[0] = pipeline.stage[ID_EXE].parsedInstruction;
-  pipelineInstructions[1] = pipeline.stage[EXE_MEM].parsedInstruction;
+  pipelineInstructions[0] = pipeline.stage[EXE_MEM].parsedInstruction;
+  pipelineInstructions[1] = pipeline.stage[MEM_WB].parsedInstruction;
   /* Loop through entries in pipeline instruction array
    */
+
+
   for(int i = 0; i< 2; i++){
     /* if either of the following pipeline register's destination (write back location) contain either argument found in the current instruction, a flow hazard exists */
-    if(pipelineInstructions[i].dest == (checkedInstruction.src1 || checkedInstruction.src2)){
+    if(pipelineInstructions[i].dest == checkedInstruction.src1 || pipelineInstructions[i].dest == checkedInstruction.src2){
       /*return integer value of stage that the pending instruction is in*/
       /* should go ahead and just return the number of stalls needed here */
       /* i = 0 would mean that the pending instruction is in id/exe stage, meaning 2 stall are necessary */
@@ -474,17 +475,30 @@ void sim_pipe::normal_decode(instruction_t currentInstruction) {
   // increment number of execute stages needed
   processorKeyNext[EXE]++;
 }
-void sim_pipe::lock_decode(instruction_t stallInstruction) {
+void sim_pipe::lock_decode() {
   /*Pass NOP instruction*/
-  pipeline.stage[ID_EXE].parsedInstruction = stallInstruction;
-  /*Set everything else to undefined*/
+  pipeline.stage[ID_EXE].parsedInstruction = {NOP,       UNDEFINED, UNDEFINED,
+                                              UNDEFINED, UNDEFINED, ""};
   pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = UNDEFINED;
   pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
   pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
   pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] = UNDEFINED;
-  /*I think I leave this on to propogate the NOP instruction*/
-  processorKeyNext[EXE]++;
 
+  /*check to see if more stalls will be needed*/
+  processorKeyNext[EXE]++;
+  if (--stallsNeeded) {
+    processorKeyNext[5] = 1;
+  }
+  else{
+    /*Turn staller off (for next clock cycle)*/
+    processorKeyNext[5] = 0;
+    /*Turn normal decoder on (for next clock cycle)*/
+    processorKeyNext[1] = 1;
+    /*Turn fetcher On (for this clock cycle)*/
+    //processorKey[0] = 1;
+    /*Turn fetcher On (for next clock cycle)*/
+    processorKeyNext[0] = 1;
+  }
 }
 
 void sim_pipe::decode()
@@ -499,79 +513,45 @@ void sim_pipe::decode()
   /*Create bool variable to hold status of dep condition*/
   static int loadStoreLock = 0;
   /*Create variable to hold current instruction*/
-  static instruction_t currentInstruction;
+  instruction_t currentInstruction =  pipeline.stage[IF_ID].parsedInstruction;
   /*Create variable to hold stall instruction*/
   static instruction_t stallInstruction = {NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
   /*If the pipeline isn't already locked, chech for dependency*/
   /*RESTRUCTURING: no need to check for dep lock, because */
-  if (!depLock) {
-    /*If the current instruction is arith.*/
-    instruction_t currentInstruction = pipeline.stage[IF_ID].parsedInstruction;
-    switch(instruction_type_check(currentInstruction)){
-      /*arith locks require a different hazard solution than load locks. arith locks are cleared after write back (later), load locks are cleared after mem (earlier)*/
-      case ARITH_INSTR:
-        arithLock = data_dep_check(currentInstruction);
-        break;
-      case LWSW_INSTR:
-        loadStoreLock = data_dep_check(currentInstruction);
-        break;
-      default:
-        break;
-    }
-    if(!arithLock && !loadStoreLock){
-      /*create function to handle normal decode*/
-      normal_decode(currentInstruction);
-    }
-    else{
-      /*handle stall decode*/
-      depLock = true;
-      /*turn fetcher off*/
-      /*Try turning it off immediately to match bechi's output*/
-      processorKey[IF] = 0;
-      processorKeyNext[IF] = 0;
-      /*Normally, fetcher controls decoder. Circumvent that by toggling decoder on here*/
-      /* Decoder is only decremented in normal decode stage */
-      //processorKeyNext[ID]++;
-      if(arithLock){
-        /*increment object stall counter*/
-        stalls = stalls + arithLock;
-        /*call lock decode function*/
-        lock_decode(stallInstruction);
-        arithLock--;
-        /*will still run this cycles fetch, but not the next ones*/
-        /*arith lock could be at max two, I'm trying to determine when to decrement*/
-        /*stall number depending on stage of pending instruction*/
-        /*number of stall needed = distance from write back*/
-        /*if stage is id/exe, need 2 stalls ???? */
-        /*if stage is exe/need 1 stall ???? */
-      }
-      else{}
-    }
+  switch (instruction_type_check(currentInstruction)) {
+  /*arith locks require a different hazard solution than load locks. arith locks
+   * are cleared after write back (later), load locks are cleared after mem
+   * (earlier)*/
+  case ARITH_INSTR:
+    stallsNeeded = data_dep_check(currentInstruction);
+    stalls+=stallsNeeded;
+    break;
+  case LWSW_INSTR:
+    stallsNeeded = data_dep_check(currentInstruction);
+    stalls+=stallsNeeded;
+    break;
+  default:
+    break;
   }
-  /*add what to do if being held in stall pattern*/
-  else{
-    /*decrement lock counter, depending on which type of stall is being handled*/
-    if(arithLock--){
-      if(!arithLock){
-        /*turn dep lock off*/
-        depLock = false;
-        /*turn fetch back on*/
-        processorKeyNext[IF] = 1;
-        /* I think decrement decoder */
-        processorKeyNext[ID] = 1;
-      }
-      /*do some function that pipes NOP*/
+  if (!stallsNeeded) {
+    /*create function to handle normal decode*/
+    normal_decode(currentInstruction);
+  } else {
+    /*handle stall decode*/
+    /*turn fetcher off (for this clock cycle and next clock cycle)*/
+    processorKey[IF] = 0;
+    processorKeyNext[IF] = 0;
+    /*turn this decoder off*/
+    processorKeyNext[ID] = 0;
+    /*Send stall*/
+    /*after calling lock decode*/
+    lock_decode();
+    /*Normally, fetcher controls decoder. Circumvent that by toggling decoder on
+     * here*/
+    /* Decoder is only decremented in normal decode stage */
+    // processorKeyNext[ID]++;
 
-    } else {
-      if(loadStoreLock--){
-        if(!loadStoreLock)
-        depLock = false;
-      }
-    }
-
-    /* Logic to break out of dep lock */
   }
-
 }
 void sim_pipe::execute() {
   /*ID_EXE -> EXE_MEM*/
@@ -685,7 +665,8 @@ void sim_pipe::write_back() {
   if(currentInstruction.opcode == EOP){
     program_complete=true;
   }
-  else{
+  if(currentInstruction.opcode != NOP && currentInstruction.opcode != EOP)
+  {
     instructions_executed++;
   }
   processorKeyNext[WB]--;
@@ -705,6 +686,9 @@ void sim_pipe::run(unsigned cycles) {
       if (processorKey[EXE]) {
         execute();
       }
+      if (processorKey[5]) {
+        lock_decode();
+      }
       if (processorKey[ID]) {
         decode();
       }
@@ -714,9 +698,7 @@ void sim_pipe::run(unsigned cycles) {
       clock_cycles++;
     }
     clock_cycles--;
-
       break;
-    
   default:
     unsigned cyclesThisRun = 0;
     while (cyclesThisRun < cycles) {
@@ -735,6 +717,9 @@ void sim_pipe::run(unsigned cycles) {
       }
       if (processorKey[EXE]) {
         execute();
+      }
+      if (processorKey[5]) {
+        lock_decode();
       }
       if (processorKey[ID]) {
         decode();

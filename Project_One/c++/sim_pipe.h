@@ -196,6 +196,7 @@ public:
   instruction_type_check(instruction_t checkedInstruction);
   /*function to handle branch NOP insertions*/
   void branch_fetch();
+  void memory_stall();
 };
 
 #endif /*SIM_PIPE_H_*/

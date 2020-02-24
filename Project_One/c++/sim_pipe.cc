@@ -255,36 +255,7 @@ sim_pipe::~sim_pipe() { delete[] data_memory; }
    CODE TO BE COMPLETED
 
    ============================================================= */
-void sim_pipe::processor_key_update(){
-  for (int i = 0; i < NUM_STAGES+2; i++) {
-    processorKey[i] = processorKeyNext[i];
-  }
-}
-void sim_pipe::set_program_complete(){
-  program_complete = true;
-}
-unsigned sim_pipe::conditional_evaluation(unsigned evaluate, opcode_t condition){
-  switch (condition){
-  case BEQZ:
-    return (evaluate == 0);
-  case BNEZ:
-    return(evaluate!=0);
-  case BGTZ:
-    return(evaluate>0);
-  case BGEZ:
-    return(evaluate>=0);
-  case BLTZ:
-    return(evaluate<0);
-  case BLEZ:
-    return(evaluate<=0);
-  default:
-    return 0;
-  }
-}
-
-bool sim_pipe::get_program_complete(){
-  return program_complete;
-}
+/* Function to update the control key for the run function */
 
 kind_of_instruction_t
 sim_pipe::instruction_type_check(instruction_t checkedInstruction) {
@@ -311,6 +282,29 @@ sim_pipe::instruction_type_check(instruction_t checkedInstruction) {
     return NOPEOP_INSTR;
   }
 }
+
+ void sim_pipe::pipeline_update(int stage){
+   /*for the given stage of the pipeline,proccess values in current, pass values from next to current*/
+   switch(stage){
+     case IF_ID:
+       /*Move NPC next to current*/
+       pipeline.stage[stage].spRegisters[IF_ID_NPC] = pipeline.stage[stage].spRegisters[IF_ID_NPC_NEXT];
+       /*Clear next*/
+       pipeline.stage[stage].spRegisters[IF_ID_NEXT] = UNDEFINED;
+       break;
+     case ID_EXE:
+       pipeline.stage[stage].spRegisters[ID_EXE_A] = pipeline.stage[stage].spRegisters[ID_EXE_A_NEXT];
+       pipeline.stage[stage].spRegisters[ID_EXE_A_NEXT] = UNDEFINED;
+       pipeline.stage[stage].spRegisters[ID_EXE_B] = pipeline.stage[stage].spRegisters[ID_EXE_B_NEXT];
+       pipeline.stage[stage].spRegisters[ID_EXE_B_NEXT] = UNDEFINED;
+       pipeline.stage[stage].spRegisters[ID_EXE_IMM] = pipeline.stage[stage].spRegisters[ID_EXE_IMM_NEXT];
+       pipeline.stage[stage].spRegisters[ID_EXE_IMM_NEXT] = UNDEFINED;
+       pipeline.stage[stage].spRegisters[ID_EXE_NPC] = pipeline.stage[stage].spRegisters[ID_EXE_NPC_NEXT];
+       pipeline.stage[stage].spRegisters[ID_EXE_NPC_NEXT] = UNDEFINED;
+       break;
+     }
+ }
+
 
 void sim_pipe::branch_fetch() {
   /* Need some way to control this better. This setup would call this over and
@@ -484,6 +478,7 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
   }
   return 0;
 }
+
 void sim_pipe::normal_decode(instruction_t currentInstruction) {
   pipeline.stage[ID_EXE].parsedInstruction = currentInstruction;
   /*different functions pass different values through the sp registers. This
@@ -576,6 +571,7 @@ void sim_pipe::normal_decode(instruction_t currentInstruction) {
   // increment number of execute stages needed
   processorKeyNext[EXE]++;
 }
+
 void sim_pipe::lock_decode() {
   /*Pass NOP instruction*/
   pipeline.stage[ID_EXE].parsedInstruction = {NOP,       UNDEFINED, UNDEFINED,
@@ -661,6 +657,26 @@ void sim_pipe::decode()
 
   }
 }
+
+unsigned sim_pipe::conditional_evaluation(unsigned evaluate, opcode_t condition){
+  switch (condition){
+  case BEQZ:
+    return (evaluate == 0);
+  case BNEZ:
+    return(evaluate!=0);
+  case BGTZ:
+    return(evaluate>0);
+  case BGEZ:
+    return(evaluate>=0);
+  case BLTZ:
+    return(evaluate<0);
+  case BLEZ:
+    return(evaluate<=0);
+  default:
+    return 0;
+  }
+}
+
 void sim_pipe::execute() {
   /*ID_EXE -> EXE_MEM*/
   /* Forward instruction register from  */
@@ -700,6 +716,7 @@ void sim_pipe::execute() {
   // increment number of memory stages needed
   processorKeyNext[MEM]++;
 }
+
 void sim_pipe::memory_stall(){
   static int stallNumber = 0;
   static unsigned stalledB;
@@ -764,6 +781,7 @@ void sim_pipe::memory_stall(){
     processorKeyNext[WB]++;
   }
 }
+
 void sim_pipe::memory() {
   unsigned char* whatToLoad;
   unsigned whereToLoadFrom;
@@ -798,6 +816,7 @@ switch(currentOpcode){
   processorKeyNext[MEM]--;
   // Conditionally increment number of write back stages needed
 }
+
 void sim_pipe::write_back() {
   //put whats in the alu output register into the destination that
   //is in the destination register
@@ -846,6 +865,7 @@ void sim_pipe::write_back() {
   processorKeyNext[WB]--;
 }
 /* body of the simulator */
+
 void sim_pipe::run(unsigned cycles) {
   switch (cycles) {
   case CYCLES_NOT_DECLARED:
@@ -1034,4 +1054,12 @@ unsigned sim_pipe::get_stalls() {
 
 unsigned sim_pipe::get_clock_cycles() {
   return clock_cycles; // please modify
+}
+
+void sim_pipe::set_program_complete(){
+  program_complete = true;
+}
+
+bool sim_pipe::get_program_complete(){
+  return program_complete;
 }

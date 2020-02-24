@@ -13,9 +13,11 @@ using namespace std;
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 16
 #define NUM_STAGES 5
-#define MY_NUM_STAGES 8;
+#define NUM_RUN_FUNCTIONS 8;
 #define CYCLES_NOT_DECLARED NULL
 #define BRANCH_STALLS 2
+#define BRANCH_STALLS 2
+
 typedef enum { PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD } sp_register_t;
 
 typedef enum {
@@ -41,10 +43,10 @@ typedef enum { IF, ID, EXE, MEM, WB } stage_t;
 typedef enum {IF_M,ID_M,EXE_M,MEM_M,WB_M,LD_M} my_stage_t;
 typedef enum {PRE_FETCH,IF_ID,ID_EXE,EXE_MEM,MEM_WB} pipeline_stage_t;
 typedef enum {PIPELINE_PC} pre_fetch_stage_t;
-typedef enum {IF_ID_NPC} fetch_decode_stage_t;
-typedef enum {ID_EXE_A, ID_EXE_B, ID_EXE_IMM, ID_EXE_NPC} decode_execute_stage_t;
-typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND} execute_memory_stage_t;
-typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD} memory_writeback_stage_t;
+typedef enum {IF_ID_NPC,IF_ID_NPC_NEXT} fetch_decode_stage_t;
+typedef enum {ID_EXE_A, ID_EXE_B, ID_EXE_IMM, ID_EXE_NPC,ID_EXE_A_NEXT, ID_EXE_B_NEXT, ID_EXE_IMM_NEXT, ID_EXE_NPC_NEXT} decode_execute_stage_t;
+typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND, EXE_MEM_B_NEXT, EXE_MEM_ALU_OUT_NEXT, EXE_MEM_COND_NEXT} execute_memory_stage_t;
+typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD, MEM_WB_ALU_OUT_NEXT, MEM_WB_LMD_NEXT} memory_writeback_stage_t;
 typedef enum {ARITH_INSTR, COND_INSTR, LWSW_INSTR, NOPEOP_INSTR} kind_of_instruction_t;
 
 typedef struct {
@@ -101,7 +103,7 @@ class sim_pipe {
 
 /*number of instructions executeds */
     float instructions_executed = 0;
-
+/*Program finish switch*/
   bool program_complete = false;
 public:
   // instantiates the simulator with a data memory of given size (in bytes) and
@@ -176,7 +178,9 @@ public:
   // prints the values of the registers
   void print_registers();
 
+  /*Function to determine if branch instruction is true or false*/
   unsigned conditional_evaluation(unsigned evaluate, opcode_t condition);
+  /*Function to get intruction, pointed to by the PC */
   void fetch();
   /*function to determine which type of decode needs to be done*/
   void decode();
@@ -184,20 +188,29 @@ public:
   void normal_decode(instruction_t currentInstruction);
   /*function to handle a decode when the pipeline is locked*/
   void lock_decode();
+  /*function to that passes register information to ALU*/
   void execute();
+  /*function to handle memory functions*/
   void memory();
+  /*function to pass information back to destination registers*/
   void write_back();
+  /*function to determine which functions run*/
   void processor_key_update();
+  /*function to set program complete bool*/
   void set_program_complete();
+  /*function to a decode when the pipeline is locked*/
   bool get_program_complete();
-    /*function to determine if a data dep exists*/
+  /*function to determine if a data dep exists*/
   int data_dep_check(instruction_t checkedInstruction);
-    /*function to determine what kind of instruction is being processed*/
+  /*function to determine what kind of instruction is being processed*/
   kind_of_instruction_t
   instruction_type_check(instruction_t checkedInstruction);
   /*function to handle branch NOP insertions*/
   void branch_fetch();
+  /*function to handle memory latency*/
   void memory_stall();
+
+  void pipeline_update(int stage);
 };
 
 #endif /*SIM_PIPE_H_*/

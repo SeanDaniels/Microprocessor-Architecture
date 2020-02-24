@@ -436,114 +436,6 @@ void sim_pipe::fetch(){
 
 }
 
-/////////////////////////////////////////////////////////////
-// The following doesnt work, so I am commenting it out    //
-/////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////////
-  // /*EOP instructions*/                                                   //
-  // /*Set pc to undefined??*/                                              //
-  // pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction; //
-  // /*Set npc to undefined??*/                                             //
-  // pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =                         //
-  //     pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];                    //
-  // /*Set fetcher to zero*/                                                //
-  // processorKeyNext[IF] = 0;                                              //
-  // pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;        //
-  ////////////////////////////////////////////////////////////////////////////
-
-
-  // /*<<Determining PC>>*/
-  // /* switch on opcode */
-  // switch(currentInstruction.opcode){
-  // /* if NOP, check/decrement stalls */
-  //   case NOP:
-  //   /******And immediately decrmenented here. Will this be a problem????******/
-  //     /* if stalls are still needed, next instruction needs to be another stall */
-  //     if(pipeline.stage[ID_EXE].parsedInstruction.opcode == NOP){
-  //       //currentInstruction = pipeline.stage[ID_EXE].parsedInstruction;
-  //       if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
-  //         /*get label*/
-  //         string someString = pipeline.stage[EXE_MEM].parsedInstruction.label;
-  //         /*compare label to labels in instruction memory*/
-  //         for(int i = 0; i<PROGRAM_SIZE;i++){
-  //           if(instr_memory[i].label==someString){
-  //         /*convert index to usable form*/
-  //             valuePassedAsPC = (i*4)+0x10000000;
-  //             continue;
-  //           }
-  //         }
-  //         pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
-  //         /*Update NPC register*/
-
-  //         pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
-  //       }
-  //       else{
-  //         valuePassedAsPC = potentialNPC;
-  //       }
-
-  //     }
-  //     /* if no additional stalls are needed, conditional evaluation is ready,
-  //        branch instructions target address can be determined */
-  //        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC]=UNDEFINED;
-  //     break;
-  //     case EOP:
-  //       /*Set pc to undefined??*/
-  //       pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
-  //       /*Set npc to undefined??*/
-  //       pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-  //           pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
-  //       /*Set fetcher to zero*/
-  //       processorKeyNext[IF] = 0;
-  //       pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
-  //       break;
-  //       case BNEZ:
-  //       case BEQZ:
-  //       case BLTZ:
-  //       case BGTZ:
-  //       case BGEZ:
-  //         pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = UNDEFINED;
-  //         break;
-  //   default:
-  //       /*Determining PC for a non branching instruction*/
-  //      valuePassedAsPC = fetchInstruction + 4;
-  //      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
-  //     pipeline.stage[IF_ID].parsedInstruction=currentInstruction;
-  //     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
-  //     break;
-  // }
-  /*Update PC register*/
-
-    ///////////////////////////////////////////////////////////////////
-    // /*Handle EOP instruction*/                                    //
-    // if (pipeline.stage[IF_ID].parsedInstruction.opcode == EOP) {  //
-    // /*Set pc to undefined??*/                                     //
-    //   pipeline.stage[IF_ID].spRegisters[PIPELINE_PC] = UNDEFINED; //
-    // /*Set npc to undefined??*/                                    //
-    //   pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =              //
-    //       pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];         //
-    // /*Set fetcher to zero*/                                       //
-    //   processorKeyNext[IF] = 0;                                   //
-    // }                                                             //
-    ///////////////////////////////////////////////////////////////////
-    ///////////////////BEFORE CONDITIONAL HAZARDS WERE
-    ///ADDRESSED//////////////////////
-    // switch (branchingCond) { // case 1: //
-    //   /* if branch condition is zero, PC is now the ALU output of the branch
-    //   //
-    //    * instruction */ //
-    //   pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = //
-    //       pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT]; //
-    //   break; //
-    //   /*branchingCond = 0 or UNDEFINED*/ //
-    // default: //
-    //   pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction +
-    //   4; // pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = //
-    //     pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC]; //
-    //   break; //
-    // } //
-    //////////////////////////////////////////////////////////////////////////////////
 
 /*Function to check if flow dependencies exist in the pipeline (at this point, only checked for arith. functions)*/
 int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
@@ -572,14 +464,13 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
        * meaning 1 stall is necessary */
       /*Normall two stalls, but a memlatency of 4 would require 5 stalls*/
       if (pipelineInstructions[i].opcode != LW) {
-        return 2 - i;
+        return data_memory_latency - 2 - i;
       }
-      /*This probably shouldn't work, must clean*/
       if (pipelineInstructions[i].opcode == SW ||
           pipelineInstructions[i].opcode == LW) {
         /*if needed instruction is exe/mem stage*/
         if (i == 0) {
-          return 2-i;
+          return data_memory_latency - 2-i;
         } else
         /* needed instruction is mem/wb (one cycle of mem latency has passed)
            stage*/
@@ -821,7 +712,7 @@ void sim_pipe::memory_stall(){
    stalledInstruction = pipeline.stage[EXE_MEM].parsedInstruction;
    stalledALUOutput = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
   }
-  if(stallNumber++!=4) {
+  if(stallNumber++!=data_memory_latency) {
     /*insert another stall*/
     /*Keep other units off*/
     processorKey[IF] = 0;
@@ -834,7 +725,8 @@ void sim_pipe::memory_stall(){
     processorKeyNext[MEM] = 0;
     processorKeyNext[WB] = 0;
     processorKeyNext[7] = 1;
-    
+   stalls++;
+
     //pipeline.stage[EXE_MEM].parsedInstruction = {NOP};
   }
   else {
@@ -990,10 +882,7 @@ void sim_pipe::run(unsigned cycles) {
     while (cyclesThisRun < cycles) {
       /*If there is only one instruction in the pipeline, only one funciton
        * will be called. If, however, multiple instructions have been fetched,
-       * the number of functions called also changes I'm struggline with
-       * implementing changing the number of actions taken within the while
-       * loop*/
-      // trying with this stupid array check and copy system
+       * the number of functions called also changes*/
       processor_key_update();
       if (processorKey[WB]) {
         write_back();

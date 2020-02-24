@@ -319,6 +319,7 @@ void sim_pipe::branch_fetch() {
   static int insertions = 0;
   static unsigned potentialNPC;
   static unsigned immediate;
+  static unsigned branchLocation;
   /*PASS NOP*/
   pipeline.stage[IF_ID].parsedInstruction = {NOP,       UNDEFINED, UNDEFINED,
                                              UNDEFINED, UNDEFINED, ""};
@@ -330,29 +331,29 @@ void sim_pipe::branch_fetch() {
   /*increment insertion counter*/
   insertions++;
   /*If more insertions are needed*/
-  if (insertions != 2) {
+  if (insertions != BRANCH_STALLS) {
     processorKeyNext[IF] = 0;
     processorKey[IF] = 0;
     processorKeyNext[6] = 1;
   }
   /*If the required amount of insertions*/
-  if (insertions == 2) {
+  if (insertions == BRANCH_STALLS) {
     /*check value of conditional*/
     if (instruction_type_check(pipeline.stage[EXE_MEM].parsedInstruction) ==
         COND_INSTR) {
       /*Really just an error check for debugging*/
       if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
-        /*If condition evaluated true*/
-        /*get label*/
-        string someString = pipeline.stage[EXE_MEM].parsedInstruction.label;
-        immediate = pipeline.stage[EXE_MEM].parsedInstruction.immediate;
-        immediate = (immediate + 4 - 0xFFFFFFE0) / 4;
-        immediate = (immediate * 4) + 0x10000000;
-        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = immediate;
+        //immediate = pipeline.stage[EXE_MEM].parsedInstruction.immediate;
+        //immediate = (immediate + 4 - 0xFFFFFFE0) / 4;
+        //immediate = (immediate * 4) + 0x10000000;
+        branchLocation = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
+        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = branchLocation;
+        cout<< "Branch set to: "<< branchLocation << endl;
       }
       else {
       /*conditon evaluated false*/
       pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = potentialNPC;
+      cout << "Branch set to: " << potentialNPC << endl;
       /*now go fetch that instruction*/
       }
     } 
@@ -405,6 +406,7 @@ void sim_pipe::fetch(){
     /*push NPC to first pipeline register*/
     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
     /*Maybe update Pipeline PC here, so its ready when this fetcher gets turned back on?*/
+    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
     //branch_fetch();
     processorKeyNext[0] = 0;
     processorKeyNext[6] = 1;

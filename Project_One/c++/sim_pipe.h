@@ -13,10 +13,12 @@ using namespace std;
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 16
 #define NUM_STAGES 5
-#define NUM_RUN_FUNCTIONS 8;
+#define NUM_RUN_FUNCTIONS 8
 #define CYCLES_NOT_DECLARED NULL
 #define BRANCH_STALLS 2
 #define BRANCH_STALLS 2
+#define OFF 0
+#define ON 1
 
 typedef enum { PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD } sp_register_t;
 
@@ -40,13 +42,21 @@ typedef enum {
 } opcode_t;
 
 typedef enum { IF, ID, EXE, MEM, WB } stage_t;
+
 typedef enum {IF_M,ID_M,EXE_M,MEM_M,WB_M,LD_M} my_stage_t;
+
 typedef enum {PRE_FETCH,IF_ID,ID_EXE,EXE_MEM,MEM_WB} pipeline_stage_t;
+
 typedef enum {PIPELINE_PC} pre_fetch_stage_t;
+
 typedef enum {IF_ID_NPC,IF_ID_NPC_NEXT} fetch_decode_stage_t;
+
 typedef enum {ID_EXE_A, ID_EXE_B, ID_EXE_IMM, ID_EXE_NPC,ID_EXE_A_NEXT, ID_EXE_B_NEXT, ID_EXE_IMM_NEXT, ID_EXE_NPC_NEXT} decode_execute_stage_t;
+
 typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND, EXE_MEM_B_NEXT, EXE_MEM_ALU_OUT_NEXT, EXE_MEM_COND_NEXT} execute_memory_stage_t;
+
 typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD, MEM_WB_ALU_OUT_NEXT, MEM_WB_LMD_NEXT} memory_writeback_stage_t;
+
 typedef enum {ARITH_INSTR, COND_INSTR, LWSW_INSTR, NOPEOP_INSTR} kind_of_instruction_t;
 
 typedef struct {
@@ -60,15 +70,17 @@ typedef struct {
                 // used only for parsing/debugging purposes
 } instruction_t;
 
-
 typedef struct {
-    instruction_t parsedInstruction;
+    instruction_t currentInstruction;
+    instruction_t nextInstruction;
     unsigned spRegisters[NUM_SP_REGISTERS] = {UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED};
 } pipeline_sp_t;
 
 typedef struct {
     pipeline_sp_t stage[NUM_STAGES];
 } pipeline_t;
+
+typedef enum{IF_R, B_IF_R, ID_R, L_ID_R, EXE_R, MEM_R, S_MEM_R, WB_R} run_control_t;
 
 class sim_pipe {
 

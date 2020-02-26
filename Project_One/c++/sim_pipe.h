@@ -13,10 +13,14 @@ using namespace std;
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 16
 #define NUM_STAGES 5
-#define MY_NUM_STAGES 6;
+#define MY_NUM_STAGES 6
+#define NUM_RUN_FUNCTIONS 8
 #define CYCLES_NOT_DECLARED NULL
+#define BRANCH_STALLS 2
+
 typedef enum { PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD } sp_register_t;
 
+typedef enum {IF_R,B_IF_R,ID_R,L_ID_R,EXE_R,MEM_R,S_MEM_R,WB_R} run_functions_t;
 typedef enum {
   LW,
   SW,

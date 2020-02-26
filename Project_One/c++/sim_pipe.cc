@@ -371,7 +371,7 @@ void sim_pipe::branch_fetch() {
   /*reset counter, turn normal fetcher back on*/
  
 
-  processorKeyNext[ID_R]++;
+  processorKeyNext[ID_R] = 1;
 }
 
 void sim_pipe::fetch(){
@@ -439,7 +439,7 @@ void sim_pipe::fetch(){
     //pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
   }
   /*push instruction to first pipeline register forward*/
-    processorKeyNext[ID_R]++;
+    processorKeyNext[ID_R] = 0;
 
 }
 

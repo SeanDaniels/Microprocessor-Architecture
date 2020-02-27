@@ -201,6 +201,7 @@ public:
   /*function to handle branch NOP insertions*/
   void branch_fetch();
   void memory_stall();
+  int stage_location(opcode_t checkOpcode);
 };
 
 #endif /*SIM_PIPE_H_*/

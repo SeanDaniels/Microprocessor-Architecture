@@ -11,10 +11,14 @@
 
 using namespace std;
 
-int decodeNeeded = 0;
-int executeNeeded = 0;
-int memoryNeeded = 0;
-int writeBackNeeded = 0;
+bool doDecode = true;
+bool doExecute = true;
+bool doMemory = true;
+bool doWriteBack = true;
+bool doFetch = true;
+bool doMemoryStall = false;
+bool doBranchFetch = false;
+bool doLockDecode = false;
 int processorKey[NUM_RUN_FUNCTIONS] = {1,0,0,0,0,0,0,0};
 int processorKeyNext[NUM_RUN_FUNCTIONS] = {1,0,0,0,0,0,0,0};
 int depStallsNeeded = 0;
@@ -339,11 +343,6 @@ void sim_pipe::branch_fetch() {
   branchStallsInserted++;
   stalls=branchStallsInserted;
   /*If more branchStallsInserted are needed*/
-  if (branchStallsInserted != BRANCH_STALLS) {
-    processorKeyNext[IF_R] = 0;
-    processorKey[IF_R] = 0;
-    processorKeyNext[B_IF_R] = 1;
-  }
   /*If the required amount of insertions*/
   if (branchStallsInserted == BRANCH_STALLS) {
     /*check value of conditional*/
@@ -365,14 +364,11 @@ void sim_pipe::branch_fetch() {
       }
     } 
   branchStallsInserted = 0;
-  processorKey[IF_R] = 1;
-  processorKeyNext[IF_R] = 1;
-  processorKeyNext[B_IF_R] = 0;
+  doFetch=true;
+  doBranchFetch=false;
   }
   /*reset counter, turn normal fetcher back on*/
- 
 
-  processorKeyNext[ID_R] = 1;
 }
 
 void sim_pipe::fetch(){
@@ -415,8 +411,8 @@ void sim_pipe::fetch(){
     /*branch_fetch will run on next clock cycle, inserting a NOP*/
     //branch_fetch();
     /*This stage runs last, only set next values, processor_key_update will fix the rest of the values*/
-    processorKeyNext[IF_R] = 0;
-    processorKeyNext[B_IF_R] = 1;
+    doBranchFetch=true;
+    doFetch=false;
   }
   /*Arith/Load/Store instruction*/
   else if(currentInstruction.opcode!=EOP){
@@ -436,14 +432,46 @@ void sim_pipe::fetch(){
         pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
     /*Set fetcher to zero*/
     pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
-    processorKeyNext[IF_R] = 0;
+    doFetch = false;
     //pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
   }
   /*push instruction to first pipeline register forward*/
-    processorKeyNext[ID_R] = 1;
 
 }
 
+bool single_source_check(instruction_t checkInstruction) {
+  if (checkInstruction.opcode == ADDI || checkInstruction.opcode == SUBI ||
+      checkInstruction.opcode == LW || checkInstruction.opcode == SW) {
+    return true;
+
+  } else {
+    return false;
+  }
+}
+
+int sim_pipe::stage_location(opcode_t checkOpcode) {
+  static int forwardStages = 2;
+  switch (checkOpcode) {
+  case ADD:
+  case ADDI:
+  case SUB:
+  case SUBI:
+  case XOR:
+    stalls+=forwardStages;
+    return forwardStages;
+    break;
+  case LW:
+    stalls+=forwardStages;
+    return forwardStages + data_memory_latency;
+    break;
+  case SW:
+    stalls+=forwardStages;
+    return forwardStages + data_memory_latency - 1;
+  default:
+    return 0;
+  }
+  return 0;
+}
 
 /*Function to check if flow dependencies exist in the pipeline, return number of stalls needed*/
 int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
@@ -473,62 +501,28 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
    */
   /*get memory latency*/
   for (int i = 0; i < FORWARD_STAGES; i++) {
-    if (checkedInstruction.opcode == LW || checkedInstruction.opcode == SW ||
-        checkedInstruction.opcode == ADDI ||
-        checkedInstruction.opcode == SUBI) {
+    if (single_source_check(checkedInstruction)) {
       if (pipelineInstructions[i].dest == checkedInstruction.src1) {
         if (i == PRE_MEMORY) {
-          switch (pipelineInstructions[PRE_MEMORY].opcode) {
-          case ADD:
-          case ADDI:
-          case SUB:
-          case SUBI:
-          case XOR:
-            stalls += FORWARD_STAGES;
-            return FORWARD_STAGES;
-            break;
-          case LW:
-            stalls += FORWARD_STAGES + data_memory_latency;
-            return FORWARD_STAGES + data_memory_latency;
-            break;
-          case SW:
-            stalls += FORWARD_STAGES + data_memory_latency - 1;
-            return FORWARD_STAGES + data_memory_latency - 1;
-          default:
-            return 0;
-          }
-        } else {
-          switch (pipelineInstructions[PRE_WRITE_BACK].opcode) {
-          case ADD:
-          case ADDI:
-          case SUB:
-          case SUBI:
-          case XOR:
-            stalls += FORWARD_STAGES - 1;
-            return FORWARD_STAGES - 1;
-            break;
-          case LW:
-            stalls += FORWARD_STAGES - 1 + data_memory_latency;
-            return FORWARD_STAGES - 1 + data_memory_latency;
-            break;
-          case SW:
-            stalls += FORWARD_STAGES + data_memory_latency - 2;
-            return FORWARD_STAGES + data_memory_latency - 2;
-          default:
-            return 0;
-          }
+          return stage_location(pipelineInstructions[i].opcode);
         }
-        return 0;
+        else{
+          return stage_location(pipelineInstructions[i].opcode)-1;
+        }
       }
-
-    } else if (checkedInstruction.opcode == ADD ||
-               checkedInstruction.opcode == SUB ||
-               checkedInstruction.opcode == XOR) {
-      if (pipelineInstructions[i].dest == checkedInstruction.src1 ||
-          pipelineInstructions[i].dest == checkedInstruction.src2) {
+    }
+    else{
+      if (pipelineInstructions[i].dest == checkedInstruction.src1 || pipelineInstructions[i].dest == checkedInstruction.src2){
+        if(i==PRE_MEMORY){
+          return stage_location(pipelineInstructions[i].opcode);
+        }
+        else{
+          return stage_location(pipelineInstructions[i].opcode)-1;
+        }
       }
     }
   }
+  return 0;
 }
 /* if either of the following pipeline register's destination (write back
  * location) contain either argument found in the current instruction, a
@@ -623,11 +617,6 @@ void sim_pipe::normal_decode(instruction_t currentInstruction) {
     break;
   }
   // decrement number of decodes stages needed
-  processorKeyNext[ID_R] = 1;
-  processorKeyNext[L_ID_R] = 0;
-  processorKey[L_ID_R] = 0;
-  // increment number of execute stages needed
-  processorKeyNext[EXE_R] = 1;
 }
 
 void sim_pipe::lock_decode() {
@@ -646,12 +635,11 @@ void sim_pipe::lock_decode() {
   if(!depStallsInserted++){
     stalled_instruction=pipeline.stage[IF_ID].parsedInstruction;
     /*Turn fetcher off*/
-    processorKeyNext[IF_R] = 0;
-    processorKey[IF_R] = 0;
+    doFetch=false;
     /*Next clock cycle, return to lock_decode()*/
-    processorKeyNext[L_ID_R] = 1;
+    doLockDecode=true;
     /*Next clock cycle, do not run normal decode*/
-    processorKeyNext[ID_R] = 0;
+    doDecode=false;
   }
   if(depStallsInserted!=depStallsNeeded){
     processorKey[ID_R] = 0;
@@ -660,16 +648,13 @@ void sim_pipe::lock_decode() {
   if (depStallsInserted==depStallsNeeded) {
     
     //normal_decode(stalled_instruction);
-    processorKeyNext[L_ID_R] = 0;
-    processorKey[L_ID_R] = 0;
+    doLockDecode=false;
     /*Turn normal decoder on (for next clock cycle)*/
-    processorKeyNext[ID_R] = 1;
-    processorKey[ID_R] = 0;
+    doDecode=true;
     /*Turn fetcher On (for this clock cycle)*/
     //processorKey[0] = 1;
     /*Turn fetcher On (for next clock cycle)*/
-    processorKeyNext[IF_R] = 1;
-    processorKey[IF_R] = 0;
+    doFetch = true;
     depStallsInserted = 0;
     depStallsNeeded = 0;
   }
@@ -706,7 +691,12 @@ void sim_pipe::decode()
     lock_decode();
 
   }
+  if(currentInstruction.opcode == EOP){
+    doDecode=false;
+    doLockDecode=false;
+  }
 }
+
 
 void sim_pipe::execute() {
   /*ID_EXE -> EXE_MEM*/
@@ -743,9 +733,10 @@ void sim_pipe::execute() {
   
   pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT] = currentALUOutput;
   // decrement number of execute stages needed
-  processorKeyNext[EXE_R]=1;
   // increment number of memory stages needed
-  processorKeyNext[MEM_R]=1;
+  if(currentInstruction.opcode==EOP){
+    doExecute=false;
+  }
 }
 
 void sim_pipe::memory_stall(){
@@ -765,28 +756,20 @@ void sim_pipe::memory_stall(){
   if(memoryStallNumber++!=data_memory_latency) {
     /*insert another stall*/
     /*Keep other units off*/
-    processorKey[IF_R] = 0;
-    processorKey[ID_R] = 0;
-    processorKey[EXE_R] = 0;
-    processorKey[MEM_R] = 0;
-    processorKeyNext[IF_R] = 0;
-    processorKeyNext[ID_R] = 0;
-    processorKeyNext[EXE_R] = 0;
-    processorKeyNext[MEM_R] = 0;
-    processorKeyNext[S_MEM_R] = 1;
-
+    doFetch=false;
+    doDecode=false;
+    doExecute=false;
+    doMemory=false;
+    doMemoryStall=true;
     stalls++;
     // pipeline.stage[EXE_MEM].parsedInstruction = {NOP};
   } else {
-    processorKey[IF_R] = 1;
-    processorKeyNext[IF_R] = 1;
-    processorKey[ID_R] = 1;
-    processorKeyNext[ID_R] = 1;
-    processorKey[EXE_R] = 1;
-    processorKeyNext[EXE_R] = 1;
-    processorKeyNext[MEM_R] = 1;
+    doFetch=true;
+    doDecode=true;
+    doExecute=true;
+    doMemory=true;
+    doMemoryStall=false;
     processorKeyNext[S_MEM_R] = 0;
-
     /*reset memory stall counter*/
     memoryStallNumber = 0;
     switch (stalledInstruction.opcode) {
@@ -831,20 +814,22 @@ void sim_pipe::memory() {
   unsigned currentALUOutput =
     pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
 
-switch(currentOpcode){
-    case LW:
-    case SW:
-      memory_stall();
-      /* Write to register ahead? */
-      //pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
-      break;
-    default:
-      pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
-      processorKeyNext[WB_R]=1;
-      break;
+  switch (currentOpcode) {
+  case LW:
+  case SW:
+    memory_stall();
+    /* Write to register ahead? */
+    // pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
+    break;
+  case EOP:
+    doMemory=false;
+    break;
+  default:
+    pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
+    processorKeyNext[WB_R] = 1;
+    break;
   }
   // decrement number of memory stages needed
-  processorKeyNext[MEM_R]=1;
   // Conditionally increment number of write back stages needed
 }
 
@@ -893,7 +878,6 @@ void sim_pipe::write_back() {
   {
     instructions_executed++;
   }
-  processorKeyNext[WB_R]=1;
 }
 /* body of the simulator */
 void sim_pipe::run(unsigned cycles) {
@@ -901,28 +885,28 @@ void sim_pipe::run(unsigned cycles) {
   case CYCLES_NOT_DECLARED:
     while (!program_complete) {
       processor_key_update();
-      if (processorKey[WB_R]) {
+      if (doWriteBack) {
         write_back();
       }
-      if (processorKey[MEM_R]) {
+      if (doMemory) {
         memory();
       }
-      if(processorKey[S_MEM_R]){
+      if(doMemoryStall){
         memory_stall();
       }
-      if (processorKey[EXE_R]) {
+      if (doExecute) {
         execute();
       }
-      if (processorKey[L_ID_R]) {
-        lock_decode();
-      }
-      if (processorKey[ID_R]) {
+      if (doDecode) {
         decode();
       }
-      if (processorKey[B_IF_R]) {
+      if (doLockDecode) {
+        lock_decode();
+      }
+      if (doBranchFetch) {
         branch_fetch();
       }
-      if (processorKey[IF_R]) {
+      if (doFetch) {
         fetch();
       }
       clock_cycles++;
@@ -936,29 +920,28 @@ void sim_pipe::run(unsigned cycles) {
        * will be called. If, however, multiple instructions have been fetched,
        * the number of functions called also changes*/
       processor_key_update();
-      if (processorKey[WB_R]) {
+      if (doWriteBack) {
         write_back();
       }
-      if (processorKey[MEM_R]) {
+      if (doMemory) {
         memory();
       }
-      if(processorKey[S_MEM_R]){
+      if(doMemoryStall){
         memory_stall();
       }
-      if (processorKey[EXE_R]) {
-        /*Pushes ID_EXE -> EXE_MEM*/
+      if (doExecute) {
         execute();
       }
-      if (processorKey[L_ID_R]) {
-        lock_decode();
-      }
-      if (processorKey[ID_R]) {
+      if (doDecode) {
         decode();
       }
-      if (processorKey[B_IF_R]) {
+      if (doLockDecode) {
+        lock_decode();
+      }
+      if (doBranchFetch) {
         branch_fetch();
       }
-      if (processorKey[IF_R]) {
+      if (doFetch) {
         fetch();
       }
       cyclesThisRun++;

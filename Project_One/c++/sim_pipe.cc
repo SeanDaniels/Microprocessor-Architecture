@@ -10,8 +10,10 @@
 //#define DEBUG
 
 using namespace std;
-
+bool immediateBreak = false;
 bool doDecode = true;
+bool didDecode = false;
+bool didLockDecode = false;
 bool doExecute = true;
 bool doMemory = true;
 bool doWriteBack = true;
@@ -23,6 +25,10 @@ int processorKey[NUM_RUN_FUNCTIONS] = {1,0,0,0,0,0,0,0};
 int processorKeyNext[NUM_RUN_FUNCTIONS] = {1,0,0,0,0,0,0,0};
 int depStallsNeeded = 0;
 int memoryStallNumber = 0;
+int globalBranches = 0;
+int globalStoreDepStalls = 0;
+int globalLoadDepStalls = 0;
+int globalArithDepStalls= 0;
 // used for debugging purposes
 static const char *reg_names[NUM_SP_REGISTERS] = {
     "PC", "NPC", "IR", "A", "B", "IMM", "COND", "ALU_OUTPUT", "LMD"};
@@ -330,7 +336,7 @@ void sim_pipe::branch_fetch() {
 /*Check if first insertion. If first insertion, store current NPC*/
 /*If not first insertion, don't over-write the stored npc, this will be used to determine which branch to take*/
 
-  if (!branchStallsInserted) {
+  if (!branchStallsInserted++) {
     potentialNPC = pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
   }
 
@@ -340,11 +346,11 @@ void sim_pipe::branch_fetch() {
   /*forward NOP NPC*/
   /*If this is first insertion call*/
   /*increment insertion counter*/
-  branchStallsInserted++;
-  stalls=branchStallsInserted;
   /*If more branchStallsInserted are needed*/
   /*If the required amount of insertions*/
   if (branchStallsInserted == BRANCH_STALLS) {
+    globalBranches++;
+    stalls+=branchStallsInserted;
     /*check value of conditional*/
     if (instruction_type_check(pipeline.stage[EXE_MEM].parsedInstruction) ==
         COND_INSTR) {
@@ -352,20 +358,28 @@ void sim_pipe::branch_fetch() {
       if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
         /*If condition evaluated true*/
         /*get label*/
+        /*
         immediate = pipeline.stage[EXE_MEM].parsedInstruction.immediate;
         immediate = (immediate + 4 - 0xFFFFFFE0) / 4;
         immediate = (immediate * 4) + 0x10000000;
-        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = immediate;
+        */
+        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
       }
       else {
       /*conditon evaluated false*/
       pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = potentialNPC;
       /*now go fetch that instruction*/
       }
-    } 
-  branchStallsInserted = 0;
-  doFetch=true;
-  doBranchFetch=false;
+    }
+    branchStallsInserted = 0;
+    doFetch = true;
+    doBranchFetch = false;
+    immediateBreak=true;
+
+  }
+
+  else {
+    doFetch=false;
   }
   /*reset counter, turn normal fetcher back on*/
 
@@ -407,6 +421,7 @@ void sim_pipe::fetch(){
     pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
     /*push NPC to first pipeline register*/
     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
     /*Maybe update Pipeline PC here, so its ready when this fetcher gets turned back on?*/
     /*branch_fetch will run on next clock cycle, inserting a NOP*/
     //branch_fetch();
@@ -457,15 +472,12 @@ int sim_pipe::stage_location(opcode_t checkOpcode) {
   case SUB:
   case SUBI:
   case XOR:
-    stalls+=forwardStages;
     return forwardStages;
     break;
   case LW:
-    stalls+=forwardStages;
     return forwardStages + data_memory_latency;
     break;
   case SW:
-    stalls+=forwardStages;
     return forwardStages + data_memory_latency - 1;
   default:
     return 0;
@@ -482,6 +494,7 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
   static int PRE_MEMORY = 0;
   static int PRE_WRITE_BACK = 1;
   static int FORWARD_STAGES = 2;
+  int retVal = 0;
 
   instruction_t pipelineInstructions[FORWARD_STAGES];
   /*Need 2 stalls*/
@@ -504,20 +517,32 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
     if (single_source_check(checkedInstruction)) {
       if (pipelineInstructions[i].dest == checkedInstruction.src1) {
         if (i == PRE_MEMORY) {
-          return stage_location(pipelineInstructions[i].opcode);
+          retVal=stage_location(pipelineInstructions[i].opcode);
+          globalLoadDepStalls+=retVal;
+          stalls+=retVal;
+          return retVal;
         }
         else{
-          return stage_location(pipelineInstructions[i].opcode)-1;
+          retVal=stage_location(pipelineInstructions[i].opcode)-1;
+          globalStoreDepStalls+=retVal;
+          stalls+=retVal;
+          return retVal;
         }
       }
     }
     else{
       if (pipelineInstructions[i].dest == checkedInstruction.src1 || pipelineInstructions[i].dest == checkedInstruction.src2){
         if(i==PRE_MEMORY){
-          return stage_location(pipelineInstructions[i].opcode);
+          globalLoadDepStalls+=retVal;
+          retVal=stage_location(pipelineInstructions[i].opcode);
+          stalls+=retVal;
+          return retVal;
         }
         else{
-          return stage_location(pipelineInstructions[i].opcode)-1;
+          retVal=stage_location(pipelineInstructions[i].opcode)-1;
+          globalStoreDepStalls+=retVal;
+          stalls+=retVal;
+          return retVal;
         }
       }
     }
@@ -631,7 +656,7 @@ void sim_pipe::lock_decode() {
   pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] = UNDEFINED;
 
   /*check to see if more stalls will be needed*/
-  processorKeyNext[EXE_R] = 1;
+  doExecute = true;
   if(!depStallsInserted++){
     stalled_instruction=pipeline.stage[IF_ID].parsedInstruction;
     /*Turn fetcher off*/
@@ -646,7 +671,9 @@ void sim_pipe::lock_decode() {
   }
   /*If the appropriate number of stalls has been inserted*/
   if (depStallsInserted==depStallsNeeded) {
-    
+    if(depStallsNeeded==1){
+      immediateBreak = true;
+    }
     //normal_decode(stalled_instruction);
     doLockDecode=false;
     /*Turn normal decoder on (for next clock cycle)*/
@@ -658,6 +685,7 @@ void sim_pipe::lock_decode() {
     depStallsInserted = 0;
     depStallsNeeded = 0;
   }
+  didLockDecode = true;
 }
 
 void sim_pipe::decode()
@@ -884,6 +912,7 @@ void sim_pipe::run(unsigned cycles) {
   switch (cycles) {
   case CYCLES_NOT_DECLARED:
     while (!program_complete) {
+      immediateBreak = false;
       processor_key_update();
       if (doWriteBack) {
         write_back();
@@ -897,16 +926,19 @@ void sim_pipe::run(unsigned cycles) {
       if (doExecute) {
         execute();
       }
-      if (doDecode) {
-        decode();
-      }
       if (doLockDecode) {
         lock_decode();
+        clock_cycles++;
+        
+      }
+      if (doDecode) {
+        decode();
+        didLockDecode=false;
       }
       if (doBranchFetch) {
         branch_fetch();
       }
-      if (doFetch) {
+      if (!immediateBreak&&doFetch) {
         fetch();
       }
       clock_cycles++;
@@ -920,6 +952,7 @@ void sim_pipe::run(unsigned cycles) {
        * will be called. If, however, multiple instructions have been fetched,
        * the number of functions called also changes*/
       processor_key_update();
+      immediateBreak=false;
       if (doWriteBack) {
         write_back();
       }
@@ -932,16 +965,19 @@ void sim_pipe::run(unsigned cycles) {
       if (doExecute) {
         execute();
       }
-      if (doDecode) {
-        decode();
-      }
       if (doLockDecode) {
         lock_decode();
+        clock_cycles++;
+        break;
+      }
+      if (doDecode) {
+        decode();
+        didDecode=true;
       }
       if (doBranchFetch) {
         branch_fetch();
       }
-      if (doFetch) {
+      if (!immediateBreak&&doFetch) {
         fetch();
       }
       cyclesThisRun++;

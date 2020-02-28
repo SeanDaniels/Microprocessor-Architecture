@@ -294,6 +294,30 @@ SW	R3 0(R1)
 ADDI 	R1 R1 4
 BNEZ	R2 T1	
 EOP
+
+
+| R0 = R0 xor'd R0 | R0 = 0                                       |   |   |
+| R1 = R0 + R0     | R1 = 0                                       |   |   |
+| R2 = R0 + 6      | R2 = 6                                       |   |   |
+| [R1] -> R3       | whatever is at address of R1 (0), load to R3 |   |   |
+| R3 = R3 + 5      |                                              |   |   |
+| R2 = R2 - 1      | R2 = 5                                       |   |   |
+| R3 -> [R1]       | Put R3's value into address indicated by R1  |   |   |
+| R1 = R1 + 4      | R1 = 4                                       |   |   |
+| Branch on R2     |                                              |   |   |
+
+DATA MEMORY
+| 0 | Val1 |
+| 1 | Val2 |
+
+R3 = val1
+take dataMemory[0], add 5 to it
+load this value into data memory 0
+NEXT ITERATION
+R3 = val2
+take dataMemory[1], add 5 to it
+load this value back into data
+
 +--------------+---+---+---+---+----+----+---+---+---+---+----+---+---+----+-----------------------------------------------+---+---+
 | ADD R1 R0 R0 | F | D | E | M | WB |    |   |   |   |   |    |   |   |    |                                               |   |   |
 +--------------+---+---+---+---+----+----+---+---+---+---+----+---+---+----+-----------------------------------------------+---+---+

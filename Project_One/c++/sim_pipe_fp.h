@@ -54,7 +54,7 @@ typedef enum { INTEGER, ADDER, MULTIPLIER, DIVIDER } exe_unit_t;
 
 typedef enum{PRE_FETCH, IF_ID, ID_EXE, EXE_MEM, MEM_WB} pipeline_stage_t;
 
-typedef enum{INT_INSTRUCTION,FP_INSTRUCTIONS} instruction_type_t;
+typedef enum{INT_INSTRUCTION,FP_INSTRUCTION} instruction_type_t;
 
 typedef enum {PIPELINE_PC} pre_fetch_stage_t;
 
@@ -259,6 +259,8 @@ public:
   void normal_decode(instruction_t currentInstruction);
   void lock_decode();
   void memory_stall();
+  kind_of_instruction_t
+  instruction_type_check(instruction_t checkedInstruction);
   instruction_type_t instruction_type(opcode_t opcode);
   bool fp_reg_dependent(opcode_t opcode);
   bool check_over_write_data_hazard(unsigned dest, exe_unit_t type);

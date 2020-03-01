@@ -896,9 +896,15 @@ void sim_pipe_fp::check_RAW_dataHazard(){
   if(ID_instruction.opcode != NOP && ID_instruction.opcode != EOP){
     if(((ID_src1 == MEM_instruction.dest || ID_src2 == MEM_instruction.dest) && MEM_instruction.dest != UNDEFINED) ||
        ((ID_src1 == WB_instruction.dest  || ID_src2 == WB_instruction.dest ) && WB_instruction.dest  != UNDEFINED)){
-      if( (writes_to_FP(MEM_instruction.opcode) && reads_from_FP(ID_instruction.opcode)) || (writes_to_FP(WB_instruction.opcode) && reads_from_FP(ID_instruction.opcode)) ||
-          (writes_to_GP(MEM_instruction.opcode) && reads_from_GP(ID_instruction.opcode)) || (writes_to_GP(WB_instruction.opcode) && reads_from_GP(ID_instruction.opcode)) ){
-            DH_RAW_stall = 1;
+      if ((writes_to_FP(MEM_instruction.opcode) &&
+           reads_from_FP(ID_instruction.opcode)) ||
+          (writes_to_FP(WB_instruction.opcode) &&
+           reads_from_FP(ID_instruction.opcode)) ||
+          (writes_to_GP(MEM_instruction.opcode) &&
+           reads_from_GP(ID_instruction.opcode)) ||
+          (writes_to_GP(WB_instruction.opcode) &&
+           reads_from_GP(ID_instruction.opcode))) {
+        DH_RAW_stall = 1;
       }
     }
   }

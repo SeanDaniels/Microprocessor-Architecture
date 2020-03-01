@@ -398,9 +398,12 @@ void sim_pipe::fetch(){
   static unsigned valuePassedAsPC;
   static instruction_t currentInstruction;
   /*IDK if the following declaration will work */
-  static instruction_t stallInstruction={NOP};
-  static int stallsNeeded = 0;
+  static instruction_t stallInstruction={NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
+  static int stallsNeeded = 2;
   static int potentialNPC;
+  static bool insertStall = false;
+  static int stallCounter = 0;
+  bool skip = false;
 /*Determine next instruction to fetch: this is an issue b/c next instruction isn't alwasy immediately available
  * For example, if the instruction we just fetched is a branching instruction, the next fetch won't be known for two clock cycles
  * Current structure hinges on a pulling of an instruction to determine what instruction should be pulled next.*/
@@ -416,43 +419,45 @@ void sim_pipe::fetch(){
   /*get current instruction*/
   currentInstruction = instr_memory[fetchInstructionIndex];
   /*Check if branch*/
-  if(instruction_type_check(currentInstruction)==COND_INSTR){
-    /*If current instruction is a branching one, turn fetch off, let some other function handle this*/
-    /* Still want to pass this current instruction forward */
+  if(insertStall){
+    pipeline.stage[IF_ID].parsedInstruction = stallInstruction;
+    stallCounter++;
+    stalls++;
+    if(stallCounter==stallsNeeded){
+      insertStall=false;
+      stallCounter=0;
+      if(pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]){
+        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
+      }
+      else{
+        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+      }
+      skip = true;
+    }
+  }
+  if((!insertStall)&&(!skip)){
+
     pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
     /*push NPC to first pipeline register*/
     pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
     pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
-    /*Maybe update Pipeline PC here, so its ready when this fetcher gets turned back on?*/
-    /*branch_fetch will run on next clock cycle, inserting a NOP*/
-    //branch_fetch();
-    /*This stage runs last, only set next values, processor_key_update will fix the rest of the values*/
-    doBranchFetch=true;
-    doFetch=false;
-  }
-  /*Arith/Load/Store instruction*/
-  else if(currentInstruction.opcode!=EOP){
-    pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
-    /*push NPC to first pipeline register*/
-    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
-    /*Set PC for next fetch*/
-    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
-  }
-  /*Check if EOP*/
-  else{
-    /*EOP instructions*/
-    /*Set pc to undefined??*/
-    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
-    /*Set npc to undefined??*/
-    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-        pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
-    /*Set fetcher to zero*/
-    pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
-    doFetch = false;
-    //pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+    if (instruction_type_check(currentInstruction) == COND_INSTR) {
+      stallCounter = 0;
+      insertStall = true;
+    }
+    if (currentInstruction.opcode == EOP) {
+      /*EOP instructions*/
+      /*Set pc to undefined??*/
+      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
+      /*Set npc to undefined??*/
+      pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
+          pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+      /*Set fetcher to zero*/
+      pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+      // pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+    }
   }
   /*push instruction to first pipeline register forward*/
-
 }
 
 bool single_source_check(instruction_t checkInstruction) {
@@ -526,7 +531,7 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
         else{
           retVal=stage_location(pipelineInstructions[i].opcode)-1;
           globalStoreDepStalls+=retVal;
-          stalls+=retVal;
+          stalls++;
           return retVal;
         }
       }
@@ -542,7 +547,7 @@ int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
         else{
           retVal=stage_location(pipelineInstructions[i].opcode)-1;
           globalStoreDepStalls+=retVal;
-          stalls+=retVal;
+          stalls++;
           return retVal;
         }
       }
@@ -783,7 +788,7 @@ void sim_pipe::memory_stall(){
    stalledALUOutput = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
   }
 
-  if(memoryStallNumber!=(data_memory_latency-1)) {
+  if(memoryStallNumber>=(data_memory_latency+1)) {
     /*insert another stall*/
     /*Keep other units off*/
     doFetch=false;
@@ -791,7 +796,6 @@ void sim_pipe::memory_stall(){
     doExecute=false;
     doMemory=false;
     doMemoryStall=true;
-    stalls++;
     pipeline.stage[MEM_WB].parsedInstruction = {NOP};
   } else {
     doFetch=true;
@@ -799,6 +803,7 @@ void sim_pipe::memory_stall(){
     doExecute=true;
     doMemory=true;
     doMemoryStall=false;
+    stalls++;
     /*reset memory stall counter*/
     memoryStallNumber = 0;
     switch (stalledInstruction.opcode) {
@@ -945,10 +950,7 @@ void sim_pipe::run(unsigned cycles) {
       if (!didLockDecode&&doDecode) {
         decode();
       }
-      if (doBranchFetch) {
-        branch_fetch();
-      }
-      if (!immediateBreak&&doFetch) {
+      if (!immediateBreak) {
         fetch();
       }
       clock_cycles++;
@@ -986,10 +988,7 @@ void sim_pipe::run(unsigned cycles) {
         decode();
         didLockDecode=true;
       }
-      if (doBranchFetch) {
-        branch_fetch();
-      }
-      if (!immediateBreak&&doFetch) {
+      if (!immediateBreak) {
         fetch();
       }
       cyclesThisRun++;
@@ -1116,4 +1115,18 @@ unsigned sim_pipe::get_stalls() {
 
 unsigned sim_pipe::get_clock_cycles() {
   return clock_cycles; // please modify
+}
+
+void sim_pipe::set_sp_reg(pipeline_stage_t thisStage, int reg, unsigned registerVal){
+  pipeline.stage[thisStage].spRegisters[reg]=registerVal;
+}
+
+instruction_t sim_pipe::get_sp_reg_instruction(pipeline_stage_t thisStage,
+                                               instruction_t thisInstruction) {
+  return pipeline.stage[thisStage].parsedInstruction;
+}
+
+void sim_pipe::set_sp_reg_instruction(pipeline_stage_t thisStage,
+                                      instruction_t thisInstruction) {
+  pipeline.stage[thisStage].parsedInstruction = thisInstruction;
 }

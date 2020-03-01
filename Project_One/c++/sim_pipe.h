@@ -21,6 +21,7 @@ using namespace std;
 typedef enum { PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD } sp_register_t;
 
 typedef enum {IF_R,B_IF_R,ID_R,L_ID_R,EXE_R,MEM_R,S_MEM_R,WB_R} run_functions_t;
+
 typedef enum {
   LW,
   SW,
@@ -41,13 +42,21 @@ typedef enum {
 } opcode_t;
 
 typedef enum { IF, ID, EXE, MEM, WB } stage_t;
+
 typedef enum {IF_M,ID_M,EXE_M,MEM_M,WB_M,LD_M} my_stage_t;
+
 typedef enum {PRE_FETCH,IF_ID,ID_EXE,EXE_MEM,MEM_WB} pipeline_stage_t;
+
 typedef enum {PIPELINE_PC} pre_fetch_stage_t;
+
 typedef enum {IF_ID_NPC} fetch_decode_stage_t;
+
 typedef enum {ID_EXE_A, ID_EXE_B, ID_EXE_IMM, ID_EXE_NPC} decode_execute_stage_t;
+
 typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND} execute_memory_stage_t;
+
 typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD} memory_writeback_stage_t;
+
 typedef enum {ARITH_INSTR, COND_INSTR, LWSW_INSTR, NOPEOP_INSTR} kind_of_instruction_t;
 
 typedef struct {
@@ -187,11 +196,17 @@ public:
   void normal_decode(instruction_t currentInstruction);
   /*function to handle a decode when the pipeline is locked*/
   void lock_decode();
+
   void execute();
+
   void memory();
+
   void write_back();
+
   void processor_key_update();
+
   void set_program_complete();
+
   bool get_program_complete();
     /*function to determine if a data dep exists*/
   int data_dep_check(instruction_t checkedInstruction);
@@ -200,8 +215,17 @@ public:
   instruction_type_check(instruction_t checkedInstruction);
   /*function to handle branch NOP insertions*/
   void branch_fetch();
+
   void memory_stall();
+
   int stage_location(opcode_t checkOpcode);
+
+  void set_sp_reg(pipeline_stage_t thisStage, int reg, unsigned registerVal);
+
+  void set_sp_reg_instruction(pipeline_stage_t thisStage, instruction_t thisInstruction);
+
+  instruction_t get_sp_reg_instruction(pipeline_stage_t thisStage,
+                                       instruction_t thisInstruction);
 };
 
 #endif /*SIM_PIPE_H_*/

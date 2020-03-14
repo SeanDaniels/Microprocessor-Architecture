@@ -55,25 +55,30 @@ typedef enum { ISSUE, EXECUTE, WRITE_RESULT, COMMIT } stage_t;
 
 // instruction data type
 typedef struct {
-  opcode_t opcode; // opcode
-  unsigned src1;   // first source register in the assembly instruction (for SW,
-                 // register to be written to memory)
-  unsigned src2;      // second source register in the assembly instruction
-  unsigned dest;      // destination register
-  unsigned immediate; // immediate field
-  string label; // for conditional branches, label of the target instruction -
-                // used only for parsing/debugging purposes
+/*opcode*/
+  opcode_t opcode;
+/*first source register in the assembly instruction (for SW,register to be written to memory)*/
+  unsigned src1;
+/*second source register in the assembly instruction*/
+  unsigned src2;
+/*destination register*/
+  unsigned dest;
+/*immediate field*/
+  unsigned immediate;
+/*for conditional branches, label of the target instruction -used only for parsing/debugging purposes*/
+  string label;
 } instruction_t;
 
 // execution unit
 typedef struct {
-  exe_unit_t type;  // execution unit type
-  unsigned latency; // execution unit latency
-  unsigned busy;    // 0 if execution unit is free, otherwise number of clock
-                 // cycles during which the execution unit will be busy. It
-                 // should be initialized to the latency of the unit when the
-                 // unit becomes busy, and decremented at each clock cycle
-  unsigned pc; // PC of the instruction using the functional unit
+// execution unit type
+  exe_unit_t type;
+  // execution unit latency
+  unsigned latency;
+/* 0 if execution unit is free, otherwise number of clock cycles during which the execution unit will be busy. It should be initialized to the latency of the unit when the becomes busy, and decremented at each clock cycle*/
+  unsigned busy;
+/*PC of the instruction using the functional unit*/
+  unsigned pc;
 } unit_t;
 
 // entry in the "instruction window"
@@ -86,6 +91,7 @@ typedef struct {
                    // clock cycle when the store starts committing
 } instr_window_entry_t;
 
+// Re Order Buffer
 // ROB entry
 typedef struct {
   bool ready;  // ready field
@@ -132,7 +138,11 @@ typedef struct {
 class sim_ooo {
 
   /* Add the data members required by your simulator's implementation here */
+  //gp integer registers
+  int int_gp[NUM_GP_REGISTERS];
 
+  //gp floating point registers
+  float float_gp[NUM_GP_REGISTERS];
   /* end added data members */
 
   // issue width

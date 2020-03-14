@@ -16,7 +16,7 @@ all:	$(TESTCASES)
 
 # generic rule for converting any .cc file to any .o file
 .cc.o:
-	$(CC) $(CFLAGS) -c *.cc
+	$(CC) $(CFLAGS) -c ./source/*.cc
 
 #rule for creating the object files for all the testcases in the "testcases" folder
 testcase: 

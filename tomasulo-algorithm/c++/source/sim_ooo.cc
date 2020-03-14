@@ -729,12 +729,24 @@ void sim_ooo::reset() {
   }
 
   // general purpose registers
+  for(int i = 0; i<NUM_GP_REGISTERS; i++){
+	  float_gp[i] = UNDEFINED;
+	  int_gp[i] = UNDEFINED;
+  }
 
   // pending_instructions
+  for(unsigned i = 0; i < pending_instructions.num_entries; i++){
+	clean_instr_window(pending_instructions.num_entries[i]);
+  }
 
   // rob
-
-  // reservation_stations
+  for (unsigned i = 0; i < rob.num_entries; i++) {
+	clean_rob(rob.entries[i]);
+  }
+  // cleaning reservation stations
+  for (unsigned i = 0; i < reservation_stations.num_entries; i++) {
+	clean_res_station(reservation_stations.entries[i]);
+  }
 
   // execution statistics
   clock_cycles = 0;
@@ -746,16 +758,20 @@ void sim_ooo::reset() {
 /* registers related */
 
 int sim_ooo::get_int_register(unsigned reg) {
-  return UNDEFINED; // please modify
+  return int_gp[reg];// please modify
 }
 
-void sim_ooo::set_int_register(unsigned reg, int value) {}
+void sim_ooo::set_int_register(unsigned reg, int value) {
+	int_gp[reg] = value;
+}
 
 float sim_ooo::get_fp_register(unsigned reg) {
-  return UNDEFINED; // please modify
+  return float_gp[reg]; // please modify
 }
 
-void sim_ooo::set_fp_register(unsigned reg, float value) {}
+void sim_ooo::set_fp_register(unsigned reg, float value) {
+	float_gp[reg] = value;
+}
 
 unsigned sim_ooo::get_int_register_tag(unsigned reg) {
   return UNDEFINED; // please modify

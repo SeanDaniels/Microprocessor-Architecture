@@ -13,8 +13,14 @@ using namespace std;
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 16
 #define NUM_STAGES 5
+#define MY_NUM_STAGES 6
+#define NUM_RUN_FUNCTIONS 8
 #define CYCLES_NOT_DECLARED NULL
+#define BRANCH_STALLS 2
+
 typedef enum { PC, NPC, IR, A, B, IMM, COND, ALU_OUTPUT, LMD } sp_register_t;
+
+typedef enum {IF_R,B_IF_R,ID_R,L_ID_R,EXE_R,MEM_R,S_MEM_R,WB_R} run_functions_t;
 
 typedef enum {
   LW,
@@ -36,12 +42,22 @@ typedef enum {
 } opcode_t;
 
 typedef enum { IF, ID, EXE, MEM, WB } stage_t;
+
+typedef enum {IF_M,ID_M,EXE_M,MEM_M,WB_M,LD_M} my_stage_t;
+
 typedef enum {PRE_FETCH,IF_ID,ID_EXE,EXE_MEM,MEM_WB} pipeline_stage_t;
+
 typedef enum {PIPELINE_PC} pre_fetch_stage_t;
+
 typedef enum {IF_ID_NPC} fetch_decode_stage_t;
+
 typedef enum {ID_EXE_A, ID_EXE_B, ID_EXE_IMM, ID_EXE_NPC} decode_execute_stage_t;
+
 typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND} execute_memory_stage_t;
+
 typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD} memory_writeback_stage_t;
+
+typedef enum {ARITH_INSTR, COND_INSTR, LWSW_INSTR, NOPEOP_INSTR} kind_of_instruction_t;
 
 typedef struct {
   opcode_t opcode; // opcode
@@ -69,7 +85,7 @@ class sim_pipe {
   /* Add the data members required by your simulator's implementation here */
 
   // instruction memory
-  instruction_t instr_memory[PROGRAM_SIZE];
+  instruction_t instr_memory[PROGRAM_SIZE] = {NOP};
 
   // base address in the instruction memory where the program is loaded
   unsigned instr_base_address;
@@ -174,15 +190,42 @@ public:
 
   unsigned conditional_evaluation(unsigned evaluate, opcode_t condition);
   void fetch();
+  /*function to determine which type of decode needs to be done*/
   void decode();
+  /*function to handle a decode when the pipeline isn't locked*/
+  void normal_decode(instruction_t currentInstruction);
+  /*function to handle a decode when the pipeline is locked*/
+  void lock_decode();
+
   void execute();
+
   void memory();
+
   void write_back();
+
   void processor_key_update();
+
   void set_program_complete();
+
   bool get_program_complete();
+    /*function to determine if a data dep exists*/
+  int data_dep_check(instruction_t checkedInstruction);
+    /*function to determine what kind of instruction is being processed*/
+  kind_of_instruction_t
+  instruction_type_check(instruction_t checkedInstruction);
+  /*function to handle branch NOP insertions*/
+  void branch_fetch();
 
+  void memory_stall();
 
+  int stage_location(opcode_t checkOpcode);
+
+  void set_sp_reg(pipeline_stage_t thisStage, int reg, unsigned registerVal);
+
+  void set_sp_reg_instruction(pipeline_stage_t thisStage, instruction_t thisInstruction);
+
+  instruction_t get_sp_reg_instruction(pipeline_stage_t thisStage,
+                                       instruction_t thisInstruction);
 };
 
 #endif /*SIM_PIPE_H_*/

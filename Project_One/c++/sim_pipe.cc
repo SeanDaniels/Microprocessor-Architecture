@@ -10,13 +10,26 @@
 //#define DEBUG
 
 using namespace std;
-
-int decodeNeeded = 0;
-int executeNeeded = 0;
-int memoryNeeded = 0;
-int writeBackNeeded = 0;
-int processorKey[5] = {1,0,0,0,0};
-int processorKeyNext[5] = {1,0,0,0,0};
+bool immediateBreak = false;
+bool doDecode = true;
+bool didDecode = false;
+bool didLockDecode = false;
+bool didMemoryStall = false;
+bool doExecute = true;
+bool doMemory = true;
+bool doWriteBack = true;
+bool doFetch = true;
+bool doMemoryStall = false;
+bool doBranchFetch = false;
+bool doLockDecode = false;
+int processorKey[NUM_RUN_FUNCTIONS] = {1,0,0,0,0,0,0,0};
+int processorKeyNext[NUM_RUN_FUNCTIONS] = {1,0,0,0,0,0,0,0};
+int depStallsNeeded = 0;
+int memoryStallNumber = 0;
+int globalBranches = 0;
+int globalStoreDepStalls = 0;
+int globalLoadDepStalls = 0;
+int globalArithDepStalls= 0;
 // used for debugging purposes
 static const char *reg_names[NUM_SP_REGISTERS] = {
     "PC", "NPC", "IR", "A", "B", "IMM", "COND", "ALU_OUTPUT", "LMD"};
@@ -255,13 +268,16 @@ sim_pipe::~sim_pipe() { delete[] data_memory; }
 
    ============================================================= */
 void sim_pipe::processor_key_update(){
-  for (int i = 0; i < NUM_STAGES; i++) {
-    processorKey[i] = processorKeyNext[i];
+  for (int i = 0; i < NUM_RUN_FUNCTIONS; i++) {
+    int &keyVal = processorKeyNext[i];
+    processorKey[i] = keyVal;
   }
 }
+
 void sim_pipe::set_program_complete(){
   program_complete = true;
 }
+
 unsigned sim_pipe::conditional_evaluation(unsigned evaluate, opcode_t condition){
   switch (condition){
   case BEQZ:
@@ -280,6 +296,7 @@ unsigned sim_pipe::conditional_evaluation(unsigned evaluate, opcode_t condition)
     return 0;
   }
 }
+<<<<<<< HEAD
 bool is_branching_instruction(opcode_t a_opcode){
   switch (a_opcode){
   case BEQZ:
@@ -293,11 +310,99 @@ bool is_branching_instruction(opcode_t a_opcode){
     return false;
   }
 }
+=======
+
+>>>>>>> Simple-Pipeline-Working
 bool sim_pipe::get_program_complete(){
   return program_complete;
 }
 
-void sim_pipe::fetch() {
+kind_of_instruction_t
+sim_pipe::instruction_type_check(instruction_t checkedInstruction) {
+  switch (checkedInstruction.opcode) {
+  case ADD:
+  case ADDI:
+  case SUB:
+  case SUBI:
+  case XOR:
+    return ARITH_INSTR;
+  case LW:
+  case SW:
+    return LWSW_INSTR;
+  case BEQZ:
+  case BNEZ:
+  case BGTZ:
+  case BGEZ:
+  case BLTZ:
+  case BLEZ:
+  case JUMP:
+    return COND_INSTR;
+  case EOP:
+  case NOP:
+    return NOPEOP_INSTR;
+  }
+}
+
+void sim_pipe::branch_fetch() {
+  /* Need some way to control this better. This setup would call this over and
+   * over for any given branch */
+  /*Set counter for stalls added*/
+  static int branchStallsInserted = 0;
+  static unsigned potentialNPC;
+  static unsigned immediate;
+/*Check if first insertion. If first insertion, store current NPC*/
+/*If not first insertion, don't over-write the stored npc, this will be used to determine which branch to take*/
+
+  if (!branchStallsInserted++) {
+    potentialNPC = pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+  }
+
+  /*PASS NOP*/
+  pipeline.stage[IF_ID].parsedInstruction = {NOP, UNDEFINED, UNDEFINED,
+                                             UNDEFINED, UNDEFINED, ""};
+  /*forward NOP NPC*/
+  /*If this is first insertion call*/
+  /*increment insertion counter*/
+  /*If more branchStallsInserted are needed*/
+  /*If the required amount of insertions*/
+  if (branchStallsInserted == BRANCH_STALLS) {
+    globalBranches++;
+    stalls+=branchStallsInserted;
+    /*check value of conditional*/
+    if (instruction_type_check(pipeline.stage[EXE_MEM].parsedInstruction) ==
+        COND_INSTR) {
+      /*Really just an error check for debugging*/
+      if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
+        /*If condition evaluated true*/
+        /*get label*/
+        /*
+        immediate = pipeline.stage[EXE_MEM].parsedInstruction.immediate;
+        immediate = (immediate + 4 - 0xFFFFFFE0) / 4;
+        immediate = (immediate * 4) + 0x10000000;
+        */
+        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
+      }
+      else {
+      /*conditon evaluated false*/
+      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = potentialNPC;
+      /*now go fetch that instruction*/
+      }
+    }
+    branchStallsInserted = 0;
+    doFetch = true;
+    doBranchFetch = false;
+    immediateBreak=true;
+
+  }
+
+  else {
+    doFetch=false;
+  }
+  /*reset counter, turn normal fetcher back on*/
+
+}
+
+void sim_pipe::fetch(){
   /*Function to get the next instruction
    * if current instruction is branch, next instruction needs to wait in decode
    * until this instruction is is ex_mem stage
@@ -309,13 +414,23 @@ void sim_pipe::fetch() {
   static unsigned valuePassedAsPC;
   static instruction_t currentInstruction;
   /*IDK if the following declaration will work */
+<<<<<<< HEAD
   static instruction_t stallInstruction={NOP};
   static int stallsNeeded = 0;
 
+=======
+  static instruction_t stallInstruction={NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
+  static int stallsNeeded = 2;
+  static int potentialNPC;
+  static bool insertStall = false;
+  static int stallCounter = 0;
+  bool skip = false;
+>>>>>>> Simple-Pipeline-Working
 /*Determine next instruction to fetch: this is an issue b/c next instruction isn't alwasy immediately available
  * For example, if the instruction we just fetched is a branching instruction, the next fetch won't be known for two clock cycles
  * Current structure hinges on a pulling of an instruction to determine what instruction should be pulled next.*/
 
+<<<<<<< HEAD
   unsigned branchingCond = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND];
   if(stallsNeeded){
     currentInstruction = stallInstruction;
@@ -425,36 +540,188 @@ void sim_pipe::fetch() {
   //   break;                                                                     //
   // }                                                                            //
   //////////////////////////////////////////////////////////////////////////////////
+=======
+/*Arith/Load/Store Instructions*/
+  /*Get current PC*/
+  fetchInstruction = pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];
+  /*Set NPC*/
+  valuePassedAsPC = fetchInstruction+4;
+  /* set fetchInstruction to a value that can be used as an index
+     * for instr_memory[] */
+  fetchInstructionIndex = (fetchInstruction-0x10000000)/4;
+  /*get current instruction*/
+  currentInstruction = instr_memory[fetchInstructionIndex];
+  /*Check if branch*/
+  if(insertStall){
+    pipeline.stage[IF_ID].parsedInstruction = stallInstruction;
+    stallCounter++;
+    stalls++;
+    if(stallCounter==stallsNeeded){
+      insertStall=false;
+      stallCounter=0;
+      if(pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]){
+        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
+      }
+      else{
+        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+      }
+      skip = true;
+    }
+  }
+  if((!insertStall)&&(!skip)){
+
+    pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+    /*push NPC to first pipeline register*/
+    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
+    if (instruction_type_check(currentInstruction) == COND_INSTR) {
+      stallCounter = 0;
+      insertStall = true;
+    }
+    if (currentInstruction.opcode == EOP) {
+      /*EOP instructions*/
+      /*Set pc to undefined??*/
+      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
+      /*Set npc to undefined??*/
+      pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
+          pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
+      /*Set fetcher to zero*/
+      pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
+      // pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+    }
+  }
+  /*push instruction to first pipeline register forward*/
 }
-void sim_pipe::decode()
-{
-  /*Function to parse the register file into special purpose registers
+
+bool single_source_check(instruction_t checkInstruction) {
+  if (checkInstruction.opcode == ADDI || checkInstruction.opcode == SUBI ||
+      checkInstruction.opcode == LW || checkInstruction.opcode == SW) {
+    return true;
+
+  } else {
+    return false;
+  }
+}
+
+int sim_pipe::stage_location(opcode_t checkOpcode) {
+  static int forwardStages = 2;
+  switch (checkOpcode) {
+  case ADD:
+  case ADDI:
+  case SUB:
+  case SUBI:
+  case XOR:
+    return forwardStages;
+    break;
+  case LW:
+    return forwardStages + data_memory_latency;
+    break;
+  case SW:
+    return forwardStages + data_memory_latency - 1;
+  default:
+    return 0;
+  }
+  return 0;
+>>>>>>> Simple-Pipeline-Working
+}
+
+/*Function to check if flow dependencies exist in the pipeline, return number of stalls needed*/
+int sim_pipe::data_dep_check(instruction_t checkedInstruction) {
+  /*array to hold instructions that exist further down the pipeline. I believe
+   * that the only pipeline registers I'm concerned with are the decode/execute
+   * register and execute/memory register. The memory/writeback register will
+   * already have been processed by the time this check happens*/
+  static int PRE_MEMORY = 0;
+  static int PRE_WRITE_BACK = 1;
+  static int FORWARD_STAGES = 2;
+  int retVal = 0;
+
+  instruction_t pipelineInstructions[FORWARD_STAGES];
+  /*Need 2 stalls*/
+  /*Destination of some instruction may be the source of this instruction, but
+   * that may not matter*/
+  /*SW R4 R0*/
+  /*ADDI R5 R4 10*/
+  /*Src1 of ADDI = 4, src2 of ADDI = 0*/
+  /*Possible deps dest of SW*/
+  pipelineInstructions[PRE_MEMORY] = pipeline.stage[EXE_MEM].parsedInstruction;
+  /*if function is in mem WB already, next time the proc runs, decode will be
+   * ready*/
+  /*Need one stall*/
+  pipelineInstructions[PRE_WRITE_BACK] =
+      pipeline.stage[MEM_WB].parsedInstruction;
+  /* Loop through entries in pipeline instruction array
    */
-  /*forward instruction register from ID_EXE stage*/
-  instruction_t currentInstruction = pipeline.stage[IF_ID].parsedInstruction;
+  /*get memory latency*/
+  for (int i = 0; i < FORWARD_STAGES; i++) {
+    if (single_source_check(checkedInstruction)) {
+      if (pipelineInstructions[i].dest == checkedInstruction.src1) {
+        if (i == PRE_MEMORY) {
+          retVal=stage_location(pipelineInstructions[i].opcode);
+          globalLoadDepStalls+=retVal;
+          stalls+=retVal;
+          return retVal;
+        }
+        else{
+          retVal=stage_location(pipelineInstructions[i].opcode)-1;
+          globalStoreDepStalls+=retVal;
+          stalls++;
+          return retVal;
+        }
+      }
+    }
+    else{
+      if (pipelineInstructions[i].dest == checkedInstruction.src1 || pipelineInstructions[i].dest == checkedInstruction.src2){
+        if(i==PRE_MEMORY){
+          globalLoadDepStalls+=retVal;
+          retVal=stage_location(pipelineInstructions[i].opcode);
+          stalls+=retVal;
+          return retVal;
+        }
+        else{
+          retVal=stage_location(pipelineInstructions[i].opcode)-1;
+          globalStoreDepStalls+=retVal;
+          stalls++;
+          return retVal;
+        }
+      }
+    }
+  }
+  return 0;
+}
+/* if either of the following pipeline register's destination (write back
+ * location) contain either argument found in the current instruction, a
+ * flow hazard exists */
+
+void sim_pipe::normal_decode(instruction_t currentInstruction) {
+  
   pipeline.stage[ID_EXE].parsedInstruction = currentInstruction;
-  /*different functions pass different values through the sp registers. This is
-   * the start of conditional logic to determine which values should be pushed
-   * through, but it is incomplete*/
-  switch (currentInstruction.opcode)
-  {
-    case SW:
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = gp_registers[currentInstruction.src1];
+  /*different functions pass different values through the sp registers. This
+   * is the start of conditional logic to determine which values should be
+   * pushed through, but it is incomplete*/
+  switch (currentInstruction.opcode) {
+  case SW:
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] =
+        gp_registers[currentInstruction.src1];
     /*don't pass B*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = gp_registers[currentInstruction.src2];
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
+        gp_registers[currentInstruction.src2];
     /*pass immediate reg*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = currentInstruction.immediate;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
+        currentInstruction.immediate;
     /*pass NPC (I don't think this value will change)*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
         pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-      break;
+    break;
   case LW:
     /*don't pass A*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = gp_registers[currentInstruction.src1];
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
+        gp_registers[currentInstruction.src1];
     /*don't pass B*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
     /*pass immediate reg*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = currentInstruction.immediate;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
+        currentInstruction.immediate;
     /*pass NPC (I don't think this value will change)*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
         pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
@@ -462,9 +729,11 @@ void sim_pipe::decode()
   case ADD:
   case SUB:
   case XOR:
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =gp_registers[currentInstruction.src1];
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
+        gp_registers[currentInstruction.src1];
     /*don't pass B*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = gp_registers[currentInstruction.src2];
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] =
+        gp_registers[currentInstruction.src2];
     /*pass immediate reg*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
     /*pass NPC (I don't think this value will change)*/
@@ -473,11 +742,13 @@ void sim_pipe::decode()
     break;
   case ADDI:
   case SUBI:
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = gp_registers[currentInstruction.src1];
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] =
+        gp_registers[currentInstruction.src1];
     /*don't pass B*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
     /*pass immediate reg*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = currentInstruction.immediate;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
+        currentInstruction.immediate;
     /*pass NPC (I don't think this value will change)*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
         pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
@@ -489,11 +760,12 @@ void sim_pipe::decode()
   case BLTZ:
   case BNEZ:
   case JUMP:
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = currentInstruction.src1;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = gp_registers[currentInstruction.src1];
     /*don't pass B*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
     /*pass immediate reg*/
-    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = currentInstruction.immediate;
+    pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] =
+        currentInstruction.immediate;
     /*pass NPC (I don't think this value will change)*/
     pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] =
         pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
@@ -509,11 +781,92 @@ void sim_pipe::decode()
         pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
     break;
   }
-  //decrement number of decodes stages needed
-  processorKeyNext[ID]--;
-  //increment number of execute stages needed
-  processorKeyNext[EXE]++;
+  // decrement number of decodes stages needed
 }
+
+void sim_pipe::lock_decode() {
+  /*Pass NOP instruction*/
+  static instruction_t stalled_instruction;
+  static int depStallsInserted = 0;
+  pipeline.stage[ID_EXE].parsedInstruction = {NOP, UNDEFINED, UNDEFINED,
+                                              UNDEFINED, UNDEFINED, ""};
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = UNDEFINED;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] = UNDEFINED;
+
+  /*check to see if more stalls will be needed*/
+  doExecute = true;
+  if(!depStallsInserted++){
+    stalled_instruction=pipeline.stage[IF_ID].parsedInstruction;
+    /*Turn fetcher off*/
+    doFetch=false;
+    /*Next clock cycle, return to lock_decode()*/
+    doLockDecode=true;
+    /*Next clock cycle, do not run normal decode*/
+    doDecode=false;
+  }
+  if(depStallsInserted!=depStallsNeeded){
+    processorKey[ID_R] = 0;
+  }
+  /*If the appropriate number of stalls has been inserted*/
+  if (depStallsInserted==depStallsNeeded) {
+    if(depStallsNeeded==1){
+      immediateBreak = true;
+    }
+    //normal_decode(stalled_instruction);
+    doLockDecode=false;
+    /*Turn normal decoder on (for next clock cycle)*/
+    doDecode=true;
+    /*Turn fetcher On (for this clock cycle)*/
+    //processorKey[0] = 1;
+    /*Turn fetcher On (for next clock cycle)*/
+    doFetch = true;
+    depStallsInserted = 0;
+    depStallsNeeded = 0;
+  }
+  immediateBreak = true;
+  didLockDecode = true;
+}
+
+void sim_pipe::decode()
+{
+  /*Function to parse the register file into special purpose registers
+   */
+  /*forward instruction register from ID_EXE stage*/
+  /*Create variable to hold current instruction*/
+  instruction_t currentInstruction =  pipeline.stage[IF_ID].parsedInstruction;
+  /*Create variable to hold stall instruction*/
+  static unsigned lastCheckedInstruction = UNDEFINED; 
+  /*If the pipeline isn't already locked, chech for dependency*/
+  /*RESTRUCTURING: no need to check for dep lock, because */
+  if(currentInstruction.opcode!=NOP && currentInstruction.opcode!=EOP && lastCheckedInstruction!=currentInstruction.opcode){
+      depStallsNeeded = data_dep_check(currentInstruction);
+  }
+  else
+  {
+    depStallsNeeded=0;
+  }
+  
+
+  if (!depStallsNeeded) {
+    /*create function to handle normal decode*/
+    normal_decode(currentInstruction);
+    lastCheckedInstruction = UNDEFINED;
+  } else {
+    /*handle stall decode*/
+    /*after calling lock decode*/
+    lastCheckedInstruction = currentInstruction.opcode;
+    lock_decode();
+
+  }
+  if(currentInstruction.opcode == EOP){
+    doDecode=false;
+    doLockDecode=false;
+  }
+}
+
+
 void sim_pipe::execute() {
   /*ID_EXE -> EXE_MEM*/
   /* Forward instruction register from  */
@@ -534,19 +887,88 @@ void sim_pipe::execute() {
 
 
   /* Generate conditional output */
-  pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND] = conditional_evaluation(
-      pipeline.stage[ID_EXE].spRegisters[ID_EXE_A],
-      pipeline.stage[EXE_MEM].parsedInstruction.opcode);
+  /* But don't overwrite current conditional output if its needed */
+  if (instruction_type_check(currentInstruction) != NOPEOP_INSTR) {
+    pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND] = conditional_evaluation(
+        pipeline.stage[ID_EXE].spRegisters[ID_EXE_A],
+        pipeline.stage[EXE_MEM].parsedInstruction.opcode);
+  }
+  else{
+    pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND] = UNDEFINED;
+  }
 
   /*take ALU action*/
   unsigned currentALUOutput = alu(currentInstruction.opcode,executeA,executeB,executeImm,executeNPC);
   
   pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT] = currentALUOutput;
   // decrement number of execute stages needed
-  processorKeyNext[EXE]--;
   // increment number of memory stages needed
-  processorKeyNext[MEM]++;
+  if(currentInstruction.opcode==EOP){
+    doExecute=false;
+  }
 }
+
+void sim_pipe::memory_stall(){
+  static unsigned stalledB;
+  static instruction_t stalledInstruction;
+  static unsigned stalledALUOutput;
+  static unsigned char* whatToLoad;
+  static unsigned whereToLoadFrom;
+  static unsigned loadableData;
+
+  if(!memoryStallNumber++){
+   stalledB =  pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_B];
+   stalledInstruction = pipeline.stage[EXE_MEM].parsedInstruction;
+   stalledALUOutput = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
+  }
+
+  if(memoryStallNumber>=(data_memory_latency+1)) {
+    /*insert another stall*/
+    /*Keep other units off*/
+    doFetch=false;
+    doDecode=false;
+    doExecute=false;
+    doMemory=false;
+    doMemoryStall=true;
+    pipeline.stage[MEM_WB].parsedInstruction = {NOP};
+  } else {
+    doFetch=true;
+    doDecode=true;
+    doExecute=true;
+    doMemory=true;
+    doMemoryStall=false;
+    stalls++;
+    /*reset memory stall counter*/
+    memoryStallNumber = 0;
+    switch (stalledInstruction.opcode) {
+    case LW:
+      /*Determine load value by referencing the data_memory array, at index
+       * generated by the ALU*/
+      whatToLoad = &data_memory[stalledALUOutput];
+      print_memory(0,32);
+      loadableData = char2int(whatToLoad);
+      cout << "Preparing to load: " << loadableData<< " from memory" << endl;
+      /*Pass the reference of the load value to conversion function
+       * Pass conversion function ot next stage of pipeline*/
+      pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD] = loadableData;
+      break;
+    case SW:
+      /*Pass memory address (pulled from register, processed with ALU) to
+       * conversion function THIS conversion function handles writing to memory
+       * (store-word doesn't need a write_back() call)
+       */
+      cout<<"Inserting: "<<stalledB<<" at "<< stalledALUOutput<< " offset from base addr." << endl;
+      int2char(stalledB, data_memory + stalledALUOutput);
+      print_memory(0,32);
+      break;
+    default:
+      break;
+    }
+    pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = stalledALUOutput;
+    processorKeyNext[WB_R]++;
+  }
+}
+
 void sim_pipe::memory() {
   unsigned char* whatToLoad;
   unsigned whereToLoadFrom;
@@ -558,33 +980,32 @@ void sim_pipe::memory() {
       pipeline.stage[EXE_MEM].parsedInstruction;
   opcode_t currentOpcode = currentInstruction.opcode;
   pipeline.stage[MEM_WB].parsedInstruction = currentInstruction;
-  // propogate ALU output
+
+  //
+  /*paropogate ALU output*/
+  /*only if instruction is not LW or SW*/
   unsigned currentALUOutput =
     pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
-  pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
 
-switch(currentOpcode){
-    case LW:
-      /*Determine load value by referencing the data_memory array, at index generated by the ALU*/
-      whatToLoad = &data_memory[currentALUOutput];
-      /*Pass the reference of the load value to conversion function
-       * Pass conversion function ot next stage of pipeline*/
-      pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD] = char2int(whatToLoad);
-      break;
-    case SW:
-      /*Pass memory address (pulled from register, processed with ALU) to conversion function
-        * THIS conversion function handles writing to memory (store-word doesn't need a write_back() call)
-       */
-      int2char(currentB,data_memory+currentALUOutput);
-      break;
-    default:
-      break;
+  switch (currentOpcode) {
+  case LW:
+  case SW:
+    memory_stall();
+    /* Write to register ahead? */
+    // pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
+    break;
+  case EOP:
+    doMemory=false;
+    break;
+  default:
+    pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
+    doWriteBack=true;
+    break;
   }
   // decrement number of memory stages needed
-  processorKeyNext[MEM]--;
   // Conditionally increment number of write back stages needed
-  processorKeyNext[WB]++;
 }
+
 void sim_pipe::write_back() {
   //put whats in the alu output register into the destination that
   //is in the destination register
@@ -625,62 +1046,83 @@ void sim_pipe::write_back() {
   }
   if(currentInstruction.opcode == EOP){
     program_complete=true;
+    pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = UNDEFINED;
   }
-  else{
+  if(currentInstruction.opcode != NOP && currentInstruction.opcode != EOP)
+  {
     instructions_executed++;
   }
-  processorKeyNext[WB]--;
 }
 /* body of the simulator */
 void sim_pipe::run(unsigned cycles) {
   switch (cycles) {
   case CYCLES_NOT_DECLARED:
     while (!program_complete) {
+      immediateBreak = false;
+      didLockDecode = false;
+      didMemoryStall = false;
       processor_key_update();
-      if (processorKey[WB]) {
+      if (doWriteBack) {
         write_back();
       }
-      if (processorKey[MEM]) {
+      if(doMemoryStall){
+        memory_stall();
+        didMemoryStall=true;
+      }
+      if (!didMemoryStall&&doMemory) {
         memory();
       }
-      if (processorKey[EXE]) {
+      if (doExecute) {
         execute();
       }
-      if (processorKey[ID]) {
+      if (doLockDecode) {
+        lock_decode();
+        didLockDecode=true;
+        //clock_cycles++;
+        
+      }
+      if (!didLockDecode&&doDecode) {
         decode();
       }
-      if (processorKey[IF]) {
+      if (!immediateBreak) {
         fetch();
       }
       clock_cycles++;
     }
     clock_cycles--;
-
       break;
-    
   default:
     unsigned cyclesThisRun = 0;
     while (cyclesThisRun < cycles) {
       /*If there is only one instruction in the pipeline, only one funciton
        * will be called. If, however, multiple instructions have been fetched,
-       * the number of functions called also changes I'm struggline with
-       * implementing changing the number of actions taken within the while
-       * loop*/
-      // trying with this stupid array check and copy system
+       * the number of functions called also changes*/
       processor_key_update();
-      if (processorKey[WB]) {
+      immediateBreak=false;
+      didLockDecode=false;
+      if (doWriteBack) {
         write_back();
       }
-      if (processorKey[MEM]) {
+      if (doMemory) {
         memory();
       }
-      if (processorKey[EXE]) {
+      if(doMemoryStall){
+        memory_stall();
+      }
+      if (doExecute) {
         execute();
       }
-      if (processorKey[ID]) {
-        decode();
+      if (doLockDecode) {
+        lock_decode();
+        didLockDecode=true;
+        //clock_cycles++;
+        //break;
       }
-      if (processorKey[IF]) {
+      if (!didLockDecode&&doDecode) {
+        decode();
+        didLockDecode=true;
+      }
+      if (!immediateBreak) {
         fetch();
       }
       cyclesThisRun++;
@@ -701,9 +1143,10 @@ void sim_pipe::reset() {
         data_memory[i] = 0xFF;
     }
     /* Clear sp registers */
-    for(int i = 0; i<NUM_STAGES-1;i++){
+    for(int i = 1; i<NUM_STAGES;i++){
         for(int j = 0; j< NUM_SP_REGISTERS; j++){
           pipeline.stage[i].spRegisters[j] = UNDEFINED;
+          pipeline.stage[i].parsedInstruction = {NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
         }
     }
 
@@ -806,4 +1249,18 @@ unsigned sim_pipe::get_stalls() {
 
 unsigned sim_pipe::get_clock_cycles() {
   return clock_cycles; // please modify
+}
+
+void sim_pipe::set_sp_reg(pipeline_stage_t thisStage, int reg, unsigned registerVal){
+  pipeline.stage[thisStage].spRegisters[reg]=registerVal;
+}
+
+instruction_t sim_pipe::get_sp_reg_instruction(pipeline_stage_t thisStage,
+                                               instruction_t thisInstruction) {
+  return pipeline.stage[thisStage].parsedInstruction;
+}
+
+void sim_pipe::set_sp_reg_instruction(pipeline_stage_t thisStage,
+                                      instruction_t thisInstruction) {
+  pipeline.stage[thisStage].parsedInstruction = thisInstruction;
 }

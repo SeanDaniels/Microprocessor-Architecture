@@ -564,20 +564,32 @@ void sim_pipe_fp::run_EXE(){
   sp_register_bank->set_EXMEM(finished_unit.B, finished_unit.ALU_out, finished_unit.condition, finished_unit.IR);
 }
 void sim_pipe_fp::run_MEM(){
+  //
   unsigned alu_temp, condition;
+  //
   instruction_t temp_instruction;
+  //
   unsigned memory = UNDEFINED;
+  //
   static unsigned mem_cycles = 0;
+  //
   condition = get_sp_register(COND,MEM);
   temp_instruction = get_IR(MEM);
   alu_temp = get_sp_register(ALU_OUTPUT, MEM);
   if(mem_cycles < data_memory_latency && is_memory(temp_instruction.opcode)){
+    //
     SH_MEM_stall = 1;
+    //
     sp_register_bank->set_WE(MEM, 0);
+    //
     mem_cycles++;
+    //
     memory = UNDEFINED;
+    //
     condition = 0;
+    //
     temp_instruction = STALL;
+    //
     alu_temp = UNDEFINED;
   }else if(is_memory(temp_instruction.opcode)){
     mem_cycles = 0;
@@ -895,7 +907,8 @@ void sim_pipe_fp::check_RAW_dataHazard(){
   unsigned ID_src2 = ID_instruction.src2;
   if(ID_instruction.opcode != NOP && ID_instruction.opcode != EOP){
     if(((ID_src1 == MEM_instruction.dest || ID_src2 == MEM_instruction.dest) && MEM_instruction.dest != UNDEFINED) ||
-       ((ID_src1 == WB_instruction.dest  || ID_src2 == WB_instruction.dest ) && WB_instruction.dest  != UNDEFINED)){
+       ((ID_src1 == WB_instruction.dest  || ID_src2 == WB_instruction.dest ) && WB_instruction.dest  != UNDEFINED))
+    {
       if ((writes_to_FP(MEM_instruction.opcode) &&
            reads_from_FP(ID_instruction.opcode)) ||
           (writes_to_FP(WB_instruction.opcode) &&

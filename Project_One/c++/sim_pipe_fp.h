@@ -64,7 +64,7 @@ typedef enum {ID_EXE_A, ID_EXE_B, ID_EXE_IMM, ID_EXE_NPC} decode_execute_stage_t
 
 typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND} execute_memory_stage_t;
 
-typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD} memory_writeback_stage_t;
+typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD,MEM_WB_COND} memory_writeback_stage_t;
 
 typedef enum {ARITH_INSTR, COND_INSTR, LWSW_INSTR, NOPEOP_INSTR} kind_of_instruction_t;
 
@@ -112,9 +112,13 @@ typedef struct {
   instruction_t instruction; // instruction using the functional unit
   pipeline_alu thisALU;
 } unit_t;
+
 typedef struct {
-    instruction_t parsedInstruction;
-    unsigned spRegisters[NUM_SP_REGISTERS] = {UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED};
+  int clear_to_write = 1;
+  instruction_t parsedInstruction;
+  unsigned spRegisters[NUM_SP_REGISTERS] = {UNDEFINED, UNDEFINED, UNDEFINED,
+                                            UNDEFINED, UNDEFINED, UNDEFINED,
+                                            UNDEFINED, UNDEFINED, UNDEFINED};
 } pipeline_sp_t;
 
 typedef struct {
@@ -147,8 +151,8 @@ class sim_pipe_fp {
   unsigned STRUCT_HAZ_EXE_STALL;
   unsigned STRUCT_HAZ_MEM_STALL;
   unsigned CONTROL_HAZ_STALL;
-  unsigned DATA_HAZ_LATE_READ_STALL;
-  unsigned DATA_HAZ_OVER_WRITE_STALL;
+  unsigned DATA_RAW_STALL;
+  unsigned DATA_WAW_STALL;
   unsigned stalls = 0;
 
   /*number of clock cycles */
@@ -256,15 +260,15 @@ public:
   void write_back();
   int stage_location(opcode_t checkOpcode);
   int data_dep_check(instruction_t checkedInstruction);
-  void normal_decode(instruction_t currentInstruction);
+  void normal_decode();
   void lock_decode();
   void memory_stall();
   kind_of_instruction_t
   instruction_type_check(instruction_t checkedInstruction);
   instruction_type_t instruction_type(opcode_t opcode);
   bool fp_reg_dependent(opcode_t opcode);
-  bool check_over_write_data_hazard(unsigned dest, exe_unit_t type);
-  bool check_read_after_write_hazard();
+  bool WAW_check(unsigned dest, exe_unit_t type);
+  bool RAW_check();
   bool src_dep_check(instruction_t dependentInst, instruction_t hingeInst);
 
 private:

@@ -27,7 +27,11 @@ static const char *unit_names[4] = {"INTEGER", "ADDER", "MULTIPLIER",
                                     "DIVIDER"};
 int number_of_stalls = 0;
 int number_of_cycles = 0;
-int depStallsNeeded = 0;
+int dep_stalls_needed = 0;
+int control_stall=0;
+int number_of_control_stalls=0;
+int cycles_run = 0;
+int control_stalls_inserted=0;
 /* =============================================================
 
    HELPER FUNCTIONS
@@ -221,6 +225,7 @@ unsigned sim_pipe_fp::get_free_unit(opcode_t opcode) {
   for (unsigned u = 0; u < num_units; u++) {
     switch (opcode) {
     // Integer unit
+    case NOP:
     case LW:
     case SW:
     case ADD:
@@ -420,31 +425,54 @@ void sim_pipe_fp::load_program(const char *filename, unsigned base_address) {
 
 /* simulator */
 void sim_pipe_fp::run(unsigned cycles) {
-  // write_back();
-  // memory();
-  // if (!STRUCT_HAZ_MEM_STALL) {
-  //    execute();
-  //    decode();
-  //    if (!DATA_HAZ_LATE_READ_STALL && !DATA_HAZ_OVER_WRITE_STALL &&
-  //        !STRUCT_HAZ_EXE_STALL) {
-  //     fetch();
-  //   }
-  // }
-  // if(DATA_HAZ_LATE_READ_STALL || DATA_HAZ_OVER_WRITE_STALL ||
-  //     STRUCT_HAZ_EXE_STALL || STRUCT_HAZ_MEM_STALL){
-  //      number_of_stalls++;
-  // }
-  // DATA_HAZ_OVER_WRITE_STALL = 0;
-  // DATA_HAZ_LATE_READ_STALL = 0;
-  // STRUCT_HAZ_EXE_STALL = 0;
-  // number_of_cycles++;
+  if (!cycles) {
+    write_back();
+    memory();
+    if (!STRUCT_HAZ_MEM_STALL) {
+      execute();
+      normal_decode();
+      if (!DATA_RAW_STALL && !DATA_WAW_STALL && !STRUCT_HAZ_EXE_STALL) {
+        fetch();
+      }
+    }
+    if (DATA_RAW_STALL || DATA_WAW_STALL || STRUCT_HAZ_EXE_STALL ||
+        STRUCT_HAZ_MEM_STALL) {
+      number_of_stalls++;
+    }
+    DATA_RAW_STALL = 0;
+    DATA_WAW_STALL = 0;
+    STRUCT_HAZ_EXE_STALL = 0;
+    number_of_cycles++;
+  } else {
+    while (cycles_run < cycles) {
+      write_back();
+      memory();
+      if (!STRUCT_HAZ_MEM_STALL) {
+        execute();
+        normal_decode();
+        if (!DATA_RAW_STALL && !DATA_WAW_STALL && !STRUCT_HAZ_EXE_STALL) {
+          fetch();
+        }
+      }
+      if (DATA_RAW_STALL || DATA_WAW_STALL || STRUCT_HAZ_EXE_STALL ||
+          STRUCT_HAZ_MEM_STALL) {
+        number_of_stalls++;
+      }
+      DATA_RAW_STALL = 0;
+      DATA_WAW_STALL = 0;
+      STRUCT_HAZ_EXE_STALL = 0;
+      number_of_cycles++;
+      cycles_run++;
+    }
+    cycles_run = 0;
+  }
 }
 
 // reset the state of the sim_pipe_fpulator
 void sim_pipe_fp::reset() {
   // init data memory
   for (unsigned i = 0; i < data_memory_size; i++)
-    data_memory[i] = 0xFF;
+    data_memory[i] = (float)0xFF;
   // init instruction memory
   for (int i = 0; i < PROGRAM_SIZE; i++) {
     instr_memory[i].opcode = (opcode_t)NOP;
@@ -452,10 +480,11 @@ void sim_pipe_fp::reset() {
     instr_memory[i].src2 = UNDEFINED;
     instr_memory[i].dest = UNDEFINED;
     instr_memory[i].immediate = UNDEFINED;
+    instr_memory[i].type = INTEGER;
   }
   for (int i = 0; i < NUM_GP_REGISTERS; i++) {
-    gp_int_registers[i] = 0;
-    gp_float_registers[i] = 0;
+    gp_int_registers[i] = UNDEFINED;
+    gp_float_registers[i] = float2unsigned(UNDEFINED);
   }
 
   /* complete the reset function here */
@@ -463,6 +492,12 @@ void sim_pipe_fp::reset() {
     exec_units[i].busy = false;
     exec_units[i].latency = UNDEFINED;
     exec_units[i].instruction = {NOP};
+  }
+  for(int i = 0; i<NUM_STAGES; i++){
+    pipeline.stage[i].parsedInstruction={NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
+    for(int j = 0; j< NUM_SP_REGISTERS;j++){
+      pipeline.stage[i].spRegisters[j]=UNDEFINED;
+    }
   }
 }
 
@@ -549,11 +584,23 @@ void sim_pipe_fp::set_int_register(unsigned reg, int value) {
 
 float sim_pipe_fp::get_fp_register(unsigned reg) {
 
-  return gp_float_registers[reg]; // please modify
+  return unsigned2float(gp_float_registers[reg]); // please modify
 }
 
+bool writes_to_FP(opcode_t opcode){
+  return (opcode == LWS || opcode == SWS ||opcode == ADDS || opcode == SUBS || opcode == MULTS || opcode == DIVS);
+}
+bool writes_to_GP(opcode_t opcode){
+  return (opcode == ADD || opcode == SUB || opcode == XOR || opcode == LW || opcode == SW || opcode == ADDI || opcode == SUBI);
+}
+bool reads_from_GP(opcode_t opcode){
+  return (opcode == ADD || opcode == SUB || opcode == XOR || opcode == LW || opcode == SW|| opcode == LWS || opcode == SWS || opcode == SUBI || opcode == ADDI || is_branch(opcode));
+}
+bool reads_from_FP(opcode_t opcode){
+  return (opcode == ADDS || opcode == SUBS || opcode == MULTS || opcode == DIVS);
+}
 void sim_pipe_fp::set_fp_register(unsigned reg, float value) {
-  gp_float_registers[reg] = value;
+  gp_float_registers[reg] = float2unsigned(value);
 }
 
 float sim_pipe_fp::get_IPC() {
@@ -571,12 +618,18 @@ unsigned sim_pipe_fp::get_clock_cycles() {
 }
 
 unsigned sim_pipe_fp::get_stalls() {
-  return stalls; // please modify
+  if(control_stalls_inserted){
+    return number_of_stalls+number_of_control_stalls;
+  }
+  else{
+    return number_of_stalls;
+  }
 }
 
 instruction_t sim_pipe_fp::get_instruction(pipeline_stage_t s) {
   return pipeline.stage[s].parsedInstruction;
 }
+
 
 void sim_pipe_fp::write_back() {
   // put whats in the alu output register into the destination that
@@ -602,6 +655,7 @@ void sim_pipe_fp::write_back() {
   case XOR:
     intWriteBackNeeded = true;
     break;
+  case LWS:
   case ADDS:
   case MULTS:
   case DIVS:
@@ -626,11 +680,11 @@ void sim_pipe_fp::write_back() {
   if (fpWriteBackNeeded) {
     switch (currentOpcode) {
     case LWS:
-      gp_float_registers[registerIndex] = unsigned2float(currentALUOutput);
+      gp_float_registers[registerIndex] = currentLMD;
       pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD] = UNDEFINED;
       break;
     default:
-      gp_float_registers[registerIndex] = unsigned2float(currentALUOutput);
+      gp_float_registers[registerIndex] = currentALUOutput;
       pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = UNDEFINED;
       break;
     }
@@ -645,18 +699,18 @@ void sim_pipe_fp::write_back() {
 }
 
 void sim_pipe_fp::fetch() {
-  /*Function to get the next instruction
-   * if current instruction is branch, next instruction needs to wait in decode
-   * until this instruction is is ex_mem stage
-   */
-
-  /* Create variable to hold PC */
-  static unsigned fetchInstruction;
-  static unsigned fetchInstructionIndex;
-  static unsigned valuePassedAsPC;
-  static instruction_t currentInstruction;
+  unsigned fetchInstruction;
+  unsigned fetchInstructionIndex;
+  unsigned valuePassedAsPC;
+  instruction_t currentInstruction;
+  instruction_t checkInstruction;
+  checkInstruction.immediate=pipeline.stage[MEM_WB].parsedInstruction.immediate;
+  checkInstruction.dest=pipeline.stage[MEM_WB].parsedInstruction.dest;
+  checkInstruction.src2=pipeline.stage[MEM_WB].parsedInstruction.src2;
+  checkInstruction.src1=pipeline.stage[MEM_WB].parsedInstruction.src1;
+  checkInstruction.opcode=pipeline.stage[MEM_WB].parsedInstruction.opcode;
   /*IDK if the following declaration will work */
-  static instruction_t stallInstruction = {NOP,       UNDEFINED, UNDEFINED,
+  instruction_t nextInstruction = {NOP, UNDEFINED, UNDEFINED,
                                            UNDEFINED, UNDEFINED, ""};
   static int stallsNeeded = 2;
   static int potentialNPC;
@@ -672,54 +726,359 @@ void sim_pipe_fp::fetch() {
   /*Arith/Load/Store Instructions*/
   /*Get current PC*/
   fetchInstruction = pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC];
-  /*Set NPC*/
-  valuePassedAsPC = fetchInstruction + 4;
+  /*branch instruction has made it to the end*/
+  if (checkInstruction.opcode > XOR && checkInstruction.opcode < EOP) {
+    control_stall = 0;
+    number_of_control_stalls++;
+    if (pipeline.stage[MEM_WB_COND].spRegisters[MEM_WB_COND] == 1) {
+      fetchInstruction =
+          pipeline.stage[MEM_WB_COND].spRegisters[MEM_WB_ALU_OUT];
+    }
+  }
+  fetchInstructionIndex = (fetchInstruction - instr_base_address) / 4;
   /* set fetchInstruction to a value that can be used as an index
    * for instr_memory[] */
-  fetchInstructionIndex = (fetchInstruction - 0x10000000) / 4;
   /*get current instruction*/
-  currentInstruction = instr_memory[fetchInstructionIndex];
+  nextInstruction = instr_memory[fetchInstructionIndex];
+  /*Set NPC*/
+  valuePassedAsPC = fetchInstruction + 4;
   /*Check if branch*/
-  if (insertStall) {
-    pipeline.stage[IF_ID].parsedInstruction = stallInstruction;
-    stallCounter++;
-    stalls++;
-    if (stallCounter == stallsNeeded) {
-      insertStall = false;
-      stallCounter = 0;
-      if (pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND]) {
-        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] =
-            pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
-      } else {
-        pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] =
-            pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-      }
-      skip = true;
-    }
+  if(control_stall){
+    valuePassedAsPC = valuePassedAsPC -4;
+    nextInstruction = {NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
   }
-  if ((!insertStall) && (!skip)) {
+  else if(nextInstruction.opcode==EOP){
+    valuePassedAsPC = valuePassedAsPC -4;
+  }
+  pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
+  if(control_stall){
+    valuePassedAsPC = UNDEFINED;
+  }
+  pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+  pipeline.stage[IF_ID].parsedInstruction=nextInstruction;
+  if(nextInstruction.opcode>XOR && nextInstruction.opcode<EOP){
+    number_of_control_stalls++;
+    control_stall=1;
+    control_stalls_inserted = 1;
+  }
+}
 
-    pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
-    /*push NPC to first pipeline register*/
-    pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
-    pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = valuePassedAsPC;
-    if (instruction_type_check(currentInstruction)==COND_INSTR) {
-      stallCounter = 0;
-      insertStall = true;
-    }
-    if (currentInstruction.opcode == EOP) {
-      /*EOP instructions*/
-      /*Set pc to undefined??*/
-      pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = fetchInstruction;
-      /*Set npc to undefined??*/
-      pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] =
-          pipeline.stage[IF_ID].spRegisters[PIPELINE_PC];
-      /*Set fetcher to zero*/
-      pipeline.stage[IF_ID].parsedInstruction = currentInstruction;
-      // pipeline.stage[IF_ID].spRegisters[IF_ID_NPC] = valuePassedAsPC;
+void sim_pipe_fp::normal_decode() {
+  unsigned checkA, checkB, checkNPC, checkImmediate;
+  instruction_t checkInstruction;
+  checkInstruction.immediate = pipeline.stage[IF_ID].parsedInstruction.immediate;
+  checkInstruction.opcode = pipeline.stage[IF_ID].parsedInstruction.opcode;
+  checkInstruction.src1 = pipeline.stage[IF_ID].parsedInstruction.src1;
+  checkInstruction.src2 = pipeline.stage[IF_ID].parsedInstruction.src2;
+  checkInstruction.label = pipeline.stage[IF_ID].parsedInstruction.label;
+  checkInstruction.dest = pipeline.stage[IF_ID].parsedInstruction.dest;
+  checkInstruction.type = pipeline.stage[IF_ID].parsedInstruction.type;
+
+  // pipeline.stage[ID_EXE].parsedInstruction = currentInstruction;
+  /*different functions pass different values through the sp registers. This
+   * is the start of conditional logic to determine which values should be
+   * pushed through, but it is incomplete*/
+  switch (checkInstruction.opcode) {
+  case SW:
+    checkA = get_int_register(checkInstruction.src2);
+    checkB = get_int_register(checkInstruction.src1);
+    checkInstruction.type = INTEGER;
+    checkInstruction.dest = UNDEFINED;
+    break;
+  case SWS:
+    checkA = get_int_register(checkInstruction.src2);
+    checkB = float2unsigned(get_fp_register(checkInstruction.src1));
+    checkInstruction.dest = UNDEFINED;
+    checkInstruction.type = INTEGER;
+    break;
+  case LW:
+  case LWS:
+    /*don't pass A*/
+    checkA = get_int_register(checkInstruction.src1);
+    checkB = UNDEFINED;
+    checkInstruction.type = INTEGER;
+    break;
+  case ADD:
+  case SUB:
+  case XOR:
+    checkA = gp_int_registers[checkInstruction.src1];
+    checkB = gp_int_registers[checkInstruction.src2];
+    checkInstruction.immediate = UNDEFINED;
+    checkInstruction.type = INTEGER;
+    break;
+  case ADDI:
+  case SUBI:
+    checkA = gp_int_registers[checkInstruction.src1];
+    checkB = UNDEFINED;
+    checkInstruction.type = INTEGER;
+    break;
+  case BEQZ:
+  case BGEZ:
+  case BGTZ:
+  case BLEZ:
+  case BLTZ:
+  case BNEZ:
+  case JUMP:
+    checkA = gp_int_registers[checkInstruction.src1];
+    checkB = UNDEFINED;
+    checkInstruction.dest = UNDEFINED;
+    checkInstruction.type = INTEGER;
+    break;
+  case ADDS:
+  case SUBS:
+    checkInstruction.type = ADDER;
+    checkA = float2unsigned(get_fp_register(checkInstruction.src1));
+    checkB = float2unsigned(get_fp_register(checkInstruction.src2));
+    checkInstruction.immediate = UNDEFINED;
+    break;
+  case MULTS:
+    checkInstruction.type = MULTIPLIER;
+    checkA = float2unsigned(get_fp_register(checkInstruction.src1));
+    checkB = float2unsigned(get_fp_register(checkInstruction.src2));
+    checkInstruction.immediate = UNDEFINED;
+    break;
+  case DIVS:
+    checkInstruction.type = DIVIDER;
+    checkA = float2unsigned(get_fp_register(checkInstruction.src1));
+    checkB = float2unsigned(get_fp_register(checkInstruction.src2));
+    checkInstruction.immediate = UNDEFINED;
+    break;
+  default:
+    checkB = UNDEFINED;
+    checkA = UNDEFINED;
+    checkInstruction.immediate = UNDEFINED;
+    checkInstruction.type=INTEGER;
+    break;
+  }
+  checkNPC = pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
+  checkImmediate = checkInstruction.immediate;
+  RAW_check();
+  WAW_check(checkInstruction.dest,checkInstruction.type);
+
+  if (get_free_unit(checkInstruction.opcode) == UNDEFINED) {
+    STRUCT_HAZ_EXE_STALL = 1;
+  }
+
+  if (STRUCT_HAZ_EXE_STALL || DATA_RAW_STALL ||
+      DATA_WAW_STALL) {
+    checkA = UNDEFINED;
+    checkB = UNDEFINED;
+    checkImmediate = UNDEFINED;
+    checkNPC = UNDEFINED;
+    checkInstruction.opcode = NOP;
+    checkInstruction.src1 = UNDEFINED;
+    checkInstruction.src2 = UNDEFINED;
+    checkInstruction.dest = UNDEFINED;
+    checkInstruction.immediate = UNDEFINED;
+    checkInstruction.label = "";
+  }
+
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = checkA;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = checkB;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] = checkNPC;
+  pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = checkImmediate;
+  pipeline.stage[ID_EXE].parsedInstruction.opcode = checkInstruction.opcode;
+  pipeline.stage[ID_EXE].parsedInstruction.src2= checkInstruction.src2;
+  pipeline.stage[ID_EXE].parsedInstruction.src1= checkInstruction.src1;
+  pipeline.stage[ID_EXE].parsedInstruction.immediate = checkInstruction.immediate;
+  pipeline.stage[ID_EXE].parsedInstruction.type= checkInstruction.type;
+  pipeline.stage[ID_EXE].parsedInstruction.dest= checkInstruction.dest;
+}
+
+void sim_pipe_fp::execute() {
+  /*ID_EXE -> EXE_MEM*/
+  /* Forward instruction register from  */
+  instruction_t currentInstruction;
+
+  currentInstruction.immediate = pipeline.stage[ID_EXE].parsedInstruction.immediate;
+  currentInstruction.opcode = pipeline.stage[ID_EXE].parsedInstruction.opcode;
+  currentInstruction.src1 = pipeline.stage[ID_EXE].parsedInstruction.src1;
+  currentInstruction.src2 = pipeline.stage[ID_EXE].parsedInstruction.src2;
+  currentInstruction.label = pipeline.stage[ID_EXE].parsedInstruction.label;
+  currentInstruction.dest = pipeline.stage[ID_EXE].parsedInstruction.dest;
+  currentInstruction.type = pipeline.stage[ID_EXE].parsedInstruction.type;
+  /* get A to use in this stage */
+  unsigned executeA = pipeline.stage[ID_EXE].spRegisters[ID_EXE_A];
+  /* get B to use in this stage */
+  unsigned executeB = pipeline.stage[ID_EXE].spRegisters[ID_EXE_B];
+  /* get NPC to use in this stage */
+  unsigned executeNPC = pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC];
+
+  unsigned latency;
+
+  unsigned pendingCompletion = UNDEFINED;
+
+  pipeline_alu completedExecution;
+
+  /* Generate conditional output */
+  /* But don't overwrite current conditional output if its needed */
+  if (currentInstruction.opcode != EOP &&  currentInstruction.opcode!=NOP) {
+    unsigned executionIndex = get_free_unit(currentInstruction.opcode);
+    pipeline_alu tempRegister;
+    latency = exec_units[executionIndex].latency;
+    tempRegister.out = alu(currentInstruction.opcode, executeA, executeB,
+                           currentInstruction.immediate, executeNPC);
+
+      tempRegister.aluB = executeB;
+      tempRegister.cond =
+          conditional_evaluation(executeA, currentInstruction.opcode);
+      tempRegister.instruction.type = currentInstruction.type;
+      tempRegister.instruction.dest = currentInstruction.dest;
+      tempRegister.instruction.label = currentInstruction.label;
+      tempRegister.instruction.src1 = currentInstruction.src1;
+      tempRegister.instruction.src2 = currentInstruction.src2;
+      tempRegister.instruction.opcode= currentInstruction.opcode;
+      tempRegister.instruction.immediate = currentInstruction.immediate;
+
+      exec_units[executionIndex].thisALU =
+          tempRegister;
+
+      exec_units[executionIndex].busy=(latency+1);
+
+  }
+  for (int i = 0; i < num_units; i++) {
+    if (exec_units[i].busy == 1) {
+      pendingCompletion = 1;
+      completedExecution = exec_units[i].thisALU;
+      exec_units[i].thisALU.instruction={NOP,UNDEFINED, UNDEFINED,
+                               UNDEFINED, UNDEFINED, ""};
     }
   }
-  /*push instruction to first pipeline register forward*/
+  if (pendingCompletion == UNDEFINED) {
+    completedExecution.cond = UNDEFINED;
+    completedExecution.out = UNDEFINED;
+    completedExecution.aluB = UNDEFINED;
+  }
+  decrement_units_busy_time();
+
+  if(pipeline.stage[EXE_MEM].clear_to_write){
+    pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT] =
+        completedExecution.out;
+    pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_B] = completedExecution.aluB;
+    pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND] = completedExecution.cond;
+
+    pipeline.stage[EXE_MEM].parsedInstruction.type =
+        completedExecution.instruction.type;
+    pipeline.stage[EXE_MEM].parsedInstruction.dest =
+        completedExecution.instruction.dest;
+    pipeline.stage[EXE_MEM].parsedInstruction.label =
+        completedExecution.instruction.label;
+    pipeline.stage[EXE_MEM].parsedInstruction.src1 =
+        completedExecution.instruction.src1;
+    pipeline.stage[EXE_MEM].parsedInstruction.src2 =
+        completedExecution.instruction.src2;
+    pipeline.stage[EXE_MEM].parsedInstruction.opcode =
+        completedExecution.instruction.opcode;
+  }
+}
+void sim_pipe_fp::memory() {
+  static unsigned memory_stalls = 0;
+  unsigned char* buffer;
+  //unsigned char whatToLoadInt[4];
+  unsigned whereToLoadFrom;
+  unsigned loadableData;
+  unsigned currentB;
+  float holdVal;
+  instruction_t currentInstruction;
+  opcode_t currentOpcode;
+  unsigned currentLMD;
+//
+  unsigned cond = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND];
+//
+  currentInstruction.immediate = pipeline.stage[EXE_MEM].parsedInstruction.immediate;
+  currentInstruction.opcode = pipeline.stage[EXE_MEM].parsedInstruction.opcode;
+  currentInstruction.src1 = pipeline.stage[EXE_MEM].parsedInstruction.src1;
+  currentInstruction.src2 = pipeline.stage[EXE_MEM].parsedInstruction.src2;
+  currentInstruction.label = pipeline.stage[EXE_MEM].parsedInstruction.label;
+  currentInstruction.dest = pipeline.stage[EXE_MEM].parsedInstruction.dest;
+  currentInstruction.type = pipeline.stage[EXE_MEM].parsedInstruction.type;
+//
+  unsigned currentALUOutput =
+      pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
+//
+  currentLMD = UNDEFINED;
+//
+  currentB = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_B];
+  currentOpcode=currentInstruction.opcode;
+  /*not ready*/
+  if (memory_stalls < data_memory_latency &&
+      (currentOpcode == SW || currentOpcode == SWS || currentOpcode == LW ||
+       currentOpcode == LWS)) {
+    memory_stalls++;
+    currentLMD=UNDEFINED;
+    currentInstruction = {NOP, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, ""};
+    currentALUOutput = UNDEFINED;
+    currentLMD = UNDEFINED;
+    pipeline.stage[EXE_MEM].clear_to_write=0;
+    cond = 0;
+    STRUCT_HAZ_MEM_STALL = 1;
+    // dont write to memory
+  }
+  /*ready*/
+  else if ((currentOpcode == SW || currentOpcode == SWS ||
+              currentOpcode == LW || currentOpcode == LWS)) {
+    memory_stalls = 0;
+    STRUCT_HAZ_MEM_STALL = 0;
+    pipeline.stage[EXE_MEM].clear_to_write=1;
+/*int load store*/
+//store
+    if (currentInstruction.opcode == SW || currentInstruction.opcode == LW) {
+      if (currentInstruction.opcode == SW) {
+        cout << "Inserting: " << currentB << " at " << currentALUOutput
+             << " offset from base addr." << endl;
+        write_memory(currentALUOutput, currentB);
+	      print_memory(0xA000, 0xA028);
+	      print_memory(0xB000, 0xB028);
+      }
+      // load
+      else {
+        buffer = &data_memory[currentALUOutput];
+	      print_memory(0xA000, 0xA028);
+	      print_memory(0xB000, 0xB028);
+        currentLMD = char2unsigned(buffer);
+        cout << "Preparing to load: " << currentLMD << " from memory" << endl;
+        /*Pass the reference of the load value to conversion function
+         * Pass conversion function ot next stage of pipeline*/
+        pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD] = currentLMD;
+      }
+    }
+    else if (currentInstruction.opcode == LWS ||
+               currentInstruction.opcode == SWS) {
+      if (currentInstruction.opcode == SWS) {
+        cout << "Inserting: " << currentB << " at " << currentALUOutput
+             << " offset from base addr." << endl;
+        //convert to float?
+        //store to float register
+        //convert to unsigned
+        write_memory(currentALUOutput, currentB);
+        unsigned2char(currentB,data_memory+currentALUOutput);
+	      print_memory(0xA000, 0xA028);
+	      print_memory(0xB000, 0xB028);
+      } else {
+        //character array
+        buffer = &data_memory[currentALUOutput];
+        currentLMD = char2unsigned(buffer); //I have an array of characters that now need to be transferred to a value that an FP reg can hold
+	      print_memory(0xA000, 0xA028);
+	      print_memory(0xB000, 0xB028);
+
+        //currentLMD = char2unsigned(whatToLoad);
+        //currentLMD = unsigned2float(currentLMD);
+        cout << "Preparing to load: " << currentLMD << " from memory" << endl;
+        /*Pass the reference of the load value to conversion function
+         * Pass conversion function ot next stage of pipeline*/
+        pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD] = currentLMD;
+      }
+    }
+  }
+  pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD] = currentLMD;
+  pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
+
+  pipeline.stage[MEM_WB].parsedInstruction.type = currentInstruction.type;
+  pipeline.stage[MEM_WB].parsedInstruction.dest = currentInstruction.dest;
+  pipeline.stage[MEM_WB].parsedInstruction.label = currentInstruction.label;
+  pipeline.stage[MEM_WB].parsedInstruction.src1 = currentInstruction.src1;
+  pipeline.stage[MEM_WB].parsedInstruction.src2 = currentInstruction.src2;
+  pipeline.stage[MEM_WB].parsedInstruction.opcode = currentInstruction.opcode;
 }
 
 bool single_source_check(instruction_t checkInstruction) {
@@ -753,224 +1112,6 @@ int sim_pipe_fp::stage_location(opcode_t checkOpcode) {
   return 0;
 }
 
-/*Function to check if flow dependencies exist in the pipeline, return number of
- * stalls needed*/
-// int sim_pipe_fp::data_dep_check(instruction_t checkedInstruction) {
-//   /*array to hold instructions that exist further down the pipeline. I
-//   believe
-//    * that the only pipeline registers I'm concerned with are the
-//    decode/execute
-//    * register and execute/memory register. The memory/writeback register will
-//    * already have been processed by the time this check happens*/
-//   static int PRE_MEMORY = 0;
-//   static int PRE_WRITE_BACK = 1;
-//   static int FORWARD_STAGES = 2;
-//   int retVal = 0;
-
-//   instruction_t pipelineInstructions[FORWARD_STAGES];
-//   /*Need 2 stalls*/
-//   /*Destination of some instruction may be the source of this instruction,
-//   but
-//    * that may not matter*/
-//   /*SW R4 R0*/
-//   /*ADDI R5 R4 10*/
-//   /*Src1 of ADDI = 4, src2 of ADDI = 0*/
-//   /*Possible deps dest of SW*/
-//   pipelineInstructions[PRE_MEMORY] =
-//   pipeline.stage[EXE_MEM].parsedInstruction;
-//   /*if function is in mem WB already, next time the proc runs, decode will be
-//    * ready*/
-//   /*Need one stall*/
-//   pipelineInstructions[PRE_WRITE_BACK] =
-//       pipeline.stage[MEM_WB].parsedInstruction;
-//   /* Loop through entries in pipeline instruction array
-//    */
-//   /*get memory latency*/
-//   for (int i = 0; i < FORWARD_STAGES; i++) {
-//     if (single_source_check(checkedInstruction)) {
-//       if (pipelineInstructions[i].dest == checkedInstruction.src1) {
-//         if (i == PRE_MEMORY) {
-//           retVal = stage_location(pipelineInstructions[i].opcode);
-//           globalLoadDepStalls += retVal;
-//           stalls += retVal;
-//           return retVal;
-//         } else {
-//           retVal = stage_location(pipelineInstructions[i].opcode) - 1;
-//           globalStoreDepStalls += retVal;
-//           stalls++;
-//           return retVal;
-//         }
-//       }
-//     } else {
-//       if (pipelineInstructions[i].dest == checkedInstruction.src1 ||
-//           pipelineInstructions[i].dest == checkedInstruction.src2) {
-//         if (i == PRE_MEMORY) {
-//           globalLoadDepStalls += retVal;
-//           retVal = stage_location(pipelineInstructions[i].opcode);
-//           stalls += retVal;
-//           return retVal;
-//         } else {
-//           retVal = stage_location(pipelineInstructions[i].opcode) - 1;
-//           globalStoreDepStalls += retVal;
-//           stalls++;
-//           return retVal;
-//         }
-//       }
-//     }
-//   }
-//   return 0;
-// }
-/* if either of the following pipeline register's destination (write back
- * location) contain either argument found in the current instruction, a
- * flow hazard exists */
-
-void sim_pipe_fp::normal_decode(instruction_t currentInstruction) {
-  unsigned checkA, checkB, checkNPC, checkImmediate;
-  instruction_t checkInstruction;
-  checkInstruction = currentInstruction;
-  // pipeline.stage[ID_EXE].parsedInstruction = currentInstruction;
-  /*different functions pass different values through the sp registers. This
-   * is the start of conditional logic to determine which values should be
-   * pushed through, but it is incomplete*/
-  switch (checkInstruction.opcode) {
-  case SW:
-    checkA = gp_int_registers[checkInstruction.src2];
-    checkB = gp_int_registers[checkInstruction.src1];
-    checkInstruction.type = INTEGER;
-    checkInstruction.dest = UNDEFINED;
-    break;
-  case SWS:
-    checkA = gp_int_registers[checkInstruction.src2];
-    checkB = float2unsigned(gp_float_registers[checkInstruction.src1]);
-    checkInstruction.dest = UNDEFINED;
-    checkInstruction.type = INTEGER;
-    break;
-  case LW:
-  case LWS:
-    /*don't pass A*/
-    checkA = gp_int_registers[checkInstruction.src1];
-    checkB = UNDEFINED;
-    checkInstruction.type = INTEGER;
-    break;
-  case ADD:
-  case SUB:
-  case XOR:
-    checkA = gp_int_registers[checkInstruction.src1];
-    checkB = gp_int_registers[checkInstruction.src2];
-    checkInstruction.immediate = UNDEFINED;
-    checkInstruction.type = INTEGER;
-    break;
-  case ADDI:
-  case SUBI:
-    checkA = gp_int_registers[checkInstruction.src1];
-    checkB = UNDEFINED;
-    checkInstruction.immediate = currentInstruction.immediate;
-    checkInstruction.type = INTEGER;
-    break;
-  case BEQZ:
-  case BGEZ:
-  case BGTZ:
-  case BLEZ:
-  case BLTZ:
-  case BNEZ:
-  case JUMP:
-    checkA = gp_int_registers[checkInstruction.src1];
-    checkB = UNDEFINED;
-    checkInstruction.dest = UNDEFINED;
-    checkInstruction.type = INTEGER;
-    break;
-  case ADDS:
-  case SUBS:
-    checkInstruction.type = ADDER;
-    checkA = float2unsigned(gp_float_registers[checkInstruction.src1]);
-    checkB = float2unsigned(gp_float_registers[checkInstruction.src2]);
-    checkInstruction.immediate = UNDEFINED;
-    break;
-  case MULTS:
-    checkInstruction.type = MULTIPLIER;
-    checkA = float2unsigned(gp_float_registers[checkInstruction.src1]);
-    checkB = float2unsigned(gp_float_registers[checkInstruction.src2]);
-    checkInstruction.immediate = UNDEFINED;
-    break;
-  case DIVS:
-    checkInstruction.type = DIVIDER;
-    checkA = float2unsigned(gp_float_registers[checkInstruction.src1]);
-    checkB = float2unsigned(gp_float_registers[checkInstruction.src2]);
-    checkInstruction.immediate = UNDEFINED;
-    break;
-  default:
-    checkB = UNDEFINED;
-    checkA = UNDEFINED;
-    checkInstruction.immediate = UNDEFINED;
-    break;
-  }
-  checkNPC = pipeline.stage[IF_ID].spRegisters[IF_ID_NPC];
-  checkImmediate = checkInstruction.immediate;
-  // check_over_write_data_hazard(checkInstruction.dest,checkInstruction.type);
-  // check_read_after_write_hazard();
-  if (get_free_unit(checkInstruction.opcode) == UNDEFINED) {
-    STRUCT_HAZ_EXE_STALL = 1;
-  }
-  if (STRUCT_HAZ_EXE_STALL || DATA_HAZ_LATE_READ_STALL ||
-      DATA_HAZ_OVER_WRITE_STALL) {
-    checkA = UNDEFINED;
-    checkB = UNDEFINED;
-    checkImmediate = UNDEFINED;
-    checkNPC = UNDEFINED;
-    checkInstruction = {NOP, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, ""};
-  }
-  pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = checkA;
-  pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = checkB;
-  pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] = checkNPC;
-  pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = checkImmediate;
-  pipeline.stage[ID_EXE].parsedInstruction = checkInstruction;
-}
-
-// void sim_pipe_fp::lock_decode() {
-//   /*Pass NOP instruction*/
-//   static instruction_t stalled_instruction;
-//   static int depStallsInserted = 0;
-//   pipeline.stage[ID_EXE].parsedInstruction = {NOP,       UNDEFINED,
-//   UNDEFINED,
-//                                               UNDEFINED, UNDEFINED, ""};
-//   pipeline.stage[ID_EXE].spRegisters[ID_EXE_A] = UNDEFINED;
-//   pipeline.stage[ID_EXE].spRegisters[ID_EXE_B] = UNDEFINED;
-//   pipeline.stage[ID_EXE].spRegisters[ID_EXE_IMM] = UNDEFINED;
-//   pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC] = UNDEFINED;
-
-//   /*check to see if more stalls will be needed*/
-//   doExecute = true;
-//   if (!depStallsInserted++) {
-//     stalled_instruction = pipeline.stage[IF_ID].parsedInstruction;
-//     /*Turn fetcher off*/
-//     doFetch = false;
-//     /*Next clock cycle, return to lock_decode()*/
-//     doLockDecode = true;
-//     /*Next clock cycle, do not run normal decode*/
-//     doDecode = false;
-//   }
-//   if (depStallsInserted != depStallsNeeded) {
-//     processorKey[ID_R] = 0;
-//   }
-//   /*If the appropriate number of stalls has been inserted*/
-//   if (depStallsInserted == depStallsNeeded) {
-//     if (depStallsNeeded == 1) {
-//       immediateBreak = true;
-//     }
-//     // normal_decode(stalled_instruction);
-//     doLockDecode = false;
-//     /*Turn normal decoder on (for next clock cycle)*/
-//     doDecode = true;
-//     /*Turn fetcher On (for this clock cycle)*/
-//     // processorKey[0] = 1;
-//     /*Turn fetcher On (for next clock cycle)*/
-//     doFetch = true;
-//     depStallsInserted = 0;
-//     depStallsNeeded = 0;
-//   }
-//   immediateBreak = true;
-//   didLockDecode = true;
-// }
 
 unsigned sim_pipe_fp::conditional_evaluation(unsigned evaluate,
                                              opcode_t condition) {
@@ -990,170 +1131,6 @@ unsigned sim_pipe_fp::conditional_evaluation(unsigned evaluate,
   default:
     return 0;
   }
-}
-
-void sim_pipe_fp::execute() {
-  /*ID_EXE -> EXE_MEM*/
-  /* Forward instruction register from  */
-  instruction_t currentInstruction = pipeline.stage[ID_EXE].parsedInstruction;
-  /* get A to use in this stage */
-  unsigned executeA = pipeline.stage[ID_EXE].spRegisters[ID_EXE_A];
-  /* get B to use in this stage */
-  unsigned executeB = pipeline.stage[ID_EXE].spRegisters[ID_EXE_B];
-  /* get NPC to use in this stage */
-  unsigned executeNPC = pipeline.stage[ID_EXE].spRegisters[ID_EXE_NPC];
-
-  unsigned latency;
-  unsigned pendingCompletion = UNDEFINED;
-
-  pipeline_alu completedExecution;
-
-  /* Generate conditional output */
-  /* But don't overwrite current conditional output if its needed */
-  if (instruction_type_check(currentInstruction) != NOPEOP_INSTR) {
-    pipeline_alu tempRegister;
-    tempRegister.out = alu(currentInstruction.opcode, executeA, executeB,
-                           currentInstruction.immediate, executeNPC);
-
-      tempRegister.aluB = executeB;
-      tempRegister.cond =
-          conditional_evaluation(executeA, currentInstruction.opcode);
-      tempRegister.instruction = currentInstruction;
-      exec_units[get_free_unit(currentInstruction.opcode)].thisALU =
-          tempRegister;
-   
-  }
-  for (int i = 0; i < num_units; i++) {
-    if (exec_units[i].busy == 1) {
-      pendingCompletion = 1;
-      completedExecution = exec_units[i].thisALU;
-      exec_units[i].thisALU.instruction={NOP,UNDEFINED, UNDEFINED,
-                               UNDEFINED, UNDEFINED, ""};
-    }
-  }
-  if (pendingCompletion == UNDEFINED) {
-    completedExecution.cond = UNDEFINED;
-    completedExecution.out = UNDEFINED;
-    completedExecution.aluB = UNDEFINED;
-  }
-  decrement_units_busy_time();
-
-  pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT] = completedExecution.out;
-
-  pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_B] = completedExecution.aluB;
-
-  pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND] = completedExecution.cond;
-  pipeline.stage[EXE_MEM].parsedInstruction = completedExecution.instruction;
-
-  // if (completedExecution.instruction.opcode == EOP) {
-  //   doExecute = false;
-  // }
-}
-
-// void sim_pipe_fp::memory_stall() {
-//   static unsigned stalledB;
-//   static instruction_t stalledInstruction;
-//   static unsigned stalledALUOutput;
-//   static unsigned char *whatToLoad;
-//   static unsigned whereToLoadFrom;
-//   static unsigned loadableData;
-
-//   if (!memoryStallNumber++) {
-//     stalledB = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_B];
-//     stalledInstruction = pipeline.stage[EXE_MEM].parsedInstruction;
-//     stalledALUOutput = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
-//   }
-
-//   if (memoryStallNumber >= (data_memory_latency + 1)) {
-//     /*insert another stall*/
-//     /*Keep other units off*/
-//     doFetch = false;
-//     doDecode = false;
-//     doExecute = false;
-//     doMemory = false;
-//     doMemoryStall = true;
-//     pipeline.stage[MEM_WB].parsedInstruction = {NOP};
-//   } else {
-//     doFetch = true;
-//     doDecode = true;
-//     doExecute = true;
-//     doMemory = true;
-//     doMemoryStall = false;
-//     stalls++;
-//     /*reset memory stall counter*/
-//     memoryStallNumber = 0;
-//     switch (stalledInstruction.opcode) {
-//     case LW:
-//       /*Determine load value by referencing the data_memory array, at index
-//        * generated by the ALU*/
-//       whatToLoad = &data_memory[stalledALUOutput];
-//       print_memory(0, 32);
-//       loadableData = char2int(whatToLoad);
-//       cout << "Preparing to load: " << loadableData << " from memory" << endl;
-//       /*Pass the reference of the load value to conversion function
-//        * Pass conversion function ot next stage of pipeline*/
-//       pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD] = loadableData;
-//       break;
-//     case SW:
-//       /*Pass memory address (pulled from register, processed with ALU) to
-//        * conversion function THIS conversion function handles writing to
-//        * memory (store-word doesn't need a write_back() call)
-//        */
-//       cout << "Inserting: " << stalledB << " at " << stalledALUOutput
-//            << " offset from base addr." << endl;
-//       int2char(stalledB, data_memory + stalledALUOutput);
-//       print_memory(0, 32);
-//       break;
-//     default:
-//       break;
-//     }
-//     pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = stalledALUOutput;
-//     processorKeyNext[WB_R]++;
-//   }
-// }
-
-void sim_pipe_fp::memory() {
-  static unsigned memory_stalls = 0;
-  unsigned char *whatToLoad;
-  unsigned whereToLoadFrom;
-  unsigned loadableData;
-  unsigned currentB;
-  = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_B];
-  instruction_t currentInstruction;
-  = pipeline.stage[EXE_MEM].parsedInstruction;
-  opcode_t currentOpcode;
-  = currentInstruction.opcode;
-  pipeline.stage[MEM_WB].parsedInstruction = currentInstruction;
-
-  //
-  /*paropogate ALU output*/
-  /*only if instruction is not LW or SW*/
-  unsigned currentALUOutput =
-      pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_ALU_OUT];
-  if (memory_stalls < data_memory_latency &&
-      (currentOpcode == SW || currentOpcode == SWS || currentOpcode == LW ||
-       currentOpcode == LWS)) {
-    STRUCT_HAZ_MEM_STALL = 1;
-    memory_stalls++;
-  }
-
-  switch (currentOpcode) {
-  case LW:
-  case SW:
-    memory_stall();
-    /* Write to register ahead? */
-    // pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
-    break;
-  case EOP:
-    doMemory = false;
-    break;
-  default:
-    pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
-    doWriteBack = true;
-    break;
-  }
-  // decrement number of memory stages needed
-  // Conditionally increment number of write back stages needed
 }
 
 instruction_type_t sim_pipe_fp::instruction_type(opcode_t opcode) {
@@ -1185,7 +1162,26 @@ bool sim_pipe_fp::src_dep_check(instruction_t dependentInst,
   }
 }
 
-bool sim_pipe_fp::check_over_write_data_hazard(unsigned dest, exe_unit_t type) {
+bool sim_pipe_fp::WAW_check(unsigned int dest, exe_unit_t type) {
+  unsigned thisLatency = UNDEFINED;
+  unsigned pendingDest = UNDEFINED;
+  for (int i = 0; i < num_units; i++) {
+    if (exec_units[i].type == type) {
+      thisLatency = exec_units[i].latency;
+    }
+  }
+  if (thisLatency != UNDEFINED) {
+    for (int i = 0; i < num_units; i++) {
+      pendingDest = exec_units[i].thisALU.instruction.dest;
+      if (pendingDest == dest && pendingDest != UNDEFINED) {
+        if (thisLatency < exec_units[i].busy) {
+          DATA_WAW_STALL = 1;
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 kind_of_instruction_t
@@ -1214,70 +1210,42 @@ sim_pipe_fp::instruction_type_check(instruction_t checkedInstruction) {
   }
 }
 
-bool sim_pipe_fp::check_read_after_write_hazard() {
+bool sim_pipe_fp::RAW_check() {
   instruction_t dec_inst = pipeline.stage[IF_ID].parsedInstruction;
   instruction_t mem_inst = pipeline.stage[EXE_MEM].parsedInstruction;
   instruction_t write_inst = pipeline.stage[MEM_WB].parsedInstruction;
   unsigned decodeSrc1 = dec_inst.src1;
   unsigned decodeSrc2 = dec_inst.src2;
+  /*check whats in mem and wb*/
   if (dec_inst.opcode != NOP && dec_inst.opcode != EOP) {
     if (src_dep_check(dec_inst, mem_inst) ||
         src_dep_check(dec_inst,  write_inst)) {
-      if ((instruction_type(mem_inst.opcode) == FP_INSTRUCTION) &&
+      if( (writes_to_FP(mem_inst.opcode) && reads_from_FP(dec_inst.opcode)) || (writes_to_FP(write_inst.opcode) && reads_from_FP(dec_inst.opcode)) ||
+          (writes_to_GP(mem_inst.opcode) && reads_from_GP(dec_inst.opcode)) || (writes_to_GP(write_inst.opcode) && reads_from_GP(dec_inst.opcode)) ){
+          DATA_RAW_STALL = 1;
+          return true;
+        }
+      }
+    }
+  /*check whats in execution units*/
+  for (int i = 0; i < num_units; i++) {
+    pipeline_alu checkALU = exec_units[i].thisALU;
+    if (src_dep_check(dec_inst, checkALU.instruction)) {
+      if ((instruction_type(checkALU.instruction.opcode) == FP_INSTRUCTION) &&
           (fp_reg_dependent(dec_inst.opcode))) {
-        if ((instruction_type(mem_inst.opcode) == INT_INSTRUCTION) &&
+        if ((instruction_type(checkALU.instruction.opcode) ==
+             INT_INSTRUCTION) &&
             (instruction_type(dec_inst.opcode) == INT_INSTRUCTION ||
              is_branch(dec_inst.opcode) || dec_inst.opcode == LWS ||
              dec_inst.opcode == SWS)) {
-          DATA_HAZ_LATE_READ_STALL = 1;
+          DATA_RAW_STALL = 1;
+          return true;
         }
       }
     }
   }
+  return false;
+}
   // if
-}
 
-execution_unit::execution_unit(unsigned thisLatency, pipeline_alu thisAlu) {
-  reset_unit();
-  latency = thisLatency + 1;
-  number_cycles = 0;
-  executionALU = thisAlu;
-}
 
-void execution_unit::run_unit() {
-  if (number_cycles < latency) {
-    number_cycles++;
-  }
-}
-
-bool execution_unit::unit_done() { return number_cycles >= latency; }
-
-void execution_unit::reset_unit() {
-  executionALU.instruction.immediate = UNDEFINED;
-  executionALU.instruction.label = "";
-  executionALU.aluB = UNDEFINED;
-  executionALU.cond = UNDEFINED;
-  executionALU.out = UNDEFINED;
-  executionALU.instruction.opcode = NOP;
-  executionALU.instruction.src1 = UNDEFINED;
-  executionALU.instruction.src2 = UNDEFINED;
-  executionALU.instruction.dest = UNDEFINED;
-}
-
-pipeline_alu execution_unit::return_content() { return executionALU; }
-
-unsigned execution_unit::cycles_left() { return latency - number_cycles; }
-
-void execution_unit::print_unit() {
-  printf("\n");
-  printf("EXECUTION UNIT:\n");
-  printf("Unit opcode: %d\n", executionALU.instruction.opcode);
-  printf("Unit src1:          %d\n", executionALU.instruction.src1);
-  printf("unit src2:          %d\n", executionALU.instruction.src2);
-  printf("unit dest:           %d\n", executionALU.instruction.dest);
-  printf("unit imm:            %d\n", executionALU.instruction.immediate);
-  printf("unit b:              %d\n", executionALU.aluB);
-  printf("unit latency:        %d\n", latency);
-  printf("unit cycles     %d\n", number_cycles);
-  printf("------------------------------\n");
-}

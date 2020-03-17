@@ -736,16 +736,17 @@ void sim_ooo::reset() {
 
   // pending_instructions
   for(unsigned i = 0; i < pending_instructions.num_entries; i++){
-	clean_instr_window(pending_instructions.num_entries[i]);
+    clean_instr_window(&pending_instructions.entries[i]);
   }
 
   // rob
   for (unsigned i = 0; i < rob.num_entries; i++) {
-	clean_rob(rob.entries[i]);
+    clean_rob(&rob.entries[i]);
   }
   // cleaning reservation stations
+
   for (unsigned i = 0; i < reservation_stations.num_entries; i++) {
-	clean_res_station(reservation_stations.entries[i]);
+    clean_res_station(&reservation_stations.entries[i]);
   }
 
   // execution statistics
@@ -774,9 +775,39 @@ void sim_ooo::set_fp_register(unsigned reg, float value) {
 }
 
 unsigned sim_ooo::get_int_register_tag(unsigned reg) {
+  /*compare rob destination column with 'reg argument'*/
+  unsigned char* destinationValue;
+    /*loop through entries in rob*/
+  for(int i  = 0; i < rob.num_entries; i++){
+    /*get destination as character array*/
+     unsigned2char(rob.entries[i].destination, destinationValue);
+    /*compare first character with r*/
+     if(destinationValue[0] == 'r'){
+    /*compare second character with 'reg' value*/
+       if(destinationValue[1] == reg){
+    /*if both cases are true, return index*/
+         return i;
+       }
+     }
+  }
   return UNDEFINED; // please modify
 }
 
 unsigned sim_ooo::get_fp_register_tag(unsigned reg) {
+  /*compare rob destination column with 'reg argument'*/
+  unsigned char* destinationValue;
+    /*loop through entries in rob*/
+  for(int i  = 0; i < rob.num_entries; i++){
+    /*get destination as character array*/
+     unsigned2char(rob.entries[i].destination, destinationValue);
+    /*compare first character with f*/
+     if(destinationValue[0] == 'f'){
+    /*compare second character with 'reg' value*/
+       if(destinationValue[1] == reg){
+    /*if both cases are true, return index*/
+         return i;
+       }
+     }
+  }
   return UNDEFINED; // please modify
 }

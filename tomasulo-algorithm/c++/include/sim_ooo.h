@@ -117,6 +117,25 @@ typedef struct {
   unsigned address;     // address field (for loads and stores)
 } res_station_entry_t;
 
+//integer register entry
+typedef struct {
+  int value;
+  string name;
+  bool busy;
+} int_gp_reg_entry;
+
+//floating point register entry
+typedef struct {
+  float value;
+  string name;
+  bool busy;
+} float_gp_reg_entry;
+
+static int_gp_reg_entry null_int_register_entry = {0xff , "", false};
+
+static float_gp_reg_entry null_float_register_entry = {0xff, "", false};
+
+
 // instruction window
 typedef struct {
   unsigned num_entries;
@@ -139,10 +158,10 @@ class sim_ooo {
 
   /* Add the data members required by your simulator's implementation here */
   //gp integer registers
-  int int_gp[NUM_GP_REGISTERS];
+  int_gp_reg_entry int_gp[NUM_GP_REGISTERS];
 
   //gp floating point registers
-  float float_gp[NUM_GP_REGISTERS];
+  float_gp_reg_entry float_gp[NUM_GP_REGISTERS];
   /* end added data members */
 
   // issue width
@@ -181,6 +200,7 @@ class sim_ooo {
 
   // execution log
   stringstream log;
+
 
 public:
   /* Instantiates the simulator
@@ -286,6 +306,20 @@ public:
 
   // print log
   void print_log();
+
+  //set float register entry to null
+  void nullify_float_reg_entry(float_gp_reg_entry &thisEntry);
+
+  //set int register entry to null
+  void nullify_int_reg_entry(int_gp_reg_entry &thisEntry);
+
+  //change some float register field value
+  void float_reg_set(float_gp_reg_entry &thisEntry, float thisValue = 0xff,
+                     string thisString = "dc", bool toggle = false);
+
+  // change some int register field value
+  void int_reg_set(float_gp_reg_entry &thisEntry, int thisValue = 0xff,
+                     string thisString = "dc", bool toggle = false);
 };
 
 #endif /*SIM_OOO_H_*/

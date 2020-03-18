@@ -1,4 +1,4 @@
-#include "../include/sim_ooo.h"
+#include "../sim_ooo.h"
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -709,6 +709,19 @@ sim_ooo::~sim_ooo() {
 /* core of the simulator */
 void sim_ooo::run(unsigned cycles) {}
 
+void nullify_float_reg_entry(float_gp_reg_entry &thisEntry){
+  thisEntry.value = 0xFF;
+  thisEntry.busy = false;
+  thisEntry.name = "";
+}
+
+// set int register entry to null
+void nullify_int_reg_entry(int_gp_reg_entry &thisEntry){
+  thisEntry.value = 0xFF;
+  thisEntry.busy = false;
+  thisEntry.name = "";
+}
+
 // reset the state of the simulator - please complete
 void sim_ooo::reset() {
 
@@ -717,21 +730,21 @@ void sim_ooo::reset() {
 
   // data memory
   for (unsigned i = 0; i < data_memory_size; i++)
-	data_memory[i] = 0xFF;
+    data_memory[i] = 0xFF;
 
   // instr memory
   for (int i = 0; i < PROGRAM_SIZE; i++) {
-	instr_memory[i].opcode = (opcode_t)EOP;
-	instr_memory[i].src1 = UNDEFINED;
-	instr_memory[i].src2 = UNDEFINED;
-	instr_memory[i].dest = UNDEFINED;
-	instr_memory[i].immediate = UNDEFINED;
+    instr_memory[i].opcode = (opcode_t)EOP;
+    instr_memory[i].src1 = UNDEFINED;
+    instr_memory[i].src2 = UNDEFINED;
+    instr_memory[i].dest = UNDEFINED;
+    instr_memory[i].immediate = UNDEFINED;
   }
 
   // general purpose registers
   for(int i = 0; i<NUM_GP_REGISTERS; i++){
-	  float_gp[i] = UNDEFINED;
-	  int_gp[i] = UNDEFINED;
+    nullify_int_reg_entry(int_gp[i]);
+    nullify_float_reg_entry(float_gp[i]);
   }
 
   // pending_instructions
@@ -759,19 +772,19 @@ void sim_ooo::reset() {
 /* registers related */
 
 int sim_ooo::get_int_register(unsigned reg) {
-  return int_gp[reg];// please modify
+  return int_gp[reg].value;// please modify
 }
 
 void sim_ooo::set_int_register(unsigned reg, int value) {
-	int_gp[reg] = value;
+	int_gp[reg].value = value;
 }
 
 float sim_ooo::get_fp_register(unsigned reg) {
-  return float_gp[reg]; // please modify
+  return float_gp[reg].value; // please modify
 }
 
 void sim_ooo::set_fp_register(unsigned reg, float value) {
-	float_gp[reg] = value;
+	float_gp[reg].value = value;
 }
 
 unsigned sim_ooo::get_int_register_tag(unsigned reg) {
@@ -810,4 +823,33 @@ unsigned sim_ooo::get_fp_register_tag(unsigned reg) {
      }
   }
   return UNDEFINED; // please modify
+}
+
+// set float register entry to null
+  //change some float register field value
+void float_reg_set(float_gp_reg_entry &thisEntry, float thisValue = 0xff,
+                   string thisString = "dc", bool toggle = false){
+  if(thisValue!=0xff){
+    thisEntry.value = thisValue;
+  }
+  if(toggle){
+    thisEntry.busy = !(thisEntry.busy);
+  }
+  if(thisString!="dc"){
+    thisEntry.name=thisString;
+  }
+}
+
+// change some int register field value
+void int_reg_set(float_gp_reg_entry &thisEntry, int thisValue = 0xff,
+                 string thisString = "dc", bool toggle = false) {
+  if (thisValue != 0xff) {
+    thisEntry.value = thisValue;
+  }
+  if (toggle) {
+    thisEntry.busy = !(thisEntry.busy);
+  }
+  if (thisString != "dc") {
+    thisEntry.name = thisString;
+  }
 }

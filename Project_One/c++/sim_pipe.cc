@@ -414,23 +414,16 @@ void sim_pipe::fetch(){
   static unsigned valuePassedAsPC;
   static instruction_t currentInstruction;
   /*IDK if the following declaration will work */
-<<<<<<< HEAD
   static instruction_t stallInstruction={NOP};
   static int stallsNeeded = 0;
-
-=======
-  static instruction_t stallInstruction={NOP,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,""};
-  static int stallsNeeded = 2;
   static int potentialNPC;
   static bool insertStall = false;
   static int stallCounter = 0;
   bool skip = false;
->>>>>>> Simple-Pipeline-Working
 /*Determine next instruction to fetch: this is an issue b/c next instruction isn't alwasy immediately available
  * For example, if the instruction we just fetched is a branching instruction, the next fetch won't be known for two clock cycles
  * Current structure hinges on a pulling of an instruction to determine what instruction should be pulled next.*/
 
-<<<<<<< HEAD
   unsigned branchingCond = pipeline.stage[EXE_MEM].spRegisters[EXE_MEM_COND];
   if(stallsNeeded){
     currentInstruction = stallInstruction;

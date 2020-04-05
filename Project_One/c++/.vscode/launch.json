@@ -9,7 +9,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/bin/testcase_fp0",
+            "program": "${workspaceRoot}/bin/testcase1",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",

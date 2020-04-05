@@ -1,4 +1,4 @@
-#include "../include/sim_ooo.h"
+#include "../sim_ooo.h"
 #include <iostream>
 #include <sstream>
 #include <cstdlib>

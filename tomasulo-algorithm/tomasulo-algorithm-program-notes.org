@@ -1,0 +1,100 @@
+#+TITLE: Tomasulo Algorithm Program Notes
+* Reservation Station and Load Store Buffers
+- Pass values to
+- Store instructions until:
+
+* Reorder Buffer
+- Store results temporarily
+* Instruction Queue
+* Stages
+** Stage 1 (Issue)
+- Issue stage
+  - Fetch from memory
+  - Send to reservation station
+  - Send to reorder buffer
+- Will stall if:
+  - Reservation station is not available
+  - If reorder buffer is full
+- Register renaming
+- Consider parameter 'Issue Width'
+  - Number of instructions that can be issued in a single clock cycle
+    - Most of the times, this number is 1
+    - There are cases where the width can be greater than 1
+- Issue stage happens in-order
+  - If stall happens, all subsequent instructions are stalled
+** Stage 2 (Execution)
+- Instructions moved from reservation station to execution unit
+- Execution units include:
+  - FP:
+    - Adder
+    - Multiplier
+    - Load
+    - Store
+    - Divider
+  - Integer
+    - Adder
+    - Load
+    - Store
+- Execution stage will stall if:
+  - The values of the operands of the instruction are not available (RAW)
+  - There are no free execution units for the instruction (Structural Hazard on
+    Execution Unit)
+  - Latency of execution stage depends on the latency of the execution unit used
+- Load and store instruction both need to compute the address of the data that
+  needs to be read or written
+- Load access memory
+- Store doesn't access memory during execution stage, accessing memory during
+  commit stage
+** Stage 3 (Write Result)
+- Result sent to:
+  - Reservation station -> RAW hazard
+  - Reorder buffer (holds temporary result before they are committed to
+    registers and memory)
+- Pass values back to reservation station
+- Pass values back to reorder buffer
+** Stage 4 (Commit)
+- Result are written to:
+  - Register file from ROB
+  - Memory from ROB
+- Remove from ROB
+- Instructions that write to register file:
+  - Arithmetic/Logic
+  - Load
+- Store instructions write to memory
+- Branches:
+  - Correct prediction: branch is removed from ROB
+  - Incorrect prediction: ROB is flushed
+* Structures in Program
+** Register file
+- Integer registers
+- FP registers
+- Register renaming map
+  - Stores mapping between register file and new name
+** Data Memory
+- Handled
+** Reservation Stations
+** Reorder Buffer (ROB)
+** Instruction Window
+- Contains pending instruction
+- Shows stage of instruction
+* Handout -> Program Map
+** Register Table
+- Number column is register renaming map
+** Top Left Table
+- Instruction window
+** Reorder buffer
+- Reorder buffer
+* Looking in the Header File
+* Questions
+** Reservation Station Questions
+- Is there a res station entry for each execution unit?
+- Should I let the res station table handle the busy/not busy shit
+- How many entries are there in the reservation station structure (is
+  dynamically allocated?)
+- How are the reservation stations named?
+** ROB
+* Flow
+** Issue
+*** Is there an available ROB entry?
+*** Is there an available reservation station entry?
+- reservation station availability based on pc field of reservation_station.entries[i]

@@ -1,8 +1,9 @@
 CC = g++
 OPT = -g
-WARN = -Wall
+#WARN = -Wall
 INCLUDE = -I..
-CFLAGS = $(OPT) $(WARN) $(INCLUDE)
+#CFLAGS = $(OPT) $(WARN) $(INCLUDE)
+CFLAGS = $(OPT) $(INCLUDE)
 
 #################################
 

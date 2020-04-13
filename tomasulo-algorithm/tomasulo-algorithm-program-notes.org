@@ -1,8 +1,5 @@
 #+TITLE: Tomasulo Algorithm Program Notes
 * Reservation Station and Load Store Buffers
-- Pass values to
-- Store instructions until:
-
 * Reorder Buffer
 - Store results temporarily
 * Instruction Queue
@@ -73,7 +70,33 @@
 ** Data Memory
 - Handled
 ** Reservation Stations
+#+BEGIN_SRC c++
+typedef struct {
+  res_station_t type;   // reservation station type
+  unsigned name;        // reservation station name (i.e., "Int", "Add", "Mult",
+                        // "Load") for logging purposes
+  unsigned pc;          // pc of corresponding instruction (set to UNDEFINED if
+                        // reservation station is available)
+  unsigned value1;      // Vj field
+  unsigned value2;      // Vk field
+  unsigned tag1;        // Qj field
+  unsigned tag2;        // Qk field
+  unsigned destination; // destination field
+  unsigned address;     // address field (for loads and stores)
+} res_station_entry_t;
+#+END_SRC
 ** Reorder Buffer (ROB)
+#+BEGIN_SRC c++
+typedef struct {
+  bool ready;  // ready field
+  unsigned pc; // pc of corresponding instruction (set to UNDEFINED if ROB entry
+  // is available)
+  stage_t state;        // state field
+  unsigned destination; // destination field
+  unsigned value;       // value field
+  bool empty;
+} rob_entry_t;
+#+END_SRC
 ** Instruction Window
 - Contains pending instruction
 - Shows stage of instruction
@@ -93,8 +116,66 @@
   dynamically allocated?)
 - How are the reservation stations named?
 ** ROB
+* General
+- LW: destination = dest, src = src1, immediate = immediate
+  - table:
+    | name | busy | pc | vj                          | vk | qj | qk | dest      | addr      |
+    | res  | y/n  |    | value in register(mem addr) | -  | -  |    | rob entry | immediate |
+- SW: source register = src1, dest = src2, immediate = immediate
+  sw f0 10(r1)
+  src2 = 1
+  src1 = 0
+  immediate = 10
+  - table:
+    | name | busy | pc | vj                | vk                          | qj                   | qk | dest      | addr      |
+    | res  | y/n  |    | either source reg | value in register(mem addr) | or tag of source reg | -  | rob entry | immediate |
+  - In ROB, SW/SWS don't populate the dest field
+** Execution Units
+*** Integer
+- Integer additions
+- branches
+- subtraction
+- logic
+*** Floating Point
+**** Adder
+- FP add, subtract
+**** Multiplier
+**** Divider
+**** Memory
 * Flow
 ** Issue
 *** Is there an available ROB entry?
 *** Is there an available reservation station entry?
 - reservation station availability based on pc field of reservation_station.entries[i]
+*** If both are available, decode, add to information to reservation station entry
+**** Not load/store instructions
+***** No immediate
+****** entries[i].type
+- populated at load program
+****** entries[i].name
+- populated at load program
+****** set pc
+- passed from previous function
+****** set destination
+- ROB entry #
+****** set/get value1 OR tag1(rob entry #)
+- check ROB, if register has a name, use tag1, else get value from mem
+****** set/get value2 OR tag2(rob entry #)
+- check ROB, if register has a name, use tag1, else get value from mem
+***** Immediate
+- same as above, except value2 is guaranteed
+**** Load/store instructions
+- Address = immediate until execution stage
+***** Load
+- src1 at issue?
+***** Store
+*** Create instruction window entry
+*** Add instruction window entry to instruction window
+** Execute
+*** Load Instruction
+- Load instructions load data from memory in the execution stage and send their result to the
+reservation stations and ROB through the CDB in the write result stag
+* Tasks
+** [ ] pointer system for rob entries
+** [ ] rob entries for branching and jumping instruction
+** [ ] reservation station entries for branching and jumping instructions

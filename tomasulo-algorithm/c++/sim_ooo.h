@@ -158,14 +158,22 @@ typedef struct {
   res_station_entry_t *entries;
 } res_stations_t;
 
+
 typedef struct {
+  //indexes
   unsigned robIndex;
   unsigned resStationIndex;
   unsigned instrWindowIndex;
   unsigned executionUnitNumber;
   unsigned instrMemoryIndex;
+ //opcode
   opcode_t instructionOpcode;
+  //res station type
+  res_station_t resStationType;
+  //clock helpers
   bool readyToWrite;
+  unsigned resStationAvailable;
+  unsigned valuesAvailable;
   bool readyToCommit;
 } map_entry_t;
 
@@ -193,6 +201,7 @@ class sim_ooo {
 
   // execution units
   unit_t exec_units[MAX_UNITS];
+
   unsigned num_units;
 
   // instruction memory
@@ -207,7 +216,7 @@ class sim_ooo {
   // memory size in bytes
   unsigned data_memory_size;
 
-  // instruction executed
+  // instructions executed
   unsigned instructions_executed;
 
   // clock cycles
@@ -219,8 +228,17 @@ class sim_ooo {
   // queue of rob entries
   queue<unsigned> robq;
 
+  queue<unsigned> robs_to_clear;
+
+  queue<unsigned> res_stations_to_clear;
+
+  queue<unsigned> instr_windows_to_clear;
+
+  queue<unsigned> res_stations_to_update;
   // link between rob, reservation station, and instruction window
   map<unsigned, map_entry_t> instruction_map;
+
+
 
 public:
   /* Instantiates the simulator
@@ -258,6 +276,7 @@ public:
   // if cycles=0)
   void run(unsigned cycles = 0);
 
+  void a_cycle();
   // resets the state of the simulator
   /* Note:
      - registers should be reset to UNDEFINED value
@@ -357,8 +376,10 @@ public:
   // decode instruction in issue stage
   void issue_decode(instruction_t thisInstruction);
 
-    bool is_conditional(opcode_t thisOpcode);
+  // conditional check
+  bool is_conditional(opcode_t thisOpcode);
 
+    void station_delay_check(res_station_t thisReservationStation);
   ///////////////////
   // ROB FUNCTIONS //
   ///////////////////
@@ -379,7 +400,12 @@ public:
 
   unsigned get_available_res_station(res_station_t thisTypeOfStation);
 
-    void reservation_station_add(map_entry_t thisMapEntry, unsigned pcOfInstruction);
+  void reservation_station_stats();
+
+  void reservation_station_check();
+
+  void reservation_station_add(map_entry_t thisMapEntry,
+                               unsigned pcOfInstruction);
 
   unsigned get_tag(unsigned thisReg);
 
@@ -393,9 +419,13 @@ public:
 
   void load_argument_tag_check(map_entry_t thisMapEntry);
 
-    void store_argument_tag_check(map_entry_t thisMapEntry);
+  void store_argument_tag_check(map_entry_t thisMapEntry);
+
+  void conditional_argument_tag_check(map_entry_t thisMapEntry);
 
   unsigned find_value_in_rob(unsigned thisRobEntry);
+
+  unsigned find_tag_in_rob(unsigned thisRegister);
 
   bool is_load_instruction(opcode_t thisOpcode);
 
@@ -414,14 +444,17 @@ public:
 
   bool arguments_ready_fp_alu(unsigned res_station_index);
 
+  bool arguments_ready_conditional(unsigned res_station_index);
   unsigned get_res_station_index(unsigned thisPC);
 
   //////////////////////////////////
   // INSTRUCTION WINDOW FUNCTIONS //
   //////////////////////////////////
-  unsigned instruction_window_add(unsigned thisPC);
+  void instruction_window_add(unsigned thisWindowIndex,unsigned thisPC);
 
   void instruction_window_set_clock(unsigned thisPC);
+
+  void instruction_window_remove(unsigned thisInstructionWindowIndex);
 
   /////////////////////////
   // EXECUTION FUNCTIONS //
@@ -434,7 +467,7 @@ public:
 
   void claim_execution_unit(unsigned thisUnit, unsigned thisPC);
 
-  unsigned cycle_execution_units();
+  void cycle_execution_units();
 
   void print_map_entry(unsigned thisKeyValue);
 
@@ -467,7 +500,7 @@ public:
 
   void find_ready_to_write();
 
-  void process_ready_to_write(unsigned thisPC);
+  void update_reservation_stations(unsigned thisResStationIndex);
   /////////////////////////////
   // COMMIT FUNCTIONS        //
   /////////////////////////////
@@ -480,9 +513,12 @@ public:
 
   void clear_rob_entry(unsigned thisRobEntry);
 
+  /////////////////////////////
+  // POST PROCESS FUNCTIONS  //
+  /////////////////////////////
 
-
-
+  void post_process();
+  void clear_res_station(unsigned thisResStationIndex);
 };
 // printing which value is impeding execution
 void print_culprit(unsigned thisVal1 = 0, unsigned thisVal2 = 0);
@@ -492,9 +528,8 @@ void print_memory_update(unsigned thisValue, unsigned thisOffset,
 // printing executiion unit type as a name instead of an integer
 void print_string_unit_type(exe_unit_t thisUnit);
 // printing the write result status and information
-void print_write_results(unsigned statement, unsigned thisPC,
-                         unsigned thisValue, unsigned thisDestination,
-                         unsigned thisResIndex);
+void print_write_results(unsigned statement, map_entry_t thisMapEntry);
+
 void print_string_opcode(opcode_t thisOpcode);
 
 void print_commit_init();

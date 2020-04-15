@@ -9,10 +9,12 @@
 
 #define TEST_NUM_CYCLES 4
 #define PRINT_EXECUTION_UNITS 0
+#define PRINT_DBG
 using namespace std;
 //global variable to access instruction memory in issue stage
 int instruction_index = 0;
 unsigned clock_cycle = 0;
+bool programComplete = false;
 
 // used for debugging purposes
 static const char *stage_names[NUM_STAGES] = {"ISSUE", "EXE", "WR", "COMMIT"};
@@ -521,7 +523,7 @@ float sim_ooo::get_IPC() { return (float)instructions_executed / clock_cycles; }
 
 unsigned sim_ooo::get_instructions_executed() { return instructions_executed; }
 
-unsigned sim_ooo::get_clock_cycles() { return clock_cycles; }
+unsigned sim_ooo::get_clock_cycles() { return clock_cycle; }
 
 /* ============================================================================
 
@@ -724,26 +726,35 @@ sim_ooo::~sim_ooo() {
 //////////////////////
 // RUN FUNCTIONS    //
 //////////////////////
+
 void sim_ooo::run(unsigned cycles) {
+  if(clock_cycle == 0){
+//    create_res_stations_stats();
+  }
+  unsigned cyclesRan = 0;
+  if(cycles){
+    while(cyclesRan<cycles){
+      a_cycle();
+      cyclesRan++;
+      clock_cycle++;
+    }
+  }
+  else{
+    while(clock_cycle<50){
+      a_cycle();
+      clock_cycle++;
+    }
+  }
+}
+
+void sim_ooo::a_cycle(){
   commit();
   write_results();
   execute();
   issue_instruction();
-  clock_cycle++;
+  post_process();
 }
 
-void nullify_float_reg_entry(float_gp_reg_entry &thisEntry) {
-  thisEntry.value = 0xFF;
-  thisEntry.busy = false;
-  thisEntry.name = UNDEFINED;
-}
-
-// set int register entry to null
-void nullify_int_reg_entry(int_gp_reg_entry &thisEntry) {
-  thisEntry.value = 0xFF;
-  thisEntry.busy = false;
-  thisEntry.name = UNDEFINED;
-}
 
 // reset the state of the simulator - please complete
 void sim_ooo::reset() {
@@ -766,14 +777,12 @@ void sim_ooo::reset() {
 
   // general purpose registers
   for (int i = 0; i < NUM_GP_REGISTERS; i++) {
-    int_gp_reg_entry *intEntry = &int_gp[i];
-    float_gp_reg_entry *floatEntry = &float_gp[i];
-    intEntry->value = UNDEFINED;
-    intEntry->name = UNDEFINED;
-    intEntry->busy = false;
-    floatEntry->value = UNDEFINED;
-    floatEntry->name = UNDEFINED;
-    floatEntry->busy = false;
+    int_gp[i].value=UNDEFINED;
+    int_gp[i].name = UNDEFINED;
+    int_gp[i].busy = false;
+    float_gp[i].value = UNDEFINED;
+    float_gp[i].name = UNDEFINED;
+    float_gp[i].busy = false;
   }
 
   // pending_instructions
@@ -792,7 +801,7 @@ void sim_ooo::reset() {
   }
 
   // execution statistics
-  clock_cycles = 0;
+  clock_cycle = 0;
   instructions_executed = 0;
 
   // other required initializations
@@ -861,40 +870,49 @@ void int_reg_set(float_gp_reg_entry &thisEntry, int thisValue = 0xff,
 // ISSUE FUNCTIONS //
 /////////////////////
 // function to handle issue stage of processor
-// **CURRENTLY ONLY HANDLES SINGLE INSTRUCTION PROCESSING**
 void sim_ooo::issue_instruction(){
-  static unsigned pc = instr_base_address;
+  static unsigned instructionIndex = instr_base_address;
   static unsigned robEntryNumber;
   static unsigned resStationIndex = UNDEFINED;
   static bool stallAtIssue = false;
   static bool res_station_full_stall = false;
   static bool rob_buffer_full_stall = false;
   static instruction_t previousInstruction;
-  instruction_t currentInstruction = instr_memory[pc];
+
+  instruction_t currentInstruction = instr_memory[instructionIndex];
   //check if rob and reservation station is full
+#ifdef PRINT_DBG
+  cout << instructionIndex << endl;;
+  print_string_opcode(currentInstruction.opcode);
+#endif
   if(!rob_full()){
-    cout << "rob is not full" << endl;
-    resStationIndex = get_available_res_station(get_station_type(currentInstruction));
+    cout << "****ISSUING INSTRUCTION****" << endl;
+    cout << "->Rob is not full" << endl;
+    res_station_t thisResStationType = get_station_type(currentInstruction);
+    resStationIndex = get_available_res_station(thisResStationType);
     if(resStationIndex!=UNDEFINED){
       //creat instruction map entry
       map_entry_t newSet;
       //set instruction map entry to pc (not instruction_memory index)
-      unsigned keyValue = pc*4;
+      unsigned keyValue = instructionIndex*4;
 
-      cout << "res stations are not full" << endl;
+      cout << "->Res stations are not full" << endl;
       // if not full, add instruction
-      cout << "adding to rob buffer"<< endl;
-      robEntryNumber = rob_add(currentInstruction, pc);
+      robEntryNumber = rob_add(currentInstruction, keyValue);
+
+      print_string_opcode(currentInstruction.opcode);
       // add rob entry to queue
-      cout << "**adding to rob queue**" << endl;
+
       robq.push(robEntryNumber);
 
-      newSet.instrMemoryIndex = pc;
+      newSet.instrMemoryIndex = instructionIndex;
       newSet.robIndex=robEntryNumber;
       //add res station index number to set
       newSet.resStationIndex=resStationIndex;
       //add to instruction window and set
-      newSet.instrWindowIndex = instruction_window_add(pc);
+      instruction_window_add(robEntryNumber, keyValue);
+
+      newSet.instrWindowIndex = robEntryNumber;
       //add opcode
       newSet.instructionOpcode = currentInstruction.opcode;
       //set ready to write to false
@@ -903,14 +921,22 @@ void sim_ooo::issue_instruction(){
       newSet.readyToCommit = false;
       //set map entry's execution unis to undefined
       newSet.executionUnitNumber = UNDEFINED;
+      //set map entries station type
+      newSet.resStationType = thisResStationType;
+      //time that write values will be available
+      newSet.valuesAvailable = 0;
+      //time that res station will be available
+      newSet.resStationAvailable = UNDEFINED;
       //add set to map
       instruction_map.insert(make_pair(keyValue, newSet));
       //add to reservation station
       map_entry_t newMapEntry = instruction_map.find(keyValue)->second;
-      reservation_station_add(newMapEntry);
+      //print reservation station info
+      cout << "->Reservation station info:" << endl;
+      reservation_station_add(newMapEntry, keyValue);
       //add rob index number to set
       // increment pc
-      pc = pc + 1;
+      instructionIndex = instructionIndex + 1;
       //set previous instruction marker
       previousInstruction = currentInstruction;
       //set current instruction for next iteration of this function
@@ -918,16 +944,17 @@ void sim_ooo::issue_instruction(){
       stallAtIssue = false;
     }
     else{
-      cout << "res stations are full" << endl;
+      cout << "[X] Res stations are full" << endl;
       res_station_full_stall = true;
     }
   }
   else {
-    cout << "rob is full" << endl;
+    cout << "[X] Rob is full" << endl;
     stallAtIssue = true;
     previousInstruction = currentInstruction;
   }
-  cout << "cc " << clock_cycle << endl;
+  cout << "****DONE ISSUING INSTRUCTION****" << endl;
+  cout << "Clock cycle: " << clock_cycle << endl;
 //  currentInstruction = instr_memory[instruction_index];
 }
 
@@ -937,6 +964,23 @@ unsigned sim_ooo::mem_to_index(unsigned thisMemoryValue){
 }
   //decode instruction in issue stage
   //pass values to reservation stations
+void sim_ooo::station_delay_check(res_station_t thisReservationStation){
+  std::map<unsigned, map_entry_t>::iterator it;
+  it = instruction_map.begin();
+  while(it!=instruction_map.end()){
+    if(it->second.resStationType==thisReservationStation){
+      if(it->second.resStationAvailable==UNDEFINED){
+        cout << "Res. station not available, available time not defined yet." << endl;
+      }
+      if(it->second.resStationAvailable>clock_cycle){
+        cout << "Res. station not available until: " << it->second.resStationAvailable<< endl;
+        return;
+      }
+    }
+    it++;
+  }
+
+}
 
 ///////////////////
 // ROB FUNCTIONS //
@@ -954,53 +998,52 @@ bool sim_ooo::rob_full(){
 //function to add instruction to reorder buffer
 unsigned sim_ooo::rob_add(instruction_t &thisInstruction, unsigned thisPC){
   //init rob index to 0;
-  static unsigned rob_index = 0;
+  static unsigned robIndex = 0;
+  unsigned robIndexReturn;
   //init pc to base address
 
   //get instruction
   //add instruction to rob
-  rob.entries[rob_index].pc = thisPC*4;
-  rob.entries[rob_index].state = ISSUE;
+  rob.entries[robIndex].pc = thisPC;
+  rob.entries[robIndex].state = ISSUE;
   //floation point instructions must be passed a value >= 32 to be put in 'F'
   //registers
   if(is_fp_instruction(thisInstruction.opcode)){
-    rob.entries[rob_index].destination = thisInstruction.dest+32;
+    rob.entries[robIndex].destination = thisInstruction.dest+32;
   }
   //integer instructions need no correction
   else{
     //conditionals don't get destination values in ROB
     if(!is_conditional(thisInstruction.opcode))
-    rob.entries[rob_index].destination = thisInstruction.dest;
+    rob.entries[robIndex].destination = thisInstruction.dest;
     else
-    rob.entries[rob_index].destination = UNDEFINED;
+    rob.entries[robIndex].destination = UNDEFINED;
   }
   //this entry is no longer open
-  rob.entries[rob_index].empty = false;
+  rob.entries[robIndex].empty = false;
   //for sw and sws, destination is not available until execution
   //for now, use immediate value
   if(thisInstruction.opcode==SW||thisInstruction.opcode==SWS){
-    rob.entries[rob_index].destination = thisInstruction.immediate;
+    rob.entries[robIndex].destination = thisInstruction.immediate;
   }
   else {
     //fp instructions go into float registers, update float names
     if (is_fp_instruction(thisInstruction.opcode)) {
-      float_gp[thisInstruction.dest].name = rob_index;
+      float_gp[thisInstruction.dest].name = robIndex;
     } else {
       //int instrutions go into gp registers, if destination exists, write dest
       if (!is_conditional(thisInstruction.opcode)) {
-        int_gp[thisInstruction.dest].name = rob_index;
-      } else {
-        cout << "This instruction opcode is: ";
-        print_string_opcode(thisInstruction.opcode);
+        int_gp[thisInstruction.dest].name = robIndex;
       }
     }
   }
-  rob_index++;
-  if(rob_index == rob.num_entries){
-    rob_index = 0;
+  robIndexReturn = robIndex;
+  robIndex++;
+  if(robIndex == rob.num_entries){
+    robIndex = 0;
   }
 
-  return (rob_index-1);
+  return robIndexReturn;
 }
 
 bool sim_ooo::is_conditional(opcode_t thisOpcode) {
@@ -1080,8 +1123,6 @@ void sim_ooo::reservation_station_add(map_entry_t thisMapEntry, unsigned pcOfIns
   unsigned setTag1 = UNDEFINED;
   unsigned setTag2 = UNDEFINED;
   unsigned robEntry = UNDEFINED;
-  unsigned robCheck1 = UNDEFINED;
-  unsigned robCheck2 = UNDEFINED;
 
   bool intReg = is_int_r(thisMapEntry.instructionOpcode);
   bool fpReg = is_fp_alu(thisMapEntry.instructionOpcode);
@@ -1098,6 +1139,10 @@ void sim_ooo::reservation_station_add(map_entry_t thisMapEntry, unsigned pcOfIns
   else if(is_int_imm(thisMapEntry.instructionOpcode)){
     single_argument_tag_check(thisMapEntry);
   }
+  else if(is_conditional(thisMapEntry.instructionOpcode)){
+    print_pc_to_instruction(pcOfInstruction);
+    conditional_argument_tag_check(thisMapEntry);
+  }
   //following is for load and store instructions
   else if(is_load_instruction(thisMapEntry.instructionOpcode)){
     load_argument_tag_check(thisMapEntry);
@@ -1109,107 +1154,185 @@ void sim_ooo::reservation_station_add(map_entry_t thisMapEntry, unsigned pcOfIns
 }
 
 void sim_ooo::two_argument_tag_check(map_entry_t thisMapEntry){
-  unsigned setTag1;
-  unsigned setTag2;
+  unsigned setTag1 = UNDEFINED;
+  unsigned setTag2 = UNDEFINED;
+  unsigned setVal1 = UNDEFINED;
+  unsigned setVal2 = UNDEFINED;
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
-  unsigned robRegisterValue;
   unsigned source1 = instr_memory[thisMapEntry.instrMemoryIndex].src1;
   unsigned source2 = instr_memory[thisMapEntry.instrMemoryIndex].src2;
   bool fpReg = is_fp_alu(thisMapEntry.instructionOpcode);
-  reservation_stations.entries[thisStationNumber].address=UNDEFINED;
+  bool waitOnValue = false;
 
-  if(fpReg){
-    //check fp registers
-    robRegisterValue = source1 + 32;
-    setTag1 = find_value_in_rob(robRegisterValue);
-    robRegisterValue = source2 + 32;
-    setTag2 = find_value_in_rob(robRegisterValue);
+  reservation_stations.entries[thisStationNumber].address=UNDEFINED;
+  print_pc_to_instruction(reservation_stations.entries[thisMapEntry.resStationIndex].pc);
+unsigned pcForMap = reservation_stations.entries[thisStationNumber].pc;
+  if (fpReg) {
+    // check fp registers
+    source1 = source1 + 32;
+    source2 = source2 + 32;
+  }
+
+  setVal1 = find_value_in_rob(source1);
+  setVal2 = find_value_in_rob(source2);
+
+  if(setVal1 == UNDEFINED){
+    setTag1 = find_tag_in_rob(source1);
+  }
+
+  if(setVal2==UNDEFINED){
+    setTag2 = find_tag_in_rob(source2);
+  }
+
+  if(setVal1 != UNDEFINED){
+      reservation_stations.entries[thisStationNumber].value1 = setVal1;
+      reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+  }
+
+  else if(setTag1!=UNDEFINED){
+      reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
+      reservation_stations.entries[thisStationNumber].tag1 = setTag1;
+      waitOnValue = true;
+  }
+
+  else if(setTag1==UNDEFINED && setVal1==UNDEFINED){
+    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+    if(fpReg){
+     source1 = source1 - 32;
+        reservation_stations.entries[thisStationNumber].value1=float2unsigned(get_fp_register(source1));
     }
     else{
-      setTag1 =find_value_in_rob(source1);
-      setTag2 = find_value_in_rob(source2);
-    }
-    if (setTag1 != UNDEFINED) {
-      // add tag1 to reservation station
-      reservation_stations.entries[thisStationNumber].tag1 = setTag1;
-      // set value1 to undefined
-      reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
-    }
-    //value does not exist in rob, not a pending instruction
-    else {
-      reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
-      if (fpReg)
-        reservation_stations.entries[thisStationNumber].value1=float2unsigned(get_fp_register(source1));
-      else {
         reservation_stations.entries[thisStationNumber].value1=get_int_register(source1);
-          }
     }
-    if (setTag2 != UNDEFINED) {
-      // add tag1 to reservation station
-      reservation_stations.entries[thisStationNumber].tag2 = setTag2;
-      // set value1 to undefined
+
+  }
+  if (setVal2 != UNDEFINED) {
+    // add tag1 to reservation station
+    reservation_stations.entries[thisStationNumber].tag2 = UNDEFINED;
+    // set value1 to undefined
+    reservation_stations.entries[thisStationNumber].value2 = setVal2;
+  }
+  else if (setTag2 != UNDEFINED) {
       reservation_stations.entries[thisStationNumber].value2 = UNDEFINED;
-      } else {
-        reservation_stations.entries[thisStationNumber].tag2 = UNDEFINED;
-      if (fpReg)
-        reservation_stations.entries[thisStationNumber].value2=get_fp_register(source2);
-      else {
+      reservation_stations.entries[thisStationNumber].tag2 = setTag2;
+      waitOnValue = true;
+  }
+  else if(setTag2==UNDEFINED && setVal2==UNDEFINED){
+    reservation_stations.entries[thisStationNumber].tag2 = UNDEFINED;
+    if(fpReg){
+     source2 = source2 - 32;
+        reservation_stations.entries[thisStationNumber].value2=float2unsigned(get_fp_register(source2));
+    }
+    else{
         reservation_stations.entries[thisStationNumber].value2=get_int_register(source2);
-          }
-      }
- 
+    }
+
+  }
+
 }
 
 void sim_ooo::single_argument_tag_check(map_entry_t thisMapEntry){
-  unsigned setTag1;
+  unsigned setTag = UNDEFINED;
+  unsigned setVal = UNDEFINED;
+
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
+
   unsigned source1 = instr_memory[thisMapEntry.instrMemoryIndex].src1;
+  bool waitOnValue = false;
+  unsigned pcForMap = reservation_stations.entries[thisStationNumber].pc;
 
   reservation_stations.entries[thisStationNumber].value2 =instr_memory[thisMapEntry.instrMemoryIndex].immediate;
 
-  setTag1 = find_value_in_rob(source1);
-  if (setTag1 != UNDEFINED) {
-    reservation_stations.entries[thisStationNumber].tag1 = setTag1;
+  setVal = find_value_in_rob(source1);
+  if(setVal == UNDEFINED){
+    setTag = find_tag_in_rob(source1);
+  }
+  if(setVal!=UNDEFINED){
+    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+    reservation_stations.entries[thisStationNumber].value1 = setVal;
+  }
+  else if(setTag != UNDEFINED){
+    reservation_stations.entries[thisStationNumber].tag1 = setTag;
     reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
-    }
-    else{
-      reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
-      reservation_stations.entries[thisStationNumber].value1 = get_int_register(source1);
-    }
- 
+    waitOnValue = true;
+  }
+  else {
+    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+    reservation_stations.entries[thisStationNumber].value1 =
+        get_int_register(source1);
+  }
+}
+
+void sim_ooo::conditional_argument_tag_check(map_entry_t thisMapEntry){
+  unsigned setTag = UNDEFINED;
+  unsigned setVal = UNDEFINED;
+  unsigned thisStationNumber = thisMapEntry.resStationIndex;
+  unsigned source1 = instr_memory[thisMapEntry.instrMemoryIndex].src1;
+  bool waitOnValue = false;
+  unsigned pcForMap = reservation_stations.entries[thisStationNumber].pc;
+
+  reservation_stations.entries[thisStationNumber].value2 = UNDEFINED;
+
+  setVal = find_value_in_rob(source1);
+
+  if(setVal == UNDEFINED){
+    setTag = find_tag_in_rob(source1);
+  }
+  if(setVal!=UNDEFINED){
+    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+    reservation_stations.entries[thisStationNumber].value1 = setVal;
+  }
+  else if(setTag != UNDEFINED){
+    reservation_stations.entries[thisStationNumber].tag1 = setTag;
+    reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
+    waitOnValue = true;
+  }
+  else {
+    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+    reservation_stations.entries[thisStationNumber].value1 =
+        get_int_register(source1);
+  }
 }
 
 void sim_ooo::load_argument_tag_check(map_entry_t thisMapEntry){
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
-  unsigned setTag1;
-  unsigned source1 =instr_memory[thisMapEntry.instrMemoryIndex].src1;
+  unsigned setTag = UNDEFINED;
+  unsigned setVal = UNDEFINED;
+  unsigned source = instr_memory[thisMapEntry.instrMemoryIndex].src1;
+  unsigned destination = instr_memory[thisMapEntry.instrMemoryIndex].dest;
   bool intLoadInstruction = (thisMapEntry.instructionOpcode == LW);
+  bool waitOnValue = false;
+  unsigned pcForMap =   reservation_stations.entries[thisStationNumber].pc;
   reservation_stations.entries[thisStationNumber].tag2 = UNDEFINED;
   reservation_stations.entries[thisStationNumber].value2 = UNDEFINED;
-  reservation_stations.entries[thisStationNumber].address =
-      instr_memory[thisMapEntry.instrMemoryIndex].immediate;
+  reservation_stations.entries[thisStationNumber].address = instr_memory[thisMapEntry.instrMemoryIndex].immediate;
   // get tag or value of
-  if (intLoadInstruction) {
-    setTag1 = find_value_in_rob(source1);
+  cout << "Source: R" << source << endl;
+  if (!intLoadInstruction) {
+    cout << "Destination: F" << destination << endl;
+    destination = destination + 32;
   }
-  else {
-    source1 = source1 + 32;
-    setTag1 = find_value_in_rob(source1);
+  setVal = find_value_in_rob(source);
+  if(setVal == UNDEFINED){
+    setTag = find_tag_in_rob(source);
   }
-  if (setTag1 != UNDEFINED) {
-    reservation_stations.entries[thisStationNumber].tag1 = setTag1;
-    reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
-  }
-  else {
+  // value  found in register
+  if (setVal != UNDEFINED) {
+    cout << "Value found in rob: " << setVal << endl;
     reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
-    if (intLoadInstruction) {
-      reservation_stations.entries[thisStationNumber].value1 =
-          get_int_register(source1);
-    } else {
-      source1 = source1 - 32;
-      reservation_stations.entries[thisStationNumber].value1 =
-        get_fp_register(source1);
-    }
+    reservation_stations.entries[thisStationNumber].value1 = setVal;
+  }
+  //tag found in register
+  else if(setTag!=UNDEFINED){
+    cout << "Tag found in rob: " << setTag << endl;
+    reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
+    reservation_stations.entries[thisStationNumber].tag1 = setTag;
+    waitOnValue = true;
+  }
+  else{
+    unsigned registerValue = int_gp[source].value;
+      reservation_stations.entries[thisStationNumber].value1 = registerValue;
+    cout << "Neither tag nor value found in rob, value found in memory: " << registerValue << endl;
   }
 }
 
@@ -1226,38 +1349,80 @@ void sim_ooo::store_argument_tag_check(map_entry_t thisMapEntry){
        */
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
   unsigned setTag1;
-  unsigned source1 =instr_memory[thisMapEntry.instrMemoryIndex].src1;
-  bool intLoadInstruction = (thisMapEntry.instructionOpcode == LW);
+  //value to be stored
+  unsigned source1 = instr_memory[thisMapEntry.instrMemoryIndex].src1; ;
+  //where the value will be stored
+  unsigned source2 = instr_memory[thisMapEntry.instrMemoryIndex].src2;
+  //check if sw or sws
+  bool intStoreInstruction= (thisMapEntry.instructionOpcode == SW);
+  bool waitOnValue = false;
+  //sw res station entry = instruction's immediate field
   reservation_stations.entries[thisStationNumber].address = instr_memory[thisMapEntry.instrMemoryIndex].immediate;
-      setTag1 = find_value_in_rob(source1);
-      if (setTag1 != UNDEFINED) {
-        reservation_stations.entries[thisStationNumber].tag1 = setTag1;
-        reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
-      } else {
-        reservation_stations.entries[thisStationNumber].value1 =
-            float2unsigned(get_fp_register(thisInstruction.src1));
-        reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
-      }
-      setTag1 = get_int_register_tag(thisInstruction.src2);
-      if(setTag1!=UNDEFINED){
-        reservation_stations.entries[thisStationNumber].tag2 = setTag1;
-        reservation_stations.entries[thisStationNumber].value2 = UNDEFINED;
-      }
-      else{
-        reservation_stations.entries[thisStationNumber].tag2 = UNDEFINED;
-        reservation_stations.entries[thisStationNumber].value2 = get_int_register(thisInstruction.src2);
-      }
- 
+  //value to be stored
+  //if sws, correct for fp register in rob
+  if(!intStoreInstruction){
+    source1 +=32;
+  }
+  //handling value to be stored
+  setTag1 = find_value_in_rob(source1);
+  //if in rob, set to tag value
+  if (setTag1 != UNDEFINED) {
+    reservation_stations.entries[thisStationNumber].tag1 = setTag1;
+    reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
+    waitOnValue = true;
+  }
+  //if not in rob, get content of that register
+  else {
+    //if sws convert float register to entry to unsigned value, add to res
+    if(!intStoreInstruction){
+      reservation_stations.entries[thisStationNumber].value1 =
+          float2unsigned(get_fp_register(source1));
+    }
+    //if sw, store unsigned int register value to res
+    else{
+      reservation_stations.entries[thisStationNumber].value1 = get_int_register(source1);
+    }
+    //either way, set tag to undefined
+    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+  }
+  //handling value where register will be stored
+  setTag1 = find_value_in_rob(source2);
+  if (setTag1 != UNDEFINED) {
+    reservation_stations.entries[thisStationNumber].tag2 = setTag1;
+    reservation_stations.entries[thisStationNumber].value2 = UNDEFINED;
+    waitOnValue = true;
+  }
+  else {
+    reservation_stations.entries[thisStationNumber].tag2 = UNDEFINED;
+    reservation_stations.entries[thisStationNumber].value2 =
+        get_int_register(source2);
+  }
 }
 
 unsigned sim_ooo::find_value_in_rob(unsigned int thisReg){
   for(unsigned i = 0; i < rob.num_entries; i++){
     if(rob.entries[i].destination==thisReg){
       if(rob.entries[i].value!=UNDEFINED){
+        cout << "Value found in rob" << endl;
         return rob.entries[i].value;
       }
-      else
-      return i;
+    }
+  }
+  return UNDEFINED;
+
+}
+
+unsigned sim_ooo::find_tag_in_rob(unsigned int thisRegister){
+  for(unsigned i = 0; i < rob.num_entries; i++){
+    if(rob.entries[i].destination==thisRegister){
+      if(rob.entries[i].value==UNDEFINED){
+        cout << "Tag found in rob" << endl;
+        return i;
+      }
+      else{
+        cout << "Error: Didn't find value, but value is defined" << endl;
+        return UNDEFINED;
+      }
     }
   }
   return UNDEFINED;
@@ -1282,24 +1447,52 @@ unsigned sim_ooo::get_res_station_index(unsigned thisPC){
   return UNDEFINED;
 }
 
+void sim_ooo::reservation_station_stats(){
+  unsigned memUnits = 0;
+  unsigned fpAddUnits = 0;
+  unsigned multUnits = 0;
+  unsigned intUnits = 0;
+  res_station_t stationType;
+  for(unsigned i = 0; i< reservation_stations.num_entries; i++){
+    stationType = reservation_stations.entries[i].type;
+    switch(stationType){
+      case INTEGER_RS:
+        intUnits++;
+        break;
+      case ADD_RS:
+        fpAddUnits++;
+        break;
+      case MULT_RS:
+        multUnits++;
+        break;
+      case LOAD_B:
+        memUnits++;
+        break;
+    }
+  }
+
+}
+
+void sim_ooo::reservation_station_check(){
+ 
+}
+
 //////////////////////////////////
 // INSTRUCTION WINDOW FUNCTIONS //
 //////////////////////////////////
-unsigned sim_ooo::instruction_window_add(unsigned thisPC){
+void sim_ooo::instruction_window_add(unsigned thisWindowIndex, unsigned thisPC){
   unsigned instruction_window_index = UNDEFINED;
-  for(unsigned i = 0 ; i < pending_instructions.num_entries; i++){
-    if(pending_instructions.entries[i].pc == UNDEFINED){
-      instruction_window_index = i;
-      pending_instructions.entries[instruction_window_index].pc = thisPC*4;
-      pending_instructions.entries[instruction_window_index].issue =
-          clock_cycle;
-      return i;
-    }
-  }
-  cout << "ERROR -> Couldn't find instruction available instruction window entry" << "\n" << endl;
-  return UNDEFINED;
+  pending_instructions.entries[thisWindowIndex].pc = thisPC;
+  pending_instructions.entries[thisWindowIndex].issue = clock_cycle;
 }
 
+void sim_ooo::instruction_window_remove(unsigned thisInstructionWindowIndex){
+  pending_instructions.entries[thisInstructionWindowIndex].pc=UNDEFINED;
+  pending_instructions.entries[thisInstructionWindowIndex].issue=UNDEFINED;
+  pending_instructions.entries[thisInstructionWindowIndex].exe=UNDEFINED;
+  pending_instructions.entries[thisInstructionWindowIndex].wr=UNDEFINED;
+  pending_instructions.entries[thisInstructionWindowIndex].commit=UNDEFINED;
+}
 //////////////////////
 // HELPER FUNCTIONS //
 //////////////////////
@@ -1338,27 +1531,35 @@ void sim_ooo::print_map_entry(unsigned thisKeyValue) {
 }
 
 void sim_ooo::print_map_entry(map_entry_t thisMapEntry){
-    cout << "The execution unit is: ";
+  unsigned thisPC = reservation_stations.entries[thisMapEntry.resStationIndex].pc;
+  cout << "PC of instruction: "  << thisPC << endl;
+    cout << "Instruction window index: "
+         << thisMapEntry.instrWindowIndex << endl;
+    cout << "ROB index: " << thisMapEntry.robIndex << endl;
+    cout << "Res. station index: " << thisMapEntry.resStationIndex
+         << endl;
+    cout << "Execution unit: ";
     if (thisMapEntry.executionUnitNumber == UNDEFINED)
       cout << " UNDEFINED" << endl;
     else {
       cout << thisMapEntry.executionUnitNumber << endl;
     }
-    cout << "The instruction window index is: "
-         << thisMapEntry.instrWindowIndex << endl;
-    cout << "The rob index is: " << thisMapEntry.robIndex << endl;
-    cout << "The res station index is: " << thisMapEntry.resStationIndex
-         << endl;
-    cout << "Is the instruction ready to write?" << endl;
+    cout << "Ready to write: ";
     if (thisMapEntry.readyToWrite)
       cout << "Yes" << endl;
     else
       cout << "No" << endl;
-    cout << "Is the instruction ready to commit?" << endl;
+    cout << "Ready to commit: ";
     if(thisMapEntry.readyToCommit)
       cout << "Yes";
     else
       cout << "No" << endl;
+    cout<<"Values will be avialble at clock cycle: ";
+    if(thisMapEntry.valuesAvailable==UNDEFINED){
+      cout << "UNDEFINED" << endl;
+    }
+    else
+      cout << thisMapEntry.valuesAvailable<< endl;
     cout << "\n" << endl;
 }
 
@@ -1419,6 +1620,10 @@ bool sim_ooo::arguments_ready_find(unsigned int thisPC) {
   if (is_int_imm(instructionOpcode)) {
     return arguments_ready_int_imm(res_station_index);
   }
+  //check conditional
+  if(is_conditional(instructionOpcode)){
+    return arguments_ready_conditional(res_station_index);
+  }
   // check memory
   if (is_memory(instructionOpcode)) {
     // check load arguments
@@ -1430,53 +1635,102 @@ bool sim_ooo::arguments_ready_find(unsigned int thisPC) {
       return arguments_ready_store(res_station_index);
     }
   }
+
   return false;
 }
 
 //check if load reservation stations are ready
 bool sim_ooo::arguments_ready_load(unsigned res_station_index){
   cout<< "Checking LOAD instruction's arguments." << endl;
+  map_entry_t tempMapEntry = instruction_map.find(reservation_stations.entries[res_station_index].pc)->second;
   unsigned val1 = reservation_stations.entries[res_station_index].value1;
-  if(val1!=UNDEFINED){
-    cout<< "LOAD instruction's value1: " << val1 << endl;
-    cout<< "This instruction is ready.\n" << endl;
-    return true;
+  print_map_entry(tempMapEntry);
+  if (tempMapEntry.valuesAvailable == UNDEFINED) {
+    cout << "Values not available" << endl;
+    return false;
   }
-  cout << "Instruction is not ready to execute" << endl;
-  cout << "Instruction's argmuents not available." << endl;
-  print_culprit(val1);
+  if(tempMapEntry.valuesAvailable!=UNDEFINED){
+    cout<< "current clock cycle: " << clock_cycle << endl;
+    if(clock_cycle<tempMapEntry.valuesAvailable){
+      cout << "Values not available until clock cycle ";
+      cout << tempMapEntry.valuesAvailable << endl;
+      return false;
+    }
+    else{
+      if (val1 != UNDEFINED) {
+        cout << "LOAD instruction's value1: " << val1 << endl;
+        cout << "This instruction is ready.\n" << endl;
+        return true;
+      }
+      cout << "Instruction is not ready to execute" << endl;
+      cout << "Instruction's argmuents not available." << endl;
+      print_culprit(val1);
+      return false;
+    }
+}
   return false;
 }
 
 //check if store reservation stations are ready
-bool sim_ooo::arguments_ready_store(unsigned res_station_index){
+bool sim_ooo::arguments_ready_store(unsigned res_station_index) {
+  map_entry_t tempMapEntry =
+      instruction_map.find(reservation_stations.entries[res_station_index].pc)
+          ->second;
   unsigned val1 = reservation_stations.entries[res_station_index].value1;
   unsigned val2 = reservation_stations.entries[res_station_index].value2;
-  cout<< "Checking STORE instruction's arguments." << endl;
-  cout<< "Instruction's reservation station index: " << res_station_index<< endl;
-  if((val1!=UNDEFINED)&&(val2!=UNDEFINED)){
-    cout << "This instruction is ready.\n" << endl;
-    return true;
+  cout << "Checking STORE instruction's arguments." << endl;
+  cout << "Instruction's reservation station index: " << res_station_index
+       << endl;
+  if (tempMapEntry.valuesAvailable == UNDEFINED) {
+    cout << "Values not availabel" << endl;
+    return false;
   }
-  cout << "Instruction is not ready to execute" << endl;
-  cout << "Instruction's argmuents not available." << endl;
-  print_culprit(val1,val2);
+  if (tempMapEntry.valuesAvailable != UNDEFINED) {
+    if (clock_cycle < tempMapEntry.valuesAvailable) {
+      cout << "Values not available until clock cycle ";
+      cout << tempMapEntry.valuesAvailable << endl;
+      return false;
+    } else {
+      if ((val1 != UNDEFINED) && (val2 != UNDEFINED)) {
+        cout << "This instruction is ready.\n" << endl;
+        return true;
+      }
+      cout << "Instruction is not ready to execute" << endl;
+      cout << "Instruction's argmuents not available." << endl;
+      print_culprit(val1, val2);
+      return false;
+    }
+  }
   return false;
 }
 
 //check if single argument reservation stations are ready
 bool sim_ooo::arguments_ready_int_imm(unsigned res_station_index){
-  cout<< "Checking IMM instruction's arguments." << endl;
+  map_entry_t tempMapEntry = instruction_map.find(reservation_stations.entries[res_station_index].pc)->second;
   unsigned val1 = reservation_stations.entries[res_station_index].value1;
-  if(val1!=UNDEFINED){
-    cout<< "Imm instruction's value1: " << val1 << endl;
-    cout<< "This instruction is ready.\n" << endl;
-    return true;
+  if (tempMapEntry.valuesAvailable == UNDEFINED) {
+    cout << "Values not availabel" << endl;
+    return false;
   }
+  if(tempMapEntry.valuesAvailable!=UNDEFINED){
+    if(clock_cycle<tempMapEntry.valuesAvailable){
+      cout << "Values not available until clock cycle ";
+      cout << tempMapEntry.valuesAvailable << endl;
+      return false;
+    }
+    else{
+      if (val1 != UNDEFINED) {
+        cout << "Imm instruction's value1: " << val1 << endl;
+        cout << "This instruction is ready.\n" << endl;
+        return true;
+      }
 
-  cout << "Instruction is not ready to execute" << endl;
-  cout << "Instruction's argmuents not available." << endl;
-  print_culprit(val1);
+      cout << "Instruction is not ready to execute" << endl;
+      cout << "Instruction's argmuents not available." << endl;
+      print_culprit(val1);
+      return false;
+    }
+}
   return false;
 }
 
@@ -1484,17 +1738,63 @@ bool sim_ooo::arguments_ready_int_imm(unsigned res_station_index){
 bool sim_ooo::arguments_ready_fp_alu(unsigned res_station_index){
   cout<< "Checking FP instruction's arguments." << endl;
   cout<< "Instruction's reservation station index: " << res_station_index<< endl;
+  map_entry_t tempMapEntry = instruction_map.find(reservation_stations.entries[res_station_index].pc)->second;
   unsigned val1 = reservation_stations.entries[res_station_index].value1;
   unsigned val2 = reservation_stations.entries[res_station_index].value2;
-  if((val1!=UNDEFINED) || (val2!=UNDEFINED)){
-    if (val1 != UNDEFINED && val2 != UNDEFINED) {
-      cout << "This instruction is ready." << endl;
-      return true;
+  if (tempMapEntry.valuesAvailable == UNDEFINED) {
+    cout << "Values not availabel" << endl;
+    return false;
+  }
+  if(tempMapEntry.valuesAvailable!=UNDEFINED){
+    if(clock_cycle<tempMapEntry.valuesAvailable){
+      cout << "Values not available until clock cycle ";
+      cout << tempMapEntry.valuesAvailable << endl;
+      return false;
+    }
+    else{
+      if ((val1 != UNDEFINED) || (val2 != UNDEFINED)) {
+        if (val1 != UNDEFINED && val2 != UNDEFINED) {
+          cout << "This instruction is ready." << endl;
+          return true;
+        }
+      }
+      cout << "Instruction is not ready to execute" << endl;
+      cout << "Instruction's argmuents not available." << endl;
+      print_culprit(val1, val2);
+      return false;
     }
   }
-  cout << "Instruction is not ready to execute" << endl;
-  cout << "Instruction's argmuents not available." << endl;
-  print_culprit(val1,val2);
+  return false;
+}
+
+//check if conditional arguments ready
+bool sim_ooo::arguments_ready_conditional(unsigned int res_station_index){
+  cout<< "Checking conditional instruction's arguments." << endl;
+  cout<< "Instruction's reservation station index: " << res_station_index<< endl;
+  map_entry_t tempMapEntry = instruction_map.find(reservation_stations.entries[res_station_index].pc)->second;
+  unsigned val1 = reservation_stations.entries[res_station_index].value1;
+  if (tempMapEntry.valuesAvailable == UNDEFINED) {
+    cout << "Values not available" << endl;
+    return false;
+  }
+  if(tempMapEntry.valuesAvailable!=UNDEFINED){
+    if(clock_cycle<tempMapEntry.valuesAvailable){
+      cout << "Values not available until clock cycle ";
+      cout << tempMapEntry.valuesAvailable << endl;
+      return false;
+    }
+    else{
+        if (val1 != UNDEFINED) {
+          cout << "This instruction is ready." << endl;
+          return true;
+        }
+
+      cout << "Instruction is not ready to execute" << endl;
+      cout << "Instruction's argmuents not available." << endl;
+      cout << "Value1 is UNDEFINED" << endl;
+      return false;
+    }
+  }
   return false;
 }
 
@@ -1507,6 +1807,7 @@ void print_culprit(unsigned thisVal1, unsigned thisVal2){
 }
 
 void print_string_opcode(opcode_t thisOpcode) {
+  cout << "Printing opcode: " << endl;
   switch (thisOpcode) {
   case LW:
     cout << "Opcode is LW" << endl;
@@ -1626,7 +1927,6 @@ void sim_ooo::find_pending_execution_instructions(){
 //find an execution unit that will house this instruction
 void sim_ooo::find_available_execution_unit(unsigned thisPC){
   opcode_t thisOpcode = pc_to_opcode_type(thisPC);
-  print_string_opcode(thisOpcode);
 #if PRINT_EXECUTION_UNITS
   cout << "**printing execution units**" << endl;
   print_active_execution_units();
@@ -1654,6 +1954,11 @@ void sim_ooo::find_available_execution_unit(unsigned thisPC){
     // update rob
     // change rob state to execute
     rob.entries[thisMapEntry->robIndex].state = EXECUTE;
+    if(is_memory(thisOpcode)){
+      reservation_stations.entries[thisMapEntry->resStationIndex].address =
+          reservation_stations.entries[thisMapEntry->resStationIndex].value1 +
+          reservation_stations.entries[thisMapEntry->resStationIndex].address;
+    }
   } else {
     cout << "Execution unit not available." << endl;
   }
@@ -1673,44 +1978,35 @@ void sim_ooo::claim_execution_unit(unsigned int thisUnit, unsigned thisPC){
 }
 
 //decrement all active execution units
-unsigned sim_ooo::cycle_execution_units(){
+void sim_ooo::cycle_execution_units(){
   cout<< "****CYCLING EXECUTION UNITS****" << endl;
-  unsigned tempExecutionUnitEntry;
-  unsigned tempInstructionWindowIndex;
-  unsigned tempPC;
-  opcode_t tempInstructionType;
-  unsigned* executionCyclesRemaining;
-  for(unsigned i = 0; i< pending_instructions.num_entries; i++){
-    if((pending_instructions.entries[i].exe!=UNDEFINED)&&(pending_instructions.entries[i].wr==UNDEFINED)){
-      tempPC = pending_instructions.entries[i].pc;
-      map_entry_t* tempMapEntry = &instruction_map.find(tempPC)->second;
-      tempExecutionUnitEntry = tempMapEntry->executionUnitNumber;
-      tempInstructionWindowIndex = tempMapEntry->instrWindowIndex;
-      tempInstructionType = pc_to_opcode_type(tempPC);
-      executionCyclesRemaining = &exec_units[tempExecutionUnitEntry].busy;
-      if (*(executionCyclesRemaining) >= 0) {
-        cout << "Cycling unit: " << tempExecutionUnitEntry << endl;
-        cout << "Execution cycles remaining: " << *(executionCyclesRemaining)
-             << endl;
-        if(*(executionCyclesRemaining)==1){
-          tempMapEntry->readyToWrite = true;
-          /*
-          cout << "Clearing execution unit" << endl;
-          exec_units[tempExecutionUnitEntry].pc = UNDEFINED;
-          exec_units[tempExecutionUnitEntry].busy = 0;
-           */
+  unsigned execUnitNumber = UNDEFINED;
+  std::map<unsigned, map_entry_t>::iterator it;
+  it=instruction_map.begin();
+  while(it!=instruction_map.end()){
+    execUnitNumber = it->second.executionUnitNumber;
+    if(execUnitNumber!=UNDEFINED){
+      if(exec_units[execUnitNumber].busy>=0){
+        cout << "Cycling unit: " << execUnitNumber << endl;
+        cout << "Execution cycles remaining: ";
+        cout << exec_units[execUnitNumber].busy <<endl;
+        if(exec_units[execUnitNumber].busy==1){
+          it->second.readyToWrite=true;
         }
-        if(*(executionCyclesRemaining)>0){
-          (*executionCyclesRemaining)--;
+        if(exec_units[execUnitNumber].busy==0){
+          exec_units[execUnitNumber].pc = UNDEFINED;
         }
-        cout << "New execution cycles remaining: "
-             << exec_units[tempExecutionUnitEntry].busy << "\n"
-             << endl;
+        if(exec_units[execUnitNumber].busy>0){
+          exec_units[execUnitNumber].busy--;
+        }
       }
+      cout << "New execution cycles remaining: "
+           << exec_units[execUnitNumber].busy << "\n"
+           << endl;
     }
+    it++;
   }
   cout<< "****DONE CYCLING EXECUTION UNITS****\n" << endl;
-  return 0;
 }
 
 void sim_ooo::print_cycle_info(map_entry_t thisMapEntry){
@@ -1721,9 +2017,9 @@ void sim_ooo::print_cycle_info(map_entry_t thisMapEntry){
 //preform the instruction action
 void sim_ooo::take_instruction_action(map_entry_t thisMapEntry){
   cout << "\n***Taking Instruction Action***"<<endl;
+  unsigned thisPC = reservation_stations.entries[thisMapEntry.resStationIndex].pc;
+  print_pc_to_instruction(thisPC);
   opcode_t thisOpcode = thisMapEntry.instructionOpcode;
-  print_map_entry(thisMapEntry);
-  print_string_opcode(thisOpcode);
   if((thisOpcode!=LW)&&(thisOpcode!=LWS)){
     //do fp adds subs mults or divs
     if(is_fp_alu(thisOpcode)){
@@ -1873,15 +2169,13 @@ void sim_ooo::lws_instruction_action(map_entry_t thisMapEntry){
         cout << "Got instruction" << endl;
         //get values
         //register value and offset for lws
-        unsigned registerValue = reservation_stations.entries[thisMapEntry.resStationIndex].value1;
-        unsigned offset = reservation_stations.entries[thisMapEntry.resStationIndex].address;
+        unsigned address= reservation_stations.entries[thisMapEntry.resStationIndex].address;
         //compute address
-        unsigned dataMemoryIndex = registerValue + offset;
         //buffer for data
         unsigned char* dataFromMemory;
-        dataFromMemory = &data_memory[dataMemoryIndex];
+        dataFromMemory = &data_memory[address];
         unsigned convertedValue = char2unsigned(dataFromMemory);
-        print_memory_update(registerValue, offset, dataMemoryIndex, convertedValue);
+//        print_memory_update(registerValue, offset, dataMemoryIndex, convertedValue);
         //update rob
         rob.entries[thisMapEntry.robIndex].value = convertedValue;
         rob.entries[thisMapEntry.robIndex].ready = true;
@@ -1908,56 +2202,59 @@ void sim_ooo::find_ready_to_write(){
     unsigned key = it->first;
     map_entry_t* tempMapEntry = &it->second;
     if(tempMapEntry->readyToWrite){
-      cout << "Check clock cycle: " << clock_cycle;
+      cout << "Check clock cycle: " << clock_cycle << endl;
       print_write_status(tempMapEntry->readyToWrite);
       noInstructionsReadyToWrite = false;
       cout << "****WRITING RESULTS****" << endl;
       //update the reservation stations with matching tag value
       take_instruction_action(*tempMapEntry);
-      process_ready_to_write(key);
+
+      res_stations_to_update.push(tempMapEntry->resStationIndex);
+      res_stations_to_clear.push(tempMapEntry->resStationIndex);
+//      update_reservation_stations(*tempMapEntry);
+
       cout << "****DONE WRITING RESULTS****" << endl;
       cout << "***RELEASING RESERVATION STATION OF THIS INSTRUCTION***"<<endl;
       //clear tag values, clear value values, clear destination,
-      clear_reservation_station(tempMapEntry->resStationIndex);
-
       tempMapEntry->readyToWrite=false;
       cout<<"**reservation station release**"<<endl;
       cout<<"*approving commit*"<<endl;
       tempMapEntry->readyToCommit = true;
       cout << "After approving commit, map entry: " << endl;
       pending_instructions.entries[tempMapEntry->instrWindowIndex].wr = clock_cycle;
+      rob.entries[tempMapEntry->robIndex].state=WRITE_RESULT;
       print_map_entry(key);
     }
     it++;
   }
+#ifdef PRINT_DBG
   if(noInstructionsReadyToWrite){
     cout << "No instructions ready to write." << endl;
   }
+  #endif
 
 }
 
-
-void sim_ooo::process_ready_to_write(unsigned thisPC){
+void sim_ooo::update_reservation_stations(unsigned thisResStationIndex){
      //get map entry of completed instruction
-     map_entry_t tempMapEntry = instruction_map.find(thisPC)->second;
      //get value of completed instruction
-     unsigned valueToWrite = rob.entries[tempMapEntry.robIndex].value;
+
+  unsigned tempDestination = reservation_stations.entries[thisResStationIndex].destination;
+
+  unsigned valueFromRob = rob.entries[tempDestination].value;
      //print output
      //from reservation station
-     unsigned tempDestination = reservation_stations.entries[tempMapEntry.resStationIndex].destination;
-     print_write_results(1, thisPC, valueToWrite,tempDestination,0);
+     //print_write_results(1, thisPC, valueToWrite,tempDestination,0);
+     map_entry_t* tempMapEntry;
      for(unsigned i = 0; i<reservation_stations.num_entries; i++){
        if(reservation_stations.entries[i].tag1 == tempDestination){
          reservation_stations.entries[i].tag1 = UNDEFINED;
-         reservation_stations.entries[i].value1 = valueToWrite;
-         print_write_results(2, thisPC, valueToWrite, tempDestination, i);
+         reservation_stations.entries[i].value1 = valueFromRob;
        }
        if (reservation_stations.entries[i].tag2 == tempDestination) {
          reservation_stations.entries[i].tag2 = UNDEFINED;
-         reservation_stations.entries[i].value2 = valueToWrite;
-         print_write_results(3, thisPC, valueToWrite, tempDestination, i);
+         reservation_stations.entries[i].value2 = valueFromRob;
        }
-
     }
 
 }
@@ -1973,27 +2270,6 @@ void sim_ooo::clear_reservation_station(unsigned thisReservationStation){
       reservation_stations.entries[thisReservationStation].tag2 = UNDEFINED;
 }
 
-
-void print_write_results(unsigned statement, unsigned thisPC,
-                          unsigned thisValue, unsigned thisDestination, unsigned thisResIndex) {
-  switch (statement) {
-  case 1:
-    cout << "Writing results of instruction: " << thisPC << endl;
-    cout << "Value to be written: " << thisValue  << endl;
-    cout << "Searching reservation stations for tag: " << thisDestination
-         << endl;
-    break;
-    case 2:
-      cout << "Tag found in position Qj in reservation station at index: " << thisResIndex << endl;
-      cout << "Updating this reservation station's Vj with value: " << thisValue << endl;
-      break;
-    case 3:
-      cout << "Tag found in position Qk in reservation station at index: " << thisResIndex << endl;
-      cout << "Updating this reservation station's Vk with value: " << thisValue << endl;
-      break;
-  }
-}
-
 void print_write_status(bool writeStatus){
   if(writeStatus)
     cout << "ready to write" << endl;
@@ -2005,7 +2281,7 @@ void print_write_status(bool writeStatus){
  // COMMIT FUNCTIONS        //
  /////////////////////////////
 void sim_ooo::commit(){
-  print_commit_init();
+  //print_commit_init();
   commit_find();
 }
 
@@ -2020,64 +2296,53 @@ unsigned thisDestination = UNDEFINED;
 unsigned valueToBeCommitted = UNDEFINED;
 unsigned frontOfrobQueue = robq.front();
 unsigned queueToKey = frontOfrobQueue*4;
-cout << "robq.front() returned: " << frontOfrobQueue << endl;
-it = instruction_map.find(queueToKey);
-map_entry_t tempMapEntry = it->second;
+bool fpCommit = false;
 
-cout << "The corresponding instruction is: " << endl;
-print_map_entry(tempMapEntry);
-//check if in order commit is ready
-if(tempMapEntry.readyToCommit){
-  //if in order commit is ready
-  cout << "****THIS INSTRUCTION IS READY TO COMMIT****" << endl;
-  //remove from commit queue
-  cout << "***removing this instruction from queue***" << endl;
-  pending_instructions.entries[tempMapEntry.instrWindowIndex].commit = clock_cycle;
-  robq.pop();
-  if(!is_conditional(tempMapEntry.instructionOpcode)){
+it = instruction_map.find(queueToKey);
+auto mapCount = instruction_map.count(queueToKey);
+if(it==instruction_map.end()){
+  cout << "This map entry doesnt exist." << endl;
+  cout << "Value returned by map.count(): ";
+  cout << mapCount << endl;
+}
+if(it!=instruction_map.end()){
+  cout << "Map entry does exist." << endl;
+  map_entry_t tempMapEntry = it->second;
+  cout << "Map entry: " << endl;
+  print_map_entry(tempMapEntry);
+  // check if in order commit is ready
+  if (tempMapEntry.readyToCommit) {
+    // if in order commit is ready
+    cout << "****THIS INSTRUCTION IS READY TO COMMIT****" << endl;
+    // remove from commit queue
+    cout << "***removing this instruction from queue***" << endl;
+    pending_instructions.entries[tempMapEntry.instrWindowIndex].commit =
+        clock_cycle;
+    robq.pop();
     thisDestination = rob.entries[tempMapEntry.robIndex].destination;
-    if(is_int_r(tempMapEntry.instructionOpcode)){
-     cout << "This instruction destination is: R";
-     cout << thisDestination << endl;
-     valueToBeCommitted = rob.entries[tempMapEntry.robIndex].value;
-     commit_commit(false, thisDestination, valueToBeCommitted);
-     commit_to_log(pending_instructions.entries[tempMapEntry.instrWindowIndex]);
+    if (is_fp_instruction(tempMapEntry.instructionOpcode)) {
+      fpCommit = true;
+      thisDestination -= 32;
+      cout << "This instruction destination is: F";
+    } else {
+      cout << "This instruction destination is: R";
     }
-    if(is_fp_alu(tempMapEntry.instructionOpcode)){
-     thisDestination-=32;
-     cout << "This instruction destination is: F";
-     cout << thisDestination << endl;
-     valueToBeCommitted = rob.entries[tempMapEntry.robIndex].value;
-     commit_commit(true, thisDestination, valueToBeCommitted);
-     commit_to_log(pending_instructions.entries[tempMapEntry.instrWindowIndex]);
+    cout << thisDestination << endl;
+    valueToBeCommitted = rob.entries[tempMapEntry.robIndex].value;
+    commit_to_log(pending_instructions.entries[tempMapEntry.instrWindowIndex]);
+    if (!is_conditional(tempMapEntry.instructionOpcode)) {
+      commit_commit(fpCommit, thisDestination, valueToBeCommitted);
     }
-    if (is_memory(tempMapEntry.instructionOpcode)) {
-      if (tempMapEntry.instructionOpcode == LWS) {
-        thisDestination -= 32;
-        cout << "This instructions destination is: F";
-        cout << thisDestination << endl;
-        unsigned valueToBeCommitted = rob.entries[tempMapEntry.robIndex].value;
-        commit_commit(true, thisDestination, valueToBeCommitted);
-        commit_to_log(
-            pending_instructions.entries[tempMapEntry.instrWindowIndex]);
-      }
-      if(tempMapEntry.instructionOpcode==LW){
-        cout << "This instruction destination is: R";
-        cout << thisDestination << endl;
-        valueToBeCommitted = rob.entries[tempMapEntry.robIndex].value;
-        commit_commit(false, thisDestination, valueToBeCommitted);
-        commit_to_log(
-            pending_instructions.entries[tempMapEntry.instrWindowIndex]);
-      }
-    }
-    cout << "Removing from rob" << endl;
-    clear_rob_entry(tempMapEntry.robIndex);
+    cout << "Adding to ROB clear queue" << endl;
+    robs_to_clear.push(tempMapEntry.robIndex);
+    cout << "Adding to instruction window clear queue" << endl;
+    instr_windows_to_clear.push(tempMapEntry.instrWindowIndex);
     cout << "Removing from instruction map" << endl;
     instruction_map.erase(it);
+    instructions_executed++;
   }
 }
 }
-
 
 void sim_ooo::commit_commit(bool isFloat, unsigned thisRegister, unsigned thisValue){
   cout << "Updating register value" << endl;
@@ -2095,7 +2360,7 @@ void sim_ooo::commit_commit(bool isFloat, unsigned thisRegister, unsigned thisVa
   cout << "Register value has been updated" << endl;
 }
 
-void print_commit_init(){
+void print_commit_message(){
   cout << "***PREPARING TO SEARCH FOR COMMITABLE MESSAGES***" << endl;
 }
 
@@ -2105,4 +2370,32 @@ void sim_ooo::clear_rob_entry(unsigned int thisRobEntry){
   rob.entries[thisRobEntry].empty = true;
   rob.entries[thisRobEntry].value = UNDEFINED;
   rob.entries[thisRobEntry].destination = UNDEFINED;
+}
+
+  /////////////////////////////
+  // POST PROCESS FUNCTIONS  //
+  /////////////////////////////
+
+void sim_ooo::post_process(){
+  unsigned thisEntry;
+  while (!res_stations_to_update.empty()) {
+    thisEntry = res_stations_to_update.front();
+    update_reservation_stations(thisEntry);
+    res_stations_to_update.pop();
+  }
+  while(!robs_to_clear.empty()){
+    thisEntry = robs_to_clear.front();
+    clear_rob_entry(thisEntry);
+    robs_to_clear.pop();
+  }
+  while(!res_stations_to_clear.empty()){
+    thisEntry = res_stations_to_clear.front();
+    clear_reservation_station(thisEntry);
+    res_stations_to_clear.pop();
+  }
+  while(!instr_windows_to_clear.empty()){
+    thisEntry = instr_windows_to_clear.front();
+    instruction_window_remove(thisEntry);
+    instr_windows_to_clear.pop();
+  }
 }

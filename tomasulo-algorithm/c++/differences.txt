@@ -1,0 +1,306 @@
+314c314
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+361c361
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+408c408
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+455c455
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+502c502
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+549c549
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+596c596
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+643c643
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+690c690
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+737c737
+<       F2                     -    5
+---
+>       F2         30/0x41f00000    -
+739c739
+<       F4                     -    2
+---
+>       F4        500/0x43fa0000    -
+748a749,823
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0   yes     no  0x00000018       EXE    F6           -
+>     1   yes    yes  0x0000001c        WR    F5  0x43160000
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> PC of instruction: ffffffff
+> Instruction window index: 5
+> ROB index: 5
+> Res. station index: 4
+> Execution unit: 1
+> Ready to write: No
+> Ready to commit: No
+> Values will be avialble at clock cycle: 0
+> 
+> 
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0    no     no           -         -     -           -
+>     1   yes    yes  0x0000001c        WR    F5  0x43160000
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> PC of instruction: ffffffff
+> Instruction window index: 0
+> ROB index: 0
+> Res. station index: 6
+> Execution unit: 4
+> Ready to write: No
+> Ready to commit: No
+> Values will be avialble at clock cycle: 0
+> 
+> 
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> PC of instruction: ffffffff
+> Instruction window index: 1
+> ROB index: 1
+> Res. station index: 3
+> Execution unit:  UNDEFINED
+> Ready to write: No
+> Ready to commit: YesValues will be avialble at clock cycle: 0
+> 
+> 
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+>     2    no     no           -         -     -           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> PC of instruction: ffffffff
+> Instruction window index: 2
+> ROB index: 2
+> Res. station index: 3
+> Execution unit:  UNDEFINED
+> Ready to write: No
+> Ready to commit: No
+> Values will be avialble at clock cycle: 0
+> 
+> 
+754c829
+<          -      -      -      -      -
+---
+> 0x00000020     15      -      -      -
+763c838
+<     3    no     no           -         -     -           -
+---
+>     3   yes     no  0x00000020     ISSUE    F4           -
+772,773c847,848
+<    Add1    no           -           -           -     -     -     -           -
+<    Add2    no           -           -           -     -     -     -           -
+---
+>    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     3           -
+>    Add2   yes  0x00000024  0x42480000           -     -     3     4           -
+784c859
+<       F2         30/0x41f00000    -
+---
+>       F2                     -    4
+786,788c861,863
+<       F4        500/0x43fa0000    -
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4                     -    3
+>       F5                     -    1
+>       F6                     -    0
+798,799d872
+< 0x00000020     16      -      -      -
+< 0x00000024     16      -      -      -
+802a876,877
+> 0x00000020     15     16      -      -
+>          -      -      -      -      -
+807,808c882,883
+<     0   yes     no  0x00000020     ISSUE    F4           -
+<     1   yes     no  0x00000024     ISSUE    F2           -
+---
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+810c885
+<     3    no     no           -         -     -           -
+---
+>     3   yes     no  0x00000020       EXE    F4           -
+819,820c894,895
+<    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     0           -
+<    Add2   yes  0x00000024  0x42480000           -     -     0     1           -
+---
+>    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     3           -
+>    Add2   yes  0x00000024  0x42480000           -     -     3     4           -
+831c906
+<       F2                     -    1
+---
+>       F2                     -    4
+833,835c908,910
+<       F4                     -    0
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4                     -    3
+>       F5                     -    1
+>       F6                     -    0
+845,846d919
+< 0x00000020     16     17      -      -
+< 0x00000024     16      -      -      -
+849a923,924
+> 0x00000020     15     16      -      -
+>          -      -      -      -      -
+854,855c929,930
+<     0   yes     no  0x00000020       EXE    F4           -
+<     1   yes     no  0x00000024     ISSUE    F2           -
+---
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+857c932
+<     3    no     no           -         -     -           -
+---
+>     3   yes     no  0x00000020       EXE    F4           -
+866,867c941,942
+<    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     0           -
+<    Add2   yes  0x00000024  0x42480000           -     -     0     1           -
+---
+>    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     3           -
+>    Add2   yes  0x00000024  0x42480000           -     -     3     4           -
+878c953
+<       F2                     -    1
+---
+>       F2                     -    4
+880,882c955,957
+<       F4                     -    0
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4                     -    3
+>       F5                     -    1
+>       F6                     -    0
+892,893d966
+< 0x00000020     16     17      -      -
+< 0x00000024     16      -      -      -
+896a970,971
+> 0x00000020     15     16     18      -
+>          -      -      -      -      -
+901,902c976,977
+<     0   yes     no  0x00000020       EXE    F4           -
+<     1   yes     no  0x00000024     ISSUE    F2           -
+---
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+904c979
+<     3    no     no           -         -     -           -
+---
+>     3   yes    yes  0x00000020        WR    F4  0x428c0000
+913,914c988,989
+<    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     0           -
+<    Add2   yes  0x00000024  0x42480000           -     -     0     1           -
+---
+>    Add1    no           -           -           -     -     -     -           -
+>    Add2   yes  0x00000024  0x42480000  0x428c0000     -     -     4           -
+925c1000
+<       F2                     -    1
+---
+>       F2                     -    4
+927,929c1002,1004
+<       F4                     -    0
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4                     -    3
+>       F5                     -    1
+>       F6                     -    0
+939,940c1014,1015
+< 0x00000020     16     17     19      -
+< 0x00000024     16      -      -      -
+---
+>          -      -      -      -      -
+>          -      -      -      -      -
+948,949c1023,1024
+<     0   yes    yes  0x00000020        WR    F4  0x428c0000
+<     1   yes     no  0x00000024     ISSUE    F2           -
+---
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+961c1036
+<    Add2   yes  0x00000024  0x42480000  0x428c0000     -     -     1           -
+---
+>    Add2   yes  0x00000024  0x42480000  0x428c0000     -     -     4           -
+972c1047
+<       F2                     -    1
+---
+>       F2                     -    4
+974,976c1049,1051
+<       F4                     -    0
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4         70/0x428c0000    -
+>       F5                     -    1
+>       F6                     -    0
+1012c1087
+<    Add2    no           -           -           -     -     -     -           -
+---
+>    Add2   yes  0x00000024  0x42480000  0x428c0000     -     -     4           -
+1023c1098
+<       F2        -20/0xc1a00000    -
+---
+>       F2                     -    4
+1026,1027c1101,1102
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F5                     -    1
+>       F6                     -    0
+1053d1127
+< 0x00000010      1      2      4     15
+1058,1059c1132,1133
+< 0x00000020     16     17     19     20
+< 0x00000024     16     20     22     23
+---
+> 0x00000010      1      2      4     15
+> 0x00000020     15     16     18     19
+1061,1063c1135,1137
+< Instruction executed = 7
+< Clock cycles = 24
+< IPC = 0.291667
+---
+> Instruction executed = 6
+> Clock cycles = 100
+> IPC = 0.06

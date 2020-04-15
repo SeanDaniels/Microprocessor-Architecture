@@ -15,6 +15,7 @@ using namespace std;
 int instruction_index = 0;
 unsigned clock_cycle = 0;
 bool programComplete = false;
+bool eop_issued = false;
 
 // used for debugging purposes
 static const char *stage_names[NUM_STAGES] = {"ISSUE", "EXE", "WR", "COMMIT"};
@@ -751,6 +752,7 @@ void sim_ooo::a_cycle(){
   commit();
   write_results();
   execute();
+  if(!eop_issued)
   issue_instruction();
   post_process();
 }
@@ -888,7 +890,12 @@ void sim_ooo::issue_instruction(){
   if(!rob_full()){
     cout << "****ISSUING INSTRUCTION****" << endl;
     cout << "->Rob is not full" << endl;
-    res_station_t thisResStationType = get_station_type(currentInstruction);
+    res_station_t thisResStationType;
+    if (currentInstruction.opcode == EOP) {
+      eop_issued=true;
+      return;
+    }
+    thisResStationType = get_station_type(currentInstruction);
     resStationIndex = get_available_res_station(thisResStationType);
     if(resStationIndex!=UNDEFINED){
       //creat instruction map entry

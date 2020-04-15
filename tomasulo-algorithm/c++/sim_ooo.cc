@@ -10,6 +10,7 @@
 #define TEST_NUM_CYCLES 4
 #define PRINT_EXECUTION_UNITS 0
 #define EARLY_COMMIT_DEBUG
+#define REG_DBG
 //#define PRINT_DBG
 //#define BRANCH_DBG
 using namespace std;
@@ -22,6 +23,9 @@ bool programComplete = false;
 bool eop_issued = false;
 bool branchTrigger = false;
 bool branchTriggerCleared = false;
+bool doBranchCommit = false;
+unsigned branchDestination = UNDEFINED;
+unsigned branchValue = UNDEFINED;
 unsigned eop_q_number = UNDEFINED;
 
 // used for debugging purposes
@@ -1092,6 +1096,11 @@ unsigned sim_ooo::rob_add(instruction_t &thisInstruction, unsigned thisPC){
     //fp instructions go into float registers, update float names
     if (is_fp_instruction(thisInstruction.opcode)) {
       float_gp[thisInstruction.dest].name = robIndex;
+      #ifdef REG_DBG
+      if(thisInstruction.opcode == SUBS){
+        cout << "This target register's name is: " << float_gp[thisInstruction.dest].name;
+      }
+      #endif
     } else {
       //int instrutions go into gp registers, if destination exists, write dest
       if (!is_conditional(thisInstruction.opcode)) {
@@ -2590,7 +2599,9 @@ if(it!=instruction_map.end()){
       commit_commit(fpCommit, thisDestination, valueToBeCommitted);
     }
     else if(is_conditional(tempMapEntry.instructionOpcode)){
-      branch_commit(thisDestination,valueToBeCommitted);
+      doBranchCommit= true;
+      branchDestination = thisDestination;
+      branchValue = valueToBeCommitted;
     }
     else{
     }
@@ -2660,6 +2671,23 @@ void sim_ooo::branch_commit(unsigned thisDestination, unsigned thisValueToBeComm
             cout << "Locating ROB entry." << endl;
 #endif
             unsigned robIndex = tempMapEntry.robIndex;
+            //find name in registers
+            for(unsigned i = 0; i< NUM_GP_REGISTERS; i++){
+              if(float_gp[i].name == robIndex){
+#ifdef REG_DBG
+                cout << "Found tag at float entry " << i <<endl;
+                #endif
+                float_gp[i].name = UNDEFINED;
+                float_gp[i].busy = false;
+              }
+              if(int_gp[i].name == robIndex){
+#ifdef REG_DBG
+                cout << "Found tag at int entry " << i <<endl;
+                #endif
+                int_gp[i].name=UNDEFINED;
+                int_gp[i].busy=false;
+              }
+            }
             clear_rob_entry(robIndex);
 #ifdef BRANCH_DBG
             cout << "Locating instruction window entry." << endl;
@@ -2716,10 +2744,22 @@ void sim_ooo::commit_commit(bool isFloat, unsigned thisRegister,
     float_gp[thisRegister].value = fpValue;
     float_gp[thisRegister].busy = false;
     float_gp[thisRegister].name = UNDEFINED;
+    // for(unsigned i = 0; i< rob.num_entries; i++){
+    //   if(rob.entries[i].destination==(thisRegister+32)){
+    //     float_gp[thisRegister].name=i;
+    //     float_gp[thisRegister].busy = true;
+    //   }
+    // }
   } else {
     int_gp[thisRegister].value = thisValue;
     int_gp[thisRegister].busy = false;
     int_gp[thisRegister].name = UNDEFINED;
+    // for(unsigned i = 0; i< rob.num_entries; i++){
+    //   if(rob.entries[i].destination==thisRegister){
+    //     int_gp[thisRegister].name=i;
+    //     int_gp[thisRegister].busy = true;
+    //   }
+    // }
   }
 #ifdef PRINT_DBG
   cout << "Register value has been updated" << endl;
@@ -2766,5 +2806,11 @@ void sim_ooo::post_process(){
     thisEntry = instr_windows_to_clear.front();
     instruction_window_remove(thisEntry);
     instr_windows_to_clear.pop();
+  }
+  if(doBranchCommit){
+    branch_commit(branchDestination,branchValue);
+    doBranchCommit = false;
+    branchDestination = UNDEFINED;
+    branchValue = UNDEFINED;
   }
 }

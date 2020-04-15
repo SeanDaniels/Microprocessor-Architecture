@@ -8,7 +8,7 @@ CFLAGS = $(OPT)
 SIM_OBJ = sim_ooo.o
 
 #TESTCASES = testcase1 testcase2 testcase3 testcase4 testcase5 testcase6 # ECE463 testcases
-TESTCASES = testcase1 testcase2 testcase3
+TESTCASES = testcase1 testcase2 testcase3 testcase4
 
 #################################
 
@@ -32,6 +32,9 @@ testcase2: .cc.o testcase
 
 testcase3: .cc.o testcase
 	$(CC) -o bin/testcase3 $(CFLAGS) $(SIM_OBJ) testcases/testcase3.o
+
+testcase4: .cc.o testcase
+	$(CC) -o bin/testcase4 $(CFLAGS) $(SIM_OBJ) testcases/testcase4.o
 # type "make clean" to remove all .o files plus the sim binary
 clean:
 	rm -f testcases/*.o

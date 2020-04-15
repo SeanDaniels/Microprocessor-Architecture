@@ -516,14 +516,18 @@ public:
   // perform the committing
   void commit_commit(bool isFloat, unsigned thisRegister, unsigned thisValue);
 
+  void branch_commit(unsigned thisDestination, unsigned thisValueToBeCommitted);
+
   void clear_rob_entry(unsigned thisRobEntry);
 
   /////////////////////////////
   // POST PROCESS FUNCTIONS  //
   /////////////////////////////
 
+    //cycle through gathered list to clear res station, rob, and instruction window
   void post_process();
-  void clear_res_station(unsigned thisResStationIndex);
+
+    void clear_res_station(unsigned thisResStationIndex);
 };
 // printing which value is impeding execution
 void print_culprit(unsigned thisVal1 = 0, unsigned thisVal2 = 0);

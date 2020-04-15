@@ -9,8 +9,9 @@
 
 #define TEST_NUM_CYCLES 4
 #define PRINT_EXECUTION_UNITS 0
+#define EARLY_COMMIT_DEBUG
 //#define PRINT_DBG
-#define BRANCH_DBG
+//#define BRANCH_DBG
 using namespace std;
 //global variable to access instruction memory in issue stage
 int instruction_index = 0;
@@ -758,8 +759,13 @@ void sim_ooo::a_cycle(){
   commit();
   write_results();
   execute();
-  if(!eop_issued)
-  issue_instruction();
+  for(unsigned i = 0; i< issue_width; i++){
+    #ifdef ISSUE_DBG
+    cout << "Attempting issue # "<< i+1 << endl;
+    #endif
+    if (!eop_issued)
+      issue_instruction();
+  }
   post_process();
 }
 
@@ -2426,8 +2432,12 @@ void sim_ooo::find_ready_to_write(){
         #endif
         noInstructionsReadyToWrite = false;
         // update the reservation stations with matching tag value
+        #ifdef EARLY_COMMIT_DBG
+        if(tempMapEntry->instructionOpcode==SUBS){
+          cout << "The SUBS writes now" << endl;
+        }
+        #endif
         take_instruction_action(*tempMapEntry);
-
         res_stations_to_update.push(tempMapEntry->resStationIndex);
         res_stations_to_clear.push(tempMapEntry->resStationIndex);
         //      update_reservation_stations(*tempMapEntry);
@@ -2579,64 +2589,10 @@ if(it!=instruction_map.end()){
     if (!is_conditional(tempMapEntry.instructionOpcode)) {
       commit_commit(fpCommit, thisDestination, valueToBeCommitted);
     }
+    else if(is_conditional(tempMapEntry.instructionOpcode)){
+      branch_commit(thisDestination,valueToBeCommitted);
+    }
     else{
-#ifdef BRANCH_DBG
-      cout << "Branch info(destination,value) " << endl;
-      cout << thisDestination << endl;
-      cout << "PC determined by branch instruction: " << valueToBeCommitted << endl;
-      cout << "Branch predicted PC: " << branchPredictedValue << endl;
-      if(branchPredictedValue!=valueToBeCommitted){
-        cout << "test" << endl;
-        unsigned removalCount = 0;
-        if(!branch_instruction_map_keys.empty()){
-          while(!branch_instruction_map_keys.empty()){
-            removalCount++;
-            cout << "Must clean ROB and Res. Stations" << endl;
-            cout << "Before deletions:" << endl;
-            print_rob();
-            print_reservation_stations();
-            unsigned tempMapKey = branch_instruction_map_keys.front();
-            map_entry_t tempMapEntry = instruction_map.find(tempMapKey)->second;
-            cout << "First entry to be cleared: " << tempMapKey << endl;
-            cout << "Checking if in execution." << endl;
-            unsigned execUnitNumber = tempMapEntry.executionUnitNumber;
-            if (execUnitNumber != UNDEFINED) {
-              cout << "It is being executed. Must remove from execution unit"
-                   << endl;
-              exec_units[execUnitNumber].busy = 0;
-              exec_units[execUnitNumber].pc = UNDEFINED;
-            }
-            cout << "Location reservation station entry." << endl;
-            unsigned resStationIndex = tempMapEntry.resStationIndex;
-            clear_reservation_station(resStationIndex);
-            cout << "Locating ROB entry." << endl;
-            unsigned robIndex = tempMapEntry.robIndex;
-            clear_rob_entry(robIndex);
-            cout << "Locating instruction window entry." << endl;
-            unsigned instrWindowIndex = tempMapEntry.instrWindowIndex;
-            cout << "Committing to log" << endl;
-            commit_to_log(pending_instructions.entries[instrWindowIndex]);
-            cout << "Removing from instr window index" << endl;
-            instruction_window_remove(instrWindowIndex);
-            cout << "After deletions:" << endl;
-            print_rob();
-            print_reservation_stations();
-            print_map_entry(tempMapEntry);
-            cout << "Removing instruction map entry." << endl;
-            instruction_map.erase(tempMapKey);
-            cout << "Moving to next erasable entry" << endl;
-            branch_instruction_map_keys.pop();
-          }
-          for(unsigned i = 0; i<removalCount; i++){
-            robq.pop();
-          }
-        }
-        cout << "Changing PC to: " << valueToBeCommitted/4 << endl;
-        branchCorrectedValue = valueToBeCommitted/4;
-        cout <<  "Clearing branch trigger" << endl;
-        branchTriggerCleared=true;
-      }
-#endif
     }
     commit_to_log(pending_instructions.entries[tempMapEntry.instrWindowIndex]);
 #ifdef PRINT_DBG
@@ -2659,26 +2615,115 @@ if(it!=instruction_map.end()){
 }
 }
 
-void sim_ooo::commit_commit(bool isFloat, unsigned thisRegister, unsigned thisValue){
-       #ifdef PRINT_DBG
+void sim_ooo::branch_commit(unsigned thisDestination, unsigned thisValueToBeCommitted){
+#ifdef BRANCH_DBG
+      cout << "Branch info(destination,value) " << endl;
+      cout << thisDestination << endl;
+      cout << "PC determined by branch instruction: " << thisValueToBeCommitted << endl;
+      cout << "Branch predicted PC: " << branchPredictedValue << endl;
+#endif
+      if(branchPredictedValue!=thisValueToBeCommitted){
+#ifdef BRANCH_DBG
+        cout << "test" << endl;
+#endif
+        unsigned removalCount = 0;
+        if(!branch_instruction_map_keys.empty()){
+          while(!branch_instruction_map_keys.empty()){
+            removalCount++;
+#ifdef BRANCH_DBG
+            cout << "Must clean ROB and Res. Stations" << endl;
+            cout << "Before deletions:" << endl;
+            print_rob();
+            print_reservation_stations();
+#endif
+            unsigned tempMapKey = branch_instruction_map_keys.front();
+            map_entry_t tempMapEntry = instruction_map.find(tempMapKey)->second;
+#ifdef BRANCH_DBG
+            cout << "First entry to be cleared: " << tempMapKey << endl;
+            cout << "Checking if in execution." << endl;
+#endif
+            unsigned execUnitNumber = tempMapEntry.executionUnitNumber;
+            if (execUnitNumber != UNDEFINED) {
+#ifdef BRANCH_DBG
+              cout << "It is being executed. Must remove from execution unit"
+                   << endl;
+#endif
+              exec_units[execUnitNumber].busy = 0;
+              exec_units[execUnitNumber].pc = UNDEFINED;
+            }
+#ifdef BRANCH_DBG
+            cout << "Location reservation station entry." << endl;
+#endif
+            unsigned resStationIndex = tempMapEntry.resStationIndex;
+            clear_reservation_station(resStationIndex);
+#ifdef BRANCH_DBG
+            cout << "Locating ROB entry." << endl;
+#endif
+            unsigned robIndex = tempMapEntry.robIndex;
+            clear_rob_entry(robIndex);
+#ifdef BRANCH_DBG
+            cout << "Locating instruction window entry." << endl;
+#endif
+            unsigned instrWindowIndex = tempMapEntry.instrWindowIndex;
+#ifdef BRANCH_DBG
+            cout << "Committing to log" << endl;
+#endif
+            commit_to_log(pending_instructions.entries[instrWindowIndex]);
+#ifdef BRANCH_DBG
+            cout << "Removing from instr window index" << endl;
+#endif
+            instruction_window_remove(instrWindowIndex);
+#ifdef BRANCH_DBG
+            cout << "After deletions:" << endl;
+#endif
+            print_rob();
+#ifdef BRANCH_DBG
+            print_reservation_stations();
+#endif
+            print_map_entry(tempMapEntry);
+#ifdef BRANCH_DBG
+            cout << "Removing instruction map entry." << endl;
+#endif
+            instruction_map.erase(tempMapKey);
+#ifdef BRANCH_DBG
+            cout << "Moving to next erasable entry" << endl;
+#endif
+            branch_instruction_map_keys.pop();
+          }
+          for(unsigned i = 0; i<removalCount; i++){
+            robq.pop();
+          }
+        }
+#ifdef BRANCH_DBG
+        cout << "Changing PC to: " << thisValueToBeCommitted/4 << endl;
+#endif
+        branchCorrectedValue = thisValueToBeCommitted/4;
+#ifdef BRANCH_DBG
+        cout <<  "Clearing branch trigger" << endl;
+#endif
+        branchTriggerCleared=true;
+      }
+
+}
+void sim_ooo::commit_commit(bool isFloat, unsigned thisRegister,
+                            unsigned thisValue) {
+#ifdef PRINT_DBG
   cout << "Updating register value" << endl;
 #endif
 
-  if(isFloat){
+  if (isFloat) {
     float fpValue = unsigned2float(thisValue);
     float_gp[thisRegister].value = fpValue;
     float_gp[thisRegister].busy = false;
     float_gp[thisRegister].name = UNDEFINED;
-  }
-  else{
+  } else {
     int_gp[thisRegister].value = thisValue;
     int_gp[thisRegister].busy = false;
     int_gp[thisRegister].name = UNDEFINED;
   }
-       #ifdef PRINT_DBG
+#ifdef PRINT_DBG
   cout << "Register value has been updated" << endl;
 #endif
-
 }
 
 void print_commit_message(){

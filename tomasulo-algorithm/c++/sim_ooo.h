@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string>
+#include <stack>
 using namespace std;
 
 #define UNDEFINED 0xFFFFFFFF // constant used for initialization
@@ -235,6 +236,8 @@ class sim_ooo {
   queue<unsigned> instr_windows_to_clear;
 
   queue<unsigned> res_stations_to_update;
+
+  queue<unsigned> branch_instruction_map_keys;
   // link between rob, reservation station, and instruction window
   map<unsigned, map_entry_t> instruction_map;
 
@@ -486,6 +489,8 @@ public:
   void conditional_instruction_action(map_entry_t thisMapEntry);
 
   void print_active_execution_units();
+
+  void eop_execution();
   //////////////////////
   // MEMORY FUNCTIONS //
   //////////////////////

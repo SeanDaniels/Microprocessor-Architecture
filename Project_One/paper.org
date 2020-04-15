@@ -1,0 +1,80 @@
+#+TITLE: paper
+Submission instructions
+Report: Your report should be no longer than 4 pages (11 pt. Times New Roman font), including figures. The
+report should be typed. It should include the following information:
+
+ Description of data structures used to model general purpose registers and pipeline registers;
+ Description of your approach to handle data, control and structural hazards;
+ Brief explanation of what works and what not in your implementation;
+ If you modified the Makefile, indicate it in the report.
+* Purpose
+The purpose of this project is to simulate a 5-stage MIPS processor using C++.
+In order to accurately simulate a multi-stage processor, correct logic and data
+structures must be implemented and executed. This portion of the project is
+limited to implementing an integer pipeline.
+* Requirements
+In order to be considered a successful implementation, the simulator needed to
+satisfy a number of requirements. A primary requirement is the creation of a
+data structure that can act as a collection of pipeline registers. This
+simulator must accomodate 32 integer registers, and the instructions must be
+seperated from the data. The simulator also needed to have a configurable memory
+latency. Aside from the memory unit, all of the stages needed to be configured
+to complete in a single clock cycle. The simulator also needed to be designed to
+handle the following instructions:
+- Loading from memory
+- Storing to memory
+- Arithmatic instructions
+- Conditional instructions
+- Jumping instructions
+- Stalling instructions
+The most pressing and time consuming requirement of this project is that the
+processor must simulate and successfully handle structural hazards, data
+hazards, and control hazards.
+* Description of data structures used to model general purpose registers and pipeline registers
+I chose to create an array in order to simulate general purpose registers. My
+decision was based on the ease with which an array can be iterated through. The
+project indicated a set number of general purpose registers, so there was no
+need to consider a data structure that could dynamically change size. Sorting
+was not required, so I didn't consider any structure that aided in that respect.
+The array fulfilled the simple requirements provided, allowed straight forward
+instantiation and deletion.
+I created an object to simulate each stage of the pipeline. The object consists
+of an instruction type (provided by Professor Becchi) an array of unsigned
+integers to simulate the special purpose registers at each stage. These
+individual objects were held an array, which allowed me to iterate through it
+and access each stage's special purpose registers with pre-defined values that
+were easy call throughout the program. The naming convention and accessing got a
+little convoluted as the program grew. If I were to start over, I may consider
+not simulating the pipeline registers as an array, but instead creating seperate
+object for each stage and storing it as discreete object in the MIPS object.
+* Description of the approach to handle data hazard
+In order to handle potential data hazard, I utilized a check function at each
+instruction decode. The basic flow the decode stage is [insert flow]. This
+checker essentially looks forward through the stages of the pipeline to see if
+either argument of the decoded instruction is a destination register for any
+instruction currently in the pipeline. If there is an instruction that the currently
+decoded instruction depends on, the appropriate numbers of stalls are inserted.
+The appropriate number of stalls is determined by the location of the pending
+instruction. The farther along the pipeline the pending instruction is, the
+fewer stalls need to be inserted. The number of stalls inserted also depends the
+type of instruction that is pending. If an arithmatic function is blocking the
+current instruction, more stalls need to be added than if the blocking
+instruction is a storing instruction.
+* Description of the approach to handle control hazards
+In order to handle potential control hazards, the fetch stage needed to be
+designed to check if the pipelines NPC can be determined immediately. In the
+case of branching instructions, the NPC can not be determined until the
+execution stage for the branching stage has completed. In order to accomodate
+this, two stalls are inserted after the branching insruction is identified.
+Logic was added to the check if the appropriate number of stalls were inserted.
+If the number of insertions matched the number of needed inssertions, the
+conditional output of the branching instruction is checked. If the conditional
+was satisfied, the pipeline NPC parsed from the immediate special purpose
+register of the branching instruction, located at EXE_MEM stage of the pipeline.
+If the conditional is not satisfied, the pipeline's NPC is calculated as the
+instruction located after the conditional instruction in instruction memory.
+* Description to handle structural hazards
+In order to handle the structural hazards, the
+* What works
+* What doesn't work
+* General remarks

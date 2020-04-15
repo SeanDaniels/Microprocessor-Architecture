@@ -1,0 +1,7065 @@
+
+BEFORE PROGRAM EXECUTION...
+======================================================================
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0          0/0x00000000    -
+      F1         10/0x41200000    -
+      F2         20/0x41a00000    -
+      F3         30/0x41f00000    -
+      F4         40/0x42200000    -
+      F5         50/0x42480000    -
+      F6         60/0x42700000    -
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+DATA MEMORY[0x00000000:0x00000030]
+0x00000000: ff ff ff ff 
+0x00000004: ff ff ff ff 
+0x00000008: ff ff ff ff 
+0x0000000c: ff ff ff ff 
+0x00000010: ff ff ff ff 
+0x00000014: 00 00 20 41 
+0x00000018: ff ff ff ff 
+0x0000001c: ff ff ff ff 
+0x00000020: ff ff ff ff 
+0x00000024: ff ff ff ff 
+0x00000028: 00 00 f0 41 
+0x0000002c: ff ff ff ff 
+
+*****************************
+STARTING THE PROGRAM...
+*****************************
+
+First 20 clock cycles: inspecting the registers at each clock cycle...
+======================================================================
+
+CLOCK CYCLE #0
+This map entry doesnt exist.
+Value returned by map.count(): 0
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+No instructions are pending execution.
+****CYCLING EXECUTION UNITS****
+****DONE CYCLING EXECUTION UNITS****
+
+0
+Printing opcode: 
+Opcode is LWS
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+0
+Printing opcode: 
+Opcode is LWS
+->Reservation station info:
+Source: R1
+Destination: F0
+Neither tag nor value found in rob, value found in memory: 10
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 0
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000000      0      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000000     ISSUE    F0           -
+    1    no     no           -         -     -           -
+    2    no     no           -         -     -           -
+    3    no     no           -         -     -           -
+    4    no     no           -         -     -           -
+    5    no     no           -         -     -           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1   yes  0x00000000  0x0000000a           -     -     -     0  0x0000000a
+  Load2    no           -           -           -     -     -     -           -
+   Add1    no           -           -           -     -     -     -           -
+   Add2    no           -           -           -     -     -     -           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2    no           -           -           -     -     -     -           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0                     -    0
+      F1         10/0x41200000    -
+      F2         20/0x41a00000    -
+      F3         30/0x41f00000    -
+      F4         40/0x42200000    -
+      F5         50/0x42480000    -
+      F6         60/0x42700000    -
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #1
+Map entry does exist.
+Map entry: 
+PC of instruction: 0
+Instruction window index: 0
+ROB index: 0
+Res. station index: 1
+Execution unit:  UNDEFINED
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is LWS
+Source 1: 1
+Source 2: 4294967295
+Destination: 0
+
+
+Attempting to begin execution.
+It is a Memory instruction
+
+Checking LOAD instruction's arguments.
+PC of instruction: 0
+Instruction window index: 0
+ROB index: 0
+Res. station index: 1
+Execution unit:  UNDEFINED
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+current clock cycle: 1
+LOAD instruction's value1: 10
+This instruction is ready.
+
+*searching for execution unit*
+claiming execution unit
+Execution unit 5 claimed for this instruction
+Beginning execution of this instruction at clock cycle: 1
+Instruction should write result at clock cycle: 2
+execution has begun
+****CYCLING EXECUTION UNITS****
+Cycling unit: 5
+Execution cycles remaining: 1
+Ready to write: 
+Printing opcode: 
+Opcode is LWS
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+1
+Printing opcode: 
+Opcode is LWS
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+4
+Printing opcode: 
+Opcode is LWS
+->Reservation station info:
+Source: R2
+Destination: F2
+Neither tag nor value found in rob, value found in memory: 20
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 1
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000000      0      1      -      -
+0x00000004      1      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000000       EXE    F0           -
+    1   yes     no  0x00000004     ISSUE    F2           -
+    2    no     no           -         -     -           -
+    3    no     no           -         -     -           -
+    4    no     no           -         -     -           -
+    5    no     no           -         -     -           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1   yes  0x00000000  0x0000000a           -     -     -     0  0x00000014
+  Load2   yes  0x00000004  0x00000014           -     -     -     1  0x00000014
+   Add1    no           -           -           -     -     -     -           -
+   Add2    no           -           -           -     -     -     -           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2    no           -           -           -     -     -     -           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0                     -    0
+      F1         10/0x41200000    -
+      F2                     -    1
+      F3         30/0x41f00000    -
+      F4         40/0x42200000    -
+      F5         50/0x42480000    -
+      F6         60/0x42700000    -
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #2
+Map entry does exist.
+Map entry: 
+PC of instruction: 0
+Instruction window index: 0
+ROB index: 0
+Res. station index: 1
+Execution unit: 5
+Ready to write: Yes
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+Check clock cycle: 2
+ready to write
+****WRITING RESULTS****
+
+***Taking Instruction Action***
+This instruction is -
+Printing opcode: 
+Opcode is LWS
+Source 1: 1
+Source 2: 4294967295
+Destination: 0
+
+
+Performing LWS
+Getting instruction
+This instruction is -
+Printing opcode: 
+Opcode is LWS
+Source 1: 1
+Source 2: 4294967295
+Destination: 0
+
+
+Got instruction
+***Done taking Instruction Action***
+
+****DONE WRITING RESULTS****
+***RELEASING RESERVATION STATION OF THIS INSTRUCTION***
+**reservation station release**
+*approving commit*
+After approving commit, map entry: 
+The key is: 0
+The execution unit is: 5
+The instruction window index is: 0
+The rob index is: 0
+The res station index is: 1
+Is the instruction ready to write?
+No
+Is the instruction ready to commit?
+Yes
+
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is LWS
+Source 1: 2
+Source 2: 4294967295
+Destination: 2
+
+
+Attempting to begin execution.
+It is a Memory instruction
+
+Checking LOAD instruction's arguments.
+PC of instruction: 4
+Instruction window index: 1
+ROB index: 1
+Res. station index: 2
+Execution unit:  UNDEFINED
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+current clock cycle: 2
+LOAD instruction's value1: 20
+This instruction is ready.
+
+*searching for execution unit*
+Execution unit not available.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 5
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+2
+Printing opcode: 
+Opcode is ADDS
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+8
+Printing opcode: 
+Opcode is ADDS
+->Reservation station info:
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 0
+Source 2: 2
+Destination: 3
+
+
+Value found in rob
+Tag found in rob
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 2
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000000      0      1      2      -
+0x00000004      1      -      -      -
+0x00000008      2      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes    yes  0x00000000        WR    F0  0x41200000
+    1   yes     no  0x00000004     ISSUE    F2           -
+    2   yes     no  0x00000008     ISSUE    F3           -
+    3    no     no           -         -     -           -
+    4    no     no           -         -     -           -
+    5    no     no           -         -     -           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2   yes  0x00000004  0x00000014           -     -     -     1  0x00000014
+   Add1   yes  0x00000008  0x41200000           -     -     1     2           -
+   Add2    no           -           -           -     -     -     -           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2    no           -           -           -     -     -     -           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0                     -    0
+      F1         10/0x41200000    -
+      F2                     -    1
+      F3                     -    2
+      F4         40/0x42200000    -
+      F5         50/0x42480000    -
+      F6         60/0x42700000    -
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #3
+Map entry does exist.
+Map entry: 
+PC of instruction: 4294967295
+Instruction window index: 0
+ROB index: 0
+Res. station index: 1
+Execution unit: 5
+Ready to write: No
+Ready to commit: YesValues will be avialble at clock cycle: 0
+
+
+****THIS INSTRUCTION IS READY TO COMMIT****
+***removing this instruction from queue***
+This instruction destination is: F0
+Updating register value
+Register value has been updated
+Adding to ROB clear queue
+Adding to instruction window clear queue
+Removing from instruction map
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is LWS
+Source 1: 2
+Source 2: 4294967295
+Destination: 2
+
+
+Attempting to begin execution.
+It is a Memory instruction
+
+Checking LOAD instruction's arguments.
+PC of instruction: 4
+Instruction window index: 1
+ROB index: 1
+Res. station index: 2
+Execution unit:  UNDEFINED
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+current clock cycle: 3
+LOAD instruction's value1: 20
+This instruction is ready.
+
+*searching for execution unit*
+claiming execution unit
+Execution unit 5 claimed for this instruction
+Beginning execution of this instruction at clock cycle: 3
+Instruction should write result at clock cycle: 4
+execution has begun
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 0
+Source 2: 2
+Destination: 3
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 5
+Execution cycles remaining: 1
+Ready to write: 
+Printing opcode: 
+Opcode is LWS
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+3
+Printing opcode: 
+Opcode is MULTS
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+12
+Printing opcode: 
+Opcode is MULTS
+->Reservation station info:
+This instruction is -
+Printing opcode: 
+Opcode is MULTS
+Source 1: 0
+Source 2: 5
+Destination: 4
+
+
+Value found in rob
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 3
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+         -      -      -      -      -
+0x00000004      1      3      -      -
+0x00000008      2      -      -      -
+0x0000000c      3      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0    no     no           -         -     -           -
+    1   yes     no  0x00000004       EXE    F2           -
+    2   yes     no  0x00000008     ISSUE    F3           -
+    3   yes     no  0x0000000c     ISSUE    F4           -
+    4    no     no           -         -     -           -
+    5    no     no           -         -     -           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2   yes  0x00000004  0x00000014           -     -     -     1  0x00000028
+   Add1   yes  0x00000008  0x41200000           -     -     1     2           -
+   Add2    no           -           -           -     -     -     -           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2    no           -           -           -     -     -     -           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    1
+      F3                     -    2
+      F4                     -    3
+      F5         50/0x42480000    -
+      F6         60/0x42700000    -
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #4
+Map entry does exist.
+Map entry: 
+PC of instruction: 4
+Instruction window index: 1
+ROB index: 1
+Res. station index: 2
+Execution unit: 5
+Ready to write: Yes
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+Check clock cycle: 4
+ready to write
+****WRITING RESULTS****
+
+***Taking Instruction Action***
+This instruction is -
+Printing opcode: 
+Opcode is LWS
+Source 1: 2
+Source 2: 4294967295
+Destination: 2
+
+
+Performing LWS
+Getting instruction
+This instruction is -
+Printing opcode: 
+Opcode is LWS
+Source 1: 2
+Source 2: 4294967295
+Destination: 2
+
+
+Got instruction
+***Done taking Instruction Action***
+
+****DONE WRITING RESULTS****
+***RELEASING RESERVATION STATION OF THIS INSTRUCTION***
+**reservation station release**
+*approving commit*
+After approving commit, map entry: 
+The key is: 4
+The execution unit is: 5
+The instruction window index is: 1
+The rob index is: 1
+The res station index is: 2
+Is the instruction ready to write?
+No
+Is the instruction ready to commit?
+Yes
+
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 0
+Source 2: 2
+Destination: 3
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is MULTS
+Source 1: 0
+Source 2: 5
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 5
+This instruction is ready.
+*searching for execution unit*
+claiming execution unit
+Execution unit 3 claimed for this instruction
+Beginning execution of this instruction at clock cycle: 4
+Instruction should write result at clock cycle: 14
+execution has begun
+****CYCLING EXECUTION UNITS****
+Cycling unit: 5
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 3
+Execution cycles remaining: 10
+New execution cycles remaining: 9
+
+****DONE CYCLING EXECUTION UNITS****
+
+4
+Printing opcode: 
+Opcode is BEQZ
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+16
+Printing opcode: 
+Opcode is BEQZ
+->Reservation station info:
+This instruction is -
+Printing opcode: 
+Opcode is BEQZ
+Source 1: 3
+Source 2: 4294967295
+Destination: 4294967295
+
+
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 4
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+         -      -      -      -      -
+0x00000004      1      3      4      -
+0x00000008      2      -      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      -      -      -
+         -      -      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0    no     no           -         -     -           -
+    1   yes    yes  0x00000004        WR    F2  0x41f00000
+    2   yes     no  0x00000008     ISSUE    F3           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010     ISSUE     -           -
+    5    no     no           -         -     -           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1   yes  0x00000010  0x0000000a           -     -     -     4           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000008  0x41200000  0x41f00000     -     -     2           -
+   Add2    no           -           -           -     -     -     -           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2    no           -           -           -     -     -     -           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    1
+      F3                     -    2
+      F4                     -    3
+      F5         50/0x42480000    -
+      F6         60/0x42700000    -
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #5
+Map entry does exist.
+Map entry: 
+PC of instruction: 4294967295
+Instruction window index: 1
+ROB index: 1
+Res. station index: 2
+Execution unit: 5
+Ready to write: No
+Ready to commit: YesValues will be avialble at clock cycle: 0
+
+
+****THIS INSTRUCTION IS READY TO COMMIT****
+***removing this instruction from queue***
+This instruction destination is: F2
+Updating register value
+Register value has been updated
+Adding to ROB clear queue
+Adding to instruction window clear queue
+Removing from instruction map
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 0
+Source 2: 2
+Destination: 3
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+This instruction is ready.
+*searching for execution unit*
+claiming execution unit
+Execution unit 1 claimed for this instruction
+Beginning execution of this instruction at clock cycle: 5
+Instruction should write result at clock cycle: 7
+execution has begun
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is BEQZ
+Source 1: 3
+Source 2: 4294967295
+Destination: 4294967295
+
+
+Attempting to begin execution.
+It is a Checking conditional instruction's arguments.
+Instruction's reservation station index: 0
+This instruction is ready.
+*searching for execution unit*
+claiming execution unit
+Execution unit 0 claimed for this instruction
+Beginning execution of this instruction at clock cycle: 5
+Instruction should write result at clock cycle: 7
+execution has begun
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 2
+New execution cycles remaining: 1
+
+Cycling unit: 3
+Execution cycles remaining: 9
+New execution cycles remaining: 8
+
+Cycling unit: 0
+Execution cycles remaining: 2
+New execution cycles remaining: 1
+
+****DONE CYCLING EXECUTION UNITS****
+
+5
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+20
+Printing opcode: 
+Opcode is SUBS
+->Reservation station info:
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Tag found in rob
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 5
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+         -      -      -      -      -
+         -      -      -      -      -
+0x00000008      2      5      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      -      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0    no     no           -         -     -           -
+    1    no     no           -         -     -           -
+    2   yes     no  0x00000008       EXE    F3           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010       EXE     -           -
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1   yes  0x00000010  0x0000000a           -     -     -     4           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000008  0x41200000  0x41f00000     -     -     2           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2    no           -           -           -     -     -     -           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3                     -    2
+      F4                     -    3
+      F5         50/0x42480000    -
+      F6         60/0x42700000    -
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #6
+Map entry does exist.
+Map entry: 
+PC of instruction: 8
+Instruction window index: 2
+ROB index: 2
+Res. station index: 3
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 1
+Ready to write: 
+Printing opcode: 
+Opcode is ADDS
+New execution cycles remaining: 0
+
+Cycling unit: 3
+Execution cycles remaining: 8
+New execution cycles remaining: 7
+
+Cycling unit: 0
+Execution cycles remaining: 1
+Ready to write: 
+Printing opcode: 
+Opcode is BEQZ
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+6
+Printing opcode: 
+Opcode is DIVS
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+24
+Printing opcode: 
+Opcode is DIVS
+->Reservation station info:
+This instruction is -
+Printing opcode: 
+Opcode is DIVS
+Source 1: 10
+Source 2: 0
+Destination: 6
+
+
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 6
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      -      -      -
+         -      -      -      -      -
+0x00000008      2      5      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      -      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018     ISSUE    F6           -
+    1    no     no           -         -     -           -
+    2   yes     no  0x00000008       EXE    F3           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010       EXE     -           -
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1   yes  0x00000010  0x0000000a           -     -     -     4           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000008  0x41200000  0x41f00000     -     -     2           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3                     -    2
+      F4                     -    3
+      F5         50/0x42480000    -
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #7
+Map entry does exist.
+Map entry: 
+PC of instruction: 8
+Instruction window index: 2
+ROB index: 2
+Res. station index: 3
+Execution unit: 1
+Ready to write: Yes
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+Check clock cycle: 7
+ready to write
+****WRITING RESULTS****
+
+***Taking Instruction Action***
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 0
+Source 2: 2
+Destination: 3
+
+
+Taking alu action
+****DONE WRITING RESULTS****
+***RELEASING RESERVATION STATION OF THIS INSTRUCTION***
+**reservation station release**
+*approving commit*
+After approving commit, map entry: 
+The key is: 8
+The execution unit is: 1
+The instruction window index is: 2
+The rob index is: 2
+The res station index is: 3
+Is the instruction ready to write?
+No
+Is the instruction ready to commit?
+Yes
+
+Check clock cycle: 7
+ready to write
+****WRITING RESULTS****
+
+***Taking Instruction Action***
+This instruction is -
+Printing opcode: 
+Opcode is BEQZ
+Source 1: 3
+Source 2: 4294967295
+Destination: 4294967295
+
+
+Target is instruction: 12This instruction is -
+Printing opcode: 
+Opcode is EOP
+Source 1: 4294967295
+Source 2: 4294967295
+Destination: 4294967295
+
+
+****DONE WRITING RESULTS****
+***RELEASING RESERVATION STATION OF THIS INSTRUCTION***
+**reservation station release**
+*approving commit*
+After approving commit, map entry: 
+The key is: 16
+The execution unit is: 0
+The instruction window index is: 4
+The rob index is: 4
+The res station index is: 0
+Is the instruction ready to write?
+No
+Is the instruction ready to commit?
+Yes
+
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is DIVS
+Source 1: 10
+Source 2: 0
+Destination: 6
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 6
+This instruction is ready.
+*searching for execution unit*
+claiming execution unit
+Execution unit 4 claimed for this instruction
+Beginning execution of this instruction at clock cycle: 7
+Instruction should write result at clock cycle: 47
+execution has begun
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 3
+Execution cycles remaining: 7
+New execution cycles remaining: 6
+
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 40
+New execution cycles remaining: 39
+
+****DONE CYCLING EXECUTION UNITS****
+
+7
+Printing opcode: 
+Opcode is ADDS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 7
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+         -      -      -      -      -
+0x00000008      2      5      7      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      7      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1    no     no           -         -     -           -
+    2   yes     no  0x00000008        WR    F3  0x42200000
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1    no           -           -           -     -     -     -           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3                     -    2
+      F4                     -    3
+      F5         50/0x42480000    -
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #8
+Map entry does exist.
+Map entry: 
+PC of instruction: 4294967295
+Instruction window index: 2
+ROB index: 2
+Res. station index: 3
+Execution unit: 1
+Ready to write: No
+Ready to commit: YesValues will be avialble at clock cycle: 0
+
+
+****THIS INSTRUCTION IS READY TO COMMIT****
+***removing this instruction from queue***
+This instruction destination is: F3
+Updating register value
+Register value has been updated
+Adding to ROB clear queue
+Adding to instruction window clear queue
+Removing from instruction map
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 3
+Execution cycles remaining: 6
+New execution cycles remaining: 5
+
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 39
+New execution cycles remaining: 38
+
+****DONE CYCLING EXECUTION UNITS****
+
+7
+Printing opcode: 
+Opcode is ADDS
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+28
+Printing opcode: 
+Opcode is ADDS
+->Reservation station info:
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 7
+Source 2: 8
+Destination: 5
+
+
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 8
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      -      -      -
+         -      -      -      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      7      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c     ISSUE    F5           -
+    2    no     no           -         -     -           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x0000001c  0x428c0000  0x42a00000     -     -     1           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4                     -    3
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #9
+Map entry does exist.
+Map entry: 
+PC of instruction: 12
+Instruction window index: 3
+ROB index: 3
+Res. station index: 5
+Execution unit: 3
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 7
+Source 2: 8
+Destination: 5
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+This instruction is ready.
+*searching for execution unit*
+claiming execution unit
+Execution unit 1 claimed for this instruction
+Beginning execution of this instruction at clock cycle: 9
+Instruction should write result at clock cycle: 11
+execution has begun
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 3
+Execution cycles remaining: 5
+New execution cycles remaining: 4
+
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 38
+New execution cycles remaining: 37
+
+Cycling unit: 1
+Execution cycles remaining: 2
+New execution cycles remaining: 1
+
+****DONE CYCLING EXECUTION UNITS****
+
+8
+Printing opcode: 
+Opcode is ADDS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 9
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9      -      -
+         -      -      -      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      7      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c       EXE    F5           -
+    2    no     no           -         -     -           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x0000001c  0x428c0000  0x42a00000     -     -     1           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4                     -    3
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #10
+Map entry does exist.
+Map entry: 
+PC of instruction: 12
+Instruction window index: 3
+ROB index: 3
+Res. station index: 5
+Execution unit: 3
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 3
+Execution cycles remaining: 4
+New execution cycles remaining: 3
+
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 37
+New execution cycles remaining: 36
+
+Cycling unit: 1
+Execution cycles remaining: 1
+Ready to write: 
+Printing opcode: 
+Opcode is ADDS
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+8
+Printing opcode: 
+Opcode is ADDS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 10
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9      -      -
+         -      -      -      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      7      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c       EXE    F5           -
+    2    no     no           -         -     -           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x0000001c  0x428c0000  0x42a00000     -     -     1           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4                     -    3
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #11
+Map entry does exist.
+Map entry: 
+PC of instruction: 12
+Instruction window index: 3
+ROB index: 3
+Res. station index: 5
+Execution unit: 3
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+Check clock cycle: 11
+ready to write
+****WRITING RESULTS****
+
+***Taking Instruction Action***
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 7
+Source 2: 8
+Destination: 5
+
+
+Taking alu action
+****DONE WRITING RESULTS****
+***RELEASING RESERVATION STATION OF THIS INSTRUCTION***
+**reservation station release**
+*approving commit*
+After approving commit, map entry: 
+The key is: 28
+The execution unit is: 1
+The instruction window index is: 1
+The rob index is: 1
+The res station index is: 3
+Is the instruction ready to write?
+No
+Is the instruction ready to commit?
+Yes
+
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 3
+Execution cycles remaining: 3
+New execution cycles remaining: 2
+
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 36
+New execution cycles remaining: 35
+
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+8
+Printing opcode: 
+Opcode is ADDS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 11
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+         -      -      -      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      7      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2    no     no           -         -     -           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1    no           -           -           -     -     -     -           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4                     -    3
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #12
+Map entry does exist.
+Map entry: 
+PC of instruction: 12
+Instruction window index: 3
+ROB index: 3
+Res. station index: 5
+Execution unit: 3
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 3
+Execution cycles remaining: 2
+New execution cycles remaining: 1
+
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 35
+New execution cycles remaining: 34
+
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+8
+Printing opcode: 
+Opcode is ADDS
+****ISSUING INSTRUCTION****
+->Rob is not full
+->Res stations are not full
+32
+Printing opcode: 
+Opcode is ADDS
+->Reservation station info:
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Tag found in rob
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 12
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      7      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4                     -    2
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #13
+Map entry does exist.
+Map entry: 
+PC of instruction: 12
+Instruction window index: 3
+ROB index: 3
+Res. station index: 5
+Execution unit: 3
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 3
+Execution cycles remaining: 1
+Ready to write: 
+Printing opcode: 
+Opcode is MULTS
+New execution cycles remaining: 0
+
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 34
+New execution cycles remaining: 33
+
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+[X] Rob is full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 13
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+0x0000000c      3      4      -      -
+0x00000010      4      5      7      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3   yes     no  0x0000000c       EXE    F4           -
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000           -     -     3     5           -
+  Mult1   yes  0x0000000c  0x41200000  0x42480000     -     -     3           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4                     -    2
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #14
+Map entry does exist.
+Map entry: 
+PC of instruction: 12
+Instruction window index: 3
+ROB index: 3
+Res. station index: 5
+Execution unit: 3
+Ready to write: Yes
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+Check clock cycle: 14
+ready to write
+****WRITING RESULTS****
+
+***Taking Instruction Action***
+This instruction is -
+Printing opcode: 
+Opcode is MULTS
+Source 1: 0
+Source 2: 5
+Destination: 4
+
+
+Taking alu action
+****DONE WRITING RESULTS****
+***RELEASING RESERVATION STATION OF THIS INSTRUCTION***
+**reservation station release**
+*approving commit*
+After approving commit, map entry: 
+The key is: 12
+The execution unit is: 3
+The instruction window index is: 3
+The rob index is: 3
+The res station index is: 5
+Is the instruction ready to write?
+No
+Is the instruction ready to commit?
+Yes
+
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value2 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 3
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 33
+New execution cycles remaining: 32
+
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+[X] Rob is full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 14
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+0x0000000c      3      4     14      -
+0x00000010      4      5      7      -
+0x00000014      5      -      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3   yes     no  0x0000000c        WR    F4  0x43fa0000
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014     ISSUE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000  0x43fa0000     -     -     5           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4                     -    2
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #15
+Map entry does exist.
+Map entry: 
+PC of instruction: 4294967295
+Instruction window index: 3
+ROB index: 3
+Res. station index: 5
+Execution unit: 3
+Ready to write: No
+Ready to commit: YesValues will be avialble at clock cycle: 0
+
+
+****THIS INSTRUCTION IS READY TO COMMIT****
+***removing this instruction from queue***
+This instruction destination is: F4
+Updating register value
+Register value has been updated
+Adding to ROB clear queue
+Adding to instruction window clear queue
+Removing from instruction map
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is SUBS
+Source 1: 5
+Source 2: 4
+Destination: 2
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 4
+This instruction is ready.
+*searching for execution unit*
+claiming execution unit
+Execution unit 1 claimed for this instruction
+Beginning execution of this instruction at clock cycle: 15
+Instruction should write result at clock cycle: 17
+execution has begun
+****CYCLING EXECUTION UNITS****
+Cycling unit: 0
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 1
+Execution cycles remaining: 2
+New execution cycles remaining: 1
+
+Cycling unit: 4
+Execution cycles remaining: 32
+New execution cycles remaining: 31
+
+Cycling unit: 1
+Execution cycles remaining: 1
+Ready to write: 
+Printing opcode: 
+Opcode is ADDS
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+[X] Rob is full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 15
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+         -      -      -      -      -
+0x00000010      4      5      7      -
+0x00000014      5     15      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3    no     no           -         -     -           -
+    4   yes     no  0x00000010        WR     -  0x00000014
+    5   yes     no  0x00000014       EXE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000  0x43fa0000     -     -     5           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4        500/0x43fa0000    -
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #16
+Map entry does exist.
+Map entry: 
+PC of instruction: 4294967295
+Instruction window index: 4
+ROB index: 4
+Res. station index: 0
+Execution unit: 0
+Ready to write: No
+Ready to commit: YesValues will be avialble at clock cycle: 0
+
+
+****THIS INSTRUCTION IS READY TO COMMIT****
+***removing this instruction from queue***
+This instruction destination is: R4294967295
+Adding to ROB clear queue
+Adding to instruction window clear queue
+Removing from instruction map
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 31
+New execution cycles remaining: 30
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 16
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+0x00000014      5     15      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3    no     no           -         -     -           -
+    4    no     no           -         -     -           -
+    5   yes     no  0x00000014       EXE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000  0x43fa0000     -     -     5           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4        500/0x43fa0000    -
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #17
+Map entry does exist.
+Map entry: 
+PC of instruction: 20
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 30
+New execution cycles remaining: 29
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 17
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+0x00000014      5     15      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3    no     no           -         -     -           -
+    4    no     no           -         -     -           -
+    5   yes     no  0x00000014       EXE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000  0x43fa0000     -     -     5           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4        500/0x43fa0000    -
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #18
+Map entry does exist.
+Map entry: 
+PC of instruction: 20
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 29
+New execution cycles remaining: 28
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 18
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+0x00000014      5     15      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3    no     no           -         -     -           -
+    4    no     no           -         -     -           -
+    5   yes     no  0x00000014       EXE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000  0x43fa0000     -     -     5           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4        500/0x43fa0000    -
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+CLOCK CYCLE #19
+Map entry does exist.
+Map entry: 
+PC of instruction: 20
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 28
+New execution cycles remaining: 27
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 19
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7      -      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+0x00000014      5     15      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018       EXE    F6           -
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3    no     no           -         -     -           -
+    4    no     no           -         -     -           -
+    5   yes     no  0x00000014       EXE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000  0x43fa0000     -     -     5           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4        500/0x43fa0000    -
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+
+EXECUTING PROGRAM TO COMPLETION...
+
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 1b
+New execution cycles remaining: 1a
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 14
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 1a
+New execution cycles remaining: 19
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 15
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 19
+New execution cycles remaining: 18
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 16
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 18
+New execution cycles remaining: 17
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 17
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 17
+New execution cycles remaining: 16
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 18
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 16
+New execution cycles remaining: 15
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 19
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 15
+New execution cycles remaining: 14
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 1a
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 14
+New execution cycles remaining: 13
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 1b
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 13
+New execution cycles remaining: 12
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 1c
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 12
+New execution cycles remaining: 11
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 1d
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 11
+New execution cycles remaining: 10
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 1e
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 10
+New execution cycles remaining: f
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 1f
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: f
+New execution cycles remaining: e
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 20
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: e
+New execution cycles remaining: d
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 21
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: d
+New execution cycles remaining: c
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 22
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: c
+New execution cycles remaining: b
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 23
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: b
+New execution cycles remaining: a
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 24
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: a
+New execution cycles remaining: 9
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 25
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 9
+New execution cycles remaining: 8
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 26
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 8
+New execution cycles remaining: 7
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 27
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 7
+New execution cycles remaining: 6
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 28
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 6
+New execution cycles remaining: 5
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 29
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 5
+New execution cycles remaining: 4
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 2a
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 4
+New execution cycles remaining: 3
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 2b
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 3
+New execution cycles remaining: 2
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 2c
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 2
+New execution cycles remaining: 1
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 2d
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 1
+Ready to write: 
+Printing opcode: 
+Opcode is DIVS
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 2e
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+Check clock cycle: 2f
+ready to write
+****WRITING RESULTS****
+
+***Taking Instruction Action***
+This instruction is -
+Printing opcode: 
+Opcode is DIVS
+Source 1: a
+Source 2: 0
+Destination: 6
+
+
+Taking alu action
+****DONE WRITING RESULTS****
+***RELEASING RESERVATION STATION OF THIS INSTRUCTION***
+**reservation station release**
+*approving commit*
+After approving commit, map entry: 
+The key is: 18
+The execution unit is: 4
+The instruction window index is: 0
+The rob index is: 0
+The res station index is: 6
+Is the instruction ready to write?
+No
+Is the instruction ready to commit?
+Yes
+
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 2f
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 30
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 31
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 32
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 33
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 34
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 35
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 36
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 37
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 38
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 39
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 3a
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 3b
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 3c
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 3d
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 3e
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 3f
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 40
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 41
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 42
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 43
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 44
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 45
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 46
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 47
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 48
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 49
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 4a
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 4b
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 4c
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 4d
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 4e
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 4f
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 50
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 51
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 52
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 53
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 54
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 55
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 56
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 57
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 58
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 59
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 5a
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 5b
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 5c
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 5d
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 5e
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 5f
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 60
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 61
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 62
+Map entry does exist.
+Map entry: 
+PC of instruction: 14
+Instruction window index: 5
+ROB index: 5
+Res. station index: 4
+Execution unit: 1
+Ready to write: No
+Ready to commit: No
+Values will be avialble at clock cycle: 0
+
+
+****FINDING INSTRUCTIONS THAT ARE READY TO WRITE****
+No instructions ready to write.
+****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****
+The following instruction has not begun execution: 
+This instruction is -
+Printing opcode: 
+Opcode is ADDS
+Source 1: 2
+Source 2: 3
+Destination: 4
+
+
+Attempting to begin execution.
+It is a FP Alu instruction
+
+Checking FP instruction's arguments.
+Instruction's reservation station index: 3
+Instruction is not ready to execute
+Instruction's argmuents not available.
+Culprit: value1 -> UNDEFINED
+
+Execution did not begin.
+Arguments not ready.
+****CYCLING EXECUTION UNITS****
+Cycling unit: 1
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+Cycling unit: 4
+Execution cycles remaining: 0
+New execution cycles remaining: 0
+
+****DONE CYCLING EXECUTION UNITS****
+
+9
+Printing opcode: 
+Opcode is SUBS
+****ISSUING INSTRUCTION****
+->Rob is not full
+[X] Res stations are full
+****DONE ISSUING INSTRUCTION****
+Clock cycle: 63
+PROGRAM TERMINATED
+===================
+
+PENDING INSTRUCTIONS STATUS
+        PC  Issue    Exe     WR Commit
+0x00000018      6      7     47      -
+0x0000001c      8      9     11      -
+0x00000020     12      -      -      -
+         -      -      -      -      -
+         -      -      -      -      -
+0x00000014      5     15      -      -
+
+REORDER BUFFER
+Entry  Busy  Ready          PC     State  Dest       Value
+    0   yes     no  0x00000018        WR    F6  0x41200000
+    1   yes     no  0x0000001c        WR    F5  0x43160000
+    2   yes     no  0x00000020     ISSUE    F4           -
+    3    no     no           -         -     -           -
+    4    no     no           -         -     -           -
+    5   yes     no  0x00000014       EXE    F2           -
+
+RESERVATION STATIONS
+   Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+   Int1    no           -           -           -     -     -     -           -
+  Load1    no           -           -           -     -     -     -           -
+  Load2    no           -           -           -     -     -     -           -
+   Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+   Add2   yes  0x00000014  0x42480000  0x43fa0000     -     -     5           -
+  Mult1    no           -           -           -     -     -     -           -
+  Mult2    no           -           -           -     -     -     -           -
+
+GENERAL PURPOSE REGISTERS
+Register                 Value  ROB
+      R1         10/0x0000000a    -
+      R2         20/0x00000014    -
+      R3         10/0x0000000a    -
+      F0         10/0x41200000    -
+      F1         10/0x41200000    -
+      F2                     -    5
+      F3         40/0x42200000    -
+      F4        500/0x43fa0000    -
+      F5                     -    1
+      F6                     -    0
+      F7         70/0x428c0000    -
+      F8         80/0x42a00000    -
+      F9         90/0x42b40000    -
+      F10        100/0x42c80000    -
+
+DATA MEMORY[0x00000000:0x00000030]
+0x00000000: ff ff ff ff 
+0x00000004: ff ff ff ff 
+0x00000008: ff ff ff ff 
+0x0000000c: ff ff ff ff 
+0x00000010: ff ff ff ff 
+0x00000014: 00 00 20 41 
+0x00000018: ff ff ff ff 
+0x0000001c: ff ff ff ff 
+0x00000020: ff ff ff ff 
+0x00000024: ff ff ff ff 
+0x00000028: 00 00 f0 41 
+0x0000002c: ff ff ff ff 
+
+EXECUTION LOG
+        PC  Issue    Exe     WR Commit
+0x00000000      0      1      2      3
+0x00000004      1      3      4      5
+0x00000008      2      5      7      8
+0x0000000c      3      4     14     15
+0x00000010      4      5      7     16
+
+Instruction executed = 5
+Clock cycles = 100
+IPC = inf

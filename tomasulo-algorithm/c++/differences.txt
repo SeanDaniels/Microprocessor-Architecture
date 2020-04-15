@@ -1,0 +1,411 @@
+231a232,234
+> Branch triggered
+> Branch predicted not taken
+> Branch predicted instruction: 20
+278a282
+> Branch trigger is true, tagging this instruction
+325a330
+> Branch trigger is true, tagging this instruction
+419a425
+> Branch trigger is true, tagging this instruction
+607a614
+> Branch trigger is true, tagging this instruction
+786c793
+<       F4                     -    2
+---
+>       F4        500/0x43fa0000    -
+795a803,1051
+> Branch info(destination,value) 
+> 4294967295
+> PC determined by branch instruction: 32
+> Branch predicted PC: 20
+> test
+> Must clean ROB and Res. Stations
+> Before deletions:
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0   yes     no  0x00000018       EXE    F6           -
+>     1   yes    yes  0x0000001c        WR    F5  0x43160000
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5   yes     no  0x00000014       EXE    F2           -
+> 
+> RESERVATION STATIONS
+>    Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+>    Int1    no           -           -           -     -     -     -           -
+>   Load1    no           -           -           -     -     -     -           -
+>   Load2    no           -           -           -     -     -     -           -
+>    Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+>    Add2   yes  0x00000014  0x42480000  0x43fa0000     -     -     5           -
+>   Mult1    no           -           -           -     -     -     -           -
+>   Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+> 
+> First entry to be cleared: 20
+> Checking if in execution.
+> It is being executed. Must remove from execution unit
+> Location reservation station entry.
+> Locating ROB entry.
+> Locating instruction window entry.
+> Committing to log
+> Removing from instr window index
+> After deletions:
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0   yes     no  0x00000018       EXE    F6           -
+>     1   yes    yes  0x0000001c        WR    F5  0x43160000
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> RESERVATION STATIONS
+>    Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+>    Int1    no           -           -           -     -     -     -           -
+>   Load1    no           -           -           -     -     -     -           -
+>   Load2    no           -           -           -     -     -     -           -
+>    Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+>    Add2    no           -           -           -     -     -     -           -
+>   Mult1    no           -           -           -     -     -     -           -
+>   Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+> 
+> PC of instruction: 4294967295
+> Instruction window index: 5
+> ROB index: 5
+> Res. station index: 4
+> Execution unit: 1
+> Ready to write: No
+> Ready to commit: No
+> Values will be avialble at clock cycle: 0
+> 
+> 
+> Removing instruction map entry.
+> Moving to next erasable entry
+> Must clean ROB and Res. Stations
+> Before deletions:
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0   yes     no  0x00000018       EXE    F6           -
+>     1   yes    yes  0x0000001c        WR    F5  0x43160000
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> RESERVATION STATIONS
+>    Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+>    Int1    no           -           -           -     -     -     -           -
+>   Load1    no           -           -           -     -     -     -           -
+>   Load2    no           -           -           -     -     -     -           -
+>    Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+>    Add2    no           -           -           -     -     -     -           -
+>   Mult1    no           -           -           -     -     -     -           -
+>   Mult2   yes  0x00000018  0x42c80000  0x41200000     -     -     0           -
+> 
+> First entry to be cleared: 24
+> Checking if in execution.
+> It is being executed. Must remove from execution unit
+> Location reservation station entry.
+> Locating ROB entry.
+> Locating instruction window entry.
+> Committing to log
+> Removing from instr window index
+> After deletions:
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0    no     no           -         -     -           -
+>     1   yes    yes  0x0000001c        WR    F5  0x43160000
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> RESERVATION STATIONS
+>    Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+>    Int1    no           -           -           -     -     -     -           -
+>   Load1    no           -           -           -     -     -     -           -
+>   Load2    no           -           -           -     -     -     -           -
+>    Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+>    Add2    no           -           -           -     -     -     -           -
+>   Mult1    no           -           -           -     -     -     -           -
+>   Mult2    no           -           -           -     -     -     -           -
+> 
+> PC of instruction: 4294967295
+> Instruction window index: 0
+> ROB index: 0
+> Res. station index: 6
+> Execution unit: 4
+> Ready to write: No
+> Ready to commit: No
+> Values will be avialble at clock cycle: 0
+> 
+> 
+> Removing instruction map entry.
+> Moving to next erasable entry
+> Must clean ROB and Res. Stations
+> Before deletions:
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0    no     no           -         -     -           -
+>     1   yes    yes  0x0000001c        WR    F5  0x43160000
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> RESERVATION STATIONS
+>    Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+>    Int1    no           -           -           -     -     -     -           -
+>   Load1    no           -           -           -     -     -     -           -
+>   Load2    no           -           -           -     -     -     -           -
+>    Add1   yes  0x00000020           -  0x42200000     5     -     2           -
+>    Add2    no           -           -           -     -     -     -           -
+>   Mult1    no           -           -           -     -     -     -           -
+>   Mult2    no           -           -           -     -     -     -           -
+> 
+> First entry to be cleared: 28
+> Checking if in execution.
+> Location reservation station entry.
+> Locating ROB entry.
+> Locating instruction window entry.
+> Committing to log
+> Removing from instr window index
+> After deletions:
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> RESERVATION STATIONS
+>    Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+>    Int1    no           -           -           -     -     -     -           -
+>   Load1    no           -           -           -     -     -     -           -
+>   Load2    no           -           -           -     -     -     -           -
+>    Add1    no           -           -           -     -     -     -           -
+>    Add2    no           -           -           -     -     -     -           -
+>   Mult1    no           -           -           -     -     -     -           -
+>   Mult2    no           -           -           -     -     -     -           -
+> 
+> PC of instruction: ffffffff
+> Instruction window index: 1
+> ROB index: 1
+> Res. station index: 3
+> Execution unit:  UNDEFINED
+> Ready to write: No
+> Ready to commit: YesValues will be avialble at clock cycle: 0
+> 
+> 
+> Removing instruction map entry.
+> Moving to next erasable entry
+> Must clean ROB and Res. Stations
+> Before deletions:
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+>     2   yes     no  0x00000020     ISSUE    F4           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> RESERVATION STATIONS
+>    Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+>    Int1    no           -           -           -     -     -     -           -
+>   Load1    no           -           -           -     -     -     -           -
+>   Load2    no           -           -           -     -     -     -           -
+>    Add1    no           -           -           -     -     -     -           -
+>    Add2    no           -           -           -     -     -     -           -
+>   Mult1    no           -           -           -     -     -     -           -
+>   Mult2    no           -           -           -     -     -     -           -
+> 
+> First entry to be cleared: 20
+> Checking if in execution.
+> Location reservation station entry.
+> Locating ROB entry.
+> Locating instruction window entry.
+> Committing to log
+> Removing from instr window index
+> After deletions:
+> REORDER BUFFER
+> Entry  Busy  Ready          PC     State  Dest       Value
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+>     2    no     no           -         -     -           -
+>     3    no     no           -         -     -           -
+>     4   yes    yes  0x00000010        WR     -  0x00000020
+>     5    no     no           -         -     -           -
+> 
+> RESERVATION STATIONS
+>    Name  Busy          PC          Vj          Vk    Qj    Qk  Dest     Address
+>    Int1    no           -           -           -     -     -     -           -
+>   Load1    no           -           -           -     -     -     -           -
+>   Load2    no           -           -           -     -     -     -           -
+>    Add1    no           -           -           -     -     -     -           -
+>    Add2    no           -           -           -     -     -     -           -
+>   Mult1    no           -           -           -     -     -     -           -
+>   Mult2    no           -           -           -     -     -     -           -
+> 
+> PC of instruction: ffffffff
+> Instruction window index: 2
+> ROB index: 2
+> Res. station index: 3
+> Execution unit:  UNDEFINED
+> Ready to write: No
+> Ready to commit: No
+> Values will be avialble at clock cycle: 0
+> 
+> 
+> Removing instruction map entry.
+> Moving to next erasable entry
+> Changing PC to: 8
+> Clearing branch trigger
+> Swapping to corrected value, index 8
+801c1057
+<          -      -      -      -      -
+---
+> 0x00000020     16      -      -      -
+810c1066
+<     3    no     no           -         -     -           -
+---
+>     3   yes     no  0x00000020     ISSUE    F4           -
+819c1075
+<    Add1    no           -           -           -     -     -     -           -
+---
+>    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     3           -
+831c1087
+<       F2         30/0x41f00000    -
+---
+>       F2                     -    5
+833,835c1089,1091
+<       F4        500/0x43fa0000    -
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4                     -    3
+>       F5                     -    1
+>       F6                     -    0
+845,846d1100
+< 0x00000020     17      -      -      -
+<          -      -      -      -      -
+849a1104,1105
+> 0x00000020     16     17      -      -
+> 0x00000024     17      -      -      -
+854c1110
+<     0   yes     no  0x00000020     ISSUE    F4           -
+---
+>     0    no     no           -         -     -           -
+857,858c1113,1114
+<     3    no     no           -         -     -           -
+<     4    no     no           -         -     -           -
+---
+>     3   yes     no  0x00000020       EXE    F4           -
+>     4   yes     no  0x00000024     ISSUE    F2           -
+866,867c1122,1123
+<    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     0           -
+<    Add2    no           -           -           -     -     -     -           -
+---
+>    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     3           -
+>    Add2   yes  0x00000024  0x42480000           -     -     3     4           -
+878c1134
+<       F2         30/0x41f00000    -
+---
+>       F2                     -    4
+880,882c1136,1138
+<       F4                     -    0
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4                     -    3
+>       F5                     -    1
+>       F6                     -    0
+892,893d1147
+< 0x00000020     17     18      -      -
+< 0x00000024     18      -      -      -
+896a1151,1152
+> 0x00000020     16     17      -      -
+> 0x00000024     17      -      -      -
+901,902c1157,1158
+<     0   yes     no  0x00000020       EXE    F4           -
+<     1   yes     no  0x00000024     ISSUE    F2           -
+---
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+904,905c1160,1161
+<     3    no     no           -         -     -           -
+<     4    no     no           -         -     -           -
+---
+>     3   yes     no  0x00000020       EXE    F4           -
+>     4   yes     no  0x00000024     ISSUE    F2           -
+913,914c1169,1170
+<    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     0           -
+<    Add2   yes  0x00000024  0x42480000           -     -     0     1           -
+---
+>    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     3           -
+>    Add2   yes  0x00000024  0x42480000           -     -     3     4           -
+925c1181
+<       F2                     -    1
+---
+>       F2                     -    4
+927,929c1183,1185
+<       F4                     -    0
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4                     -    3
+>       F5                     -    1
+>       F6                     -    0
+939,940d1194
+< 0x00000020     17     18      -      -
+< 0x00000024     18      -      -      -
+943a1198,1199
+> 0x00000020     16     17     19      -
+> 0x00000024     17      -      -      -
+948,949c1204,1205
+<     0   yes     no  0x00000020       EXE    F4           -
+<     1   yes     no  0x00000024     ISSUE    F2           -
+---
+>     0    no     no           -         -     -           -
+>     1    no     no           -         -     -           -
+951,952c1207,1208
+<     3    no     no           -         -     -           -
+<     4    no     no           -         -     -           -
+---
+>     3   yes    yes  0x00000020        WR    F4  0x428c0000
+>     4   yes     no  0x00000024     ISSUE    F2           -
+960,961c1216,1217
+<    Add1   yes  0x00000020  0x41f00000  0x42200000     -     -     0           -
+<    Add2   yes  0x00000024  0x42480000           -     -     0     1           -
+---
+>    Add1    no           -           -           -     -     -     -           -
+>    Add2   yes  0x00000024  0x42480000  0x428c0000     -     -     4           -
+972c1228
+<       F2                     -    1
+---
+>       F2                     -    4
+974,976c1230,1232
+<       F4                     -    0
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F4                     -    3
+>       F5                     -    1
+>       F6                     -    0
+1026,1027c1282,1283
+<       F5         50/0x42480000    -
+<       F6         60/0x42700000    -
+---
+>       F5                     -    1
+>       F6                     -    0
+1053d1308
+< 0x00000010      4      5      7     16
+1058,1059c1313,1315
+< 0x00000020     17     18     20     21
+< 0x00000024     18     21     23     24
+---
+> 0x00000010      4      5      7     16
+> 0x00000020     16     17     19     20
+> 0x00000024     17     20     22     23

@@ -240,6 +240,8 @@ class sim_ooo {
   queue<unsigned> branch_instruction_map_keys;
 
   queue<unsigned> memory_instruction_q;
+
+  queue<unsigned> forwarding_queue;
   // link between rob, reservation station, and instruction window
   map<unsigned, map_entry_t> instruction_map;
 
@@ -502,6 +504,8 @@ public:
 
   void lws_instruction_action(map_entry_t thisMapEntry);
 
+    void load_forward_check();
+
   /////////////////////////////
   // WRITE RESULT FUNCTIONS  //
   /////////////////////////////
@@ -518,7 +522,7 @@ public:
   // find next instruction that's ready to commit
   void commit_find();
   // perform the committing
-  void commit_commit(bool isFloat, unsigned thisRegister, unsigned thisValue);
+  void commit_commit(bool isFloat, unsigned thisRegister, unsigned thisValue,unsigned thisRobIndex);
 
   void branch_commit(unsigned thisDestination, unsigned thisValueToBeCommitted);
 

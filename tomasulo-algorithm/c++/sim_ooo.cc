@@ -17,9 +17,11 @@
 //#define SELF_NAMING_DBG
 //#define XOR_DBG
 //#define PRINT_DBG
+//#define CONFLICT_DBG
 //#define BRANCH_DBG
-#define STORE_DBG
-#define CASE_8_DBG
+//#define STORE_DBG
+//#define CASE_8_DBG
+//#define ROB_DBG
 using namespace std;
 //global variable to access instruction memory in issue stage
 int instruction_index = 0;
@@ -32,6 +34,7 @@ bool branchTrigger = false;
 bool branchTriggerCleared = false;
 bool doBranchCommit = false;
 bool storeCommitLock = false;
+bool branchRobCorrect = false;
 unsigned storeCommitTime = UNDEFINED;
 unsigned storeLatency = UNDEFINED;
 unsigned branchDestination = UNDEFINED;
@@ -544,11 +547,11 @@ void sim_ooo::print_status() {
 
 /* execution statistics */
 
-float sim_ooo::get_IPC() { return (float)instructions_executed / clock_cycle; }
+float sim_ooo::get_IPC() { return (float)instructions_executed / (clock_cycle-1); }
 
 unsigned sim_ooo::get_instructions_executed() { return instructions_executed; }
 
-unsigned sim_ooo::get_clock_cycles() { return clock_cycle; }
+unsigned sim_ooo::get_clock_cycles() { return clock_cycle-1; }
 
 /* ============================================================================
 
@@ -1166,39 +1169,51 @@ unsigned sim_ooo::rob_add(instruction_t &thisInstruction, unsigned thisPC){
 
   //get instruction
   //add instruction to rob
+  if(robq.empty())
+  robIndex = 0;
+
   rob.entries[robIndex].pc = thisPC;
   rob.entries[robIndex].state = ISSUE;
   //floation point instructions must be passed a value >= 32 to be put in 'F'
   //registers
-  if(is_fp_instruction(thisInstruction.opcode)){
-    rob.entries[robIndex].destination = thisInstruction.dest+32;
+  if (is_fp_instruction(thisInstruction.opcode)) {
+    rob.entries[robIndex].destination = thisInstruction.dest + 32;
+#ifdef REG_DBG
+    if (thisInstruction.opcode == ADDS) {
+      unsigned registerName = thisInstruction.dest;
+      cout << "This ADDS destination is: "  << registerName << endl;
+      cout << "This ADDS ROB index is: " << robIndex << endl;
+      float_gp[registerName].name = robIndex;
+      print_registers();
+    }
+#endif
   }
-  //integer instructions need no correction
-  else{
-    //conditionals don't get destination values in ROB
-    if(!is_conditional(thisInstruction.opcode))
-    rob.entries[robIndex].destination = thisInstruction.dest;
-    else
-    rob.entries[robIndex].destination = UNDEFINED;
-  }
-  //this entry is no longer open
-  rob.entries[robIndex].empty = false;
-  //for sw and sws, destination is not available until execution
-  //for now, use immediate value
-  if(thisInstruction.opcode==SW||thisInstruction.opcode==SWS){
-    rob.entries[robIndex].destination = UNDEFINED;
-  }
+  // integer instructions need no correction
   else {
+    // conditionals don't get destination values in ROB
+    if (!is_conditional(thisInstruction.opcode))
+      rob.entries[robIndex].destination = thisInstruction.dest;
+    else
+      rob.entries[robIndex].destination = UNDEFINED;
+  }
+  // this entry is no longer open
+  rob.entries[robIndex].empty = false;
+  // for sw and sws, destination is not available until execution
+  // for now, use immediate value
+  if (thisInstruction.opcode == SW || thisInstruction.opcode == SWS) {
+    rob.entries[robIndex].destination = UNDEFINED;
+  } else {
     //fp instructions go into float registers, update float names
     if (is_fp_instruction(thisInstruction.opcode)) {
       float_gp[thisInstruction.dest].name = robIndex;
-      #ifdef REG_DBG
-      if(thisInstruction.opcode == SUBS){
-        cout << "This target register's name is: " << float_gp[thisInstruction.dest].name;
+#ifdef REG_DBG
+      if (thisInstruction.opcode == ADDS) {
+        cout << "This target register's name is: "
+             << float_gp[thisInstruction.dest].name << endl;
       }
-      #endif
+#endif
     } else {
-      //int instrutions go into gp registers, if destination exists, write dest
+      // int instrutions go into gp registers, if destination exists, write dest
       if (!is_conditional(thisInstruction.opcode)) {
         int_gp[thisInstruction.dest].name = robIndex;
       }
@@ -1209,6 +1224,10 @@ unsigned sim_ooo::rob_add(instruction_t &thisInstruction, unsigned thisPC){
   if(robIndex == rob.num_entries){
     robIndex = 0;
   }
+#ifdef REG_DBG
+  cout << "Printing registers again" << endl;
+      print_registers();
+#endif
 
   return robIndexReturn;
 }
@@ -1335,7 +1354,8 @@ void sim_ooo::two_argument_tag_check(map_entry_t thisMapEntry){
   unsigned source2 = instr_memory[thisMapEntry.instrMemoryIndex].src2;
   bool fpReg = is_fp_alu(thisMapEntry.instructionOpcode);
   bool waitOnValue = false;
-
+#ifdef REG_DBG
+  #endif
   reservation_stations.entries[thisStationNumber].address=UNDEFINED;
   #ifdef PRINT_DBG
   print_pc_to_instruction(reservation_stations.entries[thisMapEntry.resStationIndex].pc);
@@ -1346,12 +1366,24 @@ unsigned pcForMap = reservation_stations.entries[thisStationNumber].pc;
     source1 = source1 + 32;
     source2 = source2 + 32;
   }
+  #ifdef CONFLICT_DBG
+    if(thisMapEntry.instructionOpcode==DIVS){
+      cout << " " << setTag1 << endl;
+//      print_rob();
+    }
+  #endif
 
   setVal1 = find_value_in_rob(source1);
   setVal2 = find_value_in_rob(source2);
 
   if(setVal1 == UNDEFINED){
     setTag1 = find_tag_in_rob(source1,thisRobIndex);
+  #ifdef CONFLICT_DBG
+    if(thisMapEntry.instructionOpcode==DIVS){
+      cout << "Tag returned: " << setTag1 << endl;
+//      print_rob();
+    }
+  #endif
   }
 
   if(setVal2==UNDEFINED){
@@ -1466,26 +1498,45 @@ void sim_ooo::conditional_argument_tag_check(map_entry_t thisMapEntry){
   unsigned pcForMap = reservation_stations.entries[thisStationNumber].pc;
 
   reservation_stations.entries[thisStationNumber].value2 = UNDEFINED;
-
-  setVal = find_value_in_rob(source1);
-
-  if(setVal == UNDEFINED){
-    setTag = find_tag_in_rob(source1, thisRobIndex);
-  }
-  if(setVal!=UNDEFINED){
-    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
-    reservation_stations.entries[thisStationNumber].value1 = setVal;
-  }
-  else if(setTag != UNDEFINED){
+#ifdef CONFLICT_DBG
+  #endif
+  setTag = find_tag_in_rob(source1,thisRobIndex);
+  if(setTag!=UNDEFINED){
     reservation_stations.entries[thisStationNumber].tag1 = setTag;
     reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
-    waitOnValue = true;
+    return;
   }
-  else {
+  if(setTag == UNDEFINED){
+    setVal = find_value_in_rob(source1);
+    if(setVal!=UNDEFINED){
     reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
-    reservation_stations.entries[thisStationNumber].value1 =
-        get_int_register(source1);
+    reservation_stations.entries[thisStationNumber].value1 = setVal;
+    return;
+    }
   }
+  if((setTag==UNDEFINED)&&(setVal==UNDEFINED)){
+    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+    reservation_stations.entries[thisStationNumber].value1 = int_gp[source1].value;
+    return;
+  }
+  // setVal = find_value_in_rob(source1);
+  // if(setVal == UNDEFINED){
+  //   setTag = find_tag_in_rob(source1, thisRobIndex);
+  // }
+  // if(setVal!=UNDEFINED){
+  //   reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+  //   reservation_stations.entries[thisStationNumber].value1 = setVal;
+  // }
+  // else if(setTag != UNDEFINED){
+  //   reservation_stations.entries[thisStationNumber].tag1 = setTag;
+  //   reservation_stations.entries[thisStationNumber].value1 = UNDEFINED;
+  //   waitOnValue = true;
+  // }
+  // else {
+  //   reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+  //   reservation_stations.entries[thisStationNumber].value1 =
+  //       get_int_register(source1);
+  // }
 }
 
 void sim_ooo::load_argument_tag_check(map_entry_t thisMapEntry){
@@ -1642,10 +1693,16 @@ void sim_ooo::store_argument_tag_check(map_entry_t thisMapEntry){
 }
 
 unsigned sim_ooo::find_value_in_rob(unsigned int thisReg){
+#ifdef CONFLICT_DBG
+        cout << "Value destination found in rob" << endl;
+        #endif
   for(unsigned i = 0; i < rob.num_entries; i++){
     if(rob.entries[i].destination==thisReg){
+#ifdef CONFLICT_DBG
+        cout << "Value destination found in rob" << endl;
+        #endif
       if(rob.entries[i].value!=UNDEFINED){
-#ifdef PRINT_DBG
+#ifdef CONFLICT_DBG
         cout << "Value found in rob" << endl;
         #endif
         return rob.entries[i].value;
@@ -1656,26 +1713,25 @@ unsigned sim_ooo::find_value_in_rob(unsigned int thisReg){
 
 }
 
-unsigned sim_ooo::find_tag_in_rob(unsigned int thisRegister, unsigned currentRobIndex){
-  for(unsigned i = 0; i < rob.num_entries; i++){
-    if(rob.entries[i].destination==thisRegister&&(i!=currentRobIndex)){
-      if(rob.entries[i].value==UNDEFINED){
-#ifdef PRINT_DBG
-        cout << "Tag found in rob" << endl;
-        #endif
+unsigned sim_ooo::find_tag_in_rob(unsigned int thisRegister,
+                                  unsigned currentRobIndex) {
+  int maxIndex = rob.num_entries;
+  unsigned newROBpc = rob.entries[currentRobIndex].pc;
+  unsigned earliestFound = newROBpc;
+  unsigned returnIndex = UNDEFINED;
+  bool someValueFound = false;
+  for (int i = maxIndex; i-- > 0;) {
+    if (rob.entries[i].destination == thisRegister && (i != currentRobIndex)) {
+      if (rob.entries[i].value == UNDEFINED) {
+#ifdef CONFLICT_DBG
+        cout << "Returning: " << i << endl;
+#endif
         return i;
       }
-      else{
-#ifdef PRINT_DBG
-        cout << "Error: Didn't find value, but value is defined" << endl;
-        #endif
-
-        return UNDEFINED;
-      }
     }
-  }
-  return UNDEFINED;
+      }
 
+  return UNDEFINED;
 }
 
 unsigned sim_ooo::get_tag(unsigned thisReg){
@@ -2283,6 +2339,8 @@ void sim_ooo::find_pending_execution_instructions() {
       print_pc_to_instruction(pcOfInstruction);
       cout << "Attempting to begin execution." << endl;
 #endif
+    #ifdef DIV_DBG
+      #endif
       // check if arguments are ready
       if (arguments_ready_find(pcOfInstruction)) {
         // if arguments are ready, find execution unit
@@ -2910,7 +2968,7 @@ if(it!=instruction_map.end()){
     #endif
     valueToBeCommitted = rob.entries[tempMapEntry.robIndex].value;
     if (!is_conditional(tempMapEntry.instructionOpcode)) {
-      commit_commit(fpCommit, thisDestination, valueToBeCommitted);
+      commit_commit(fpCommit, thisDestination, valueToBeCommitted, tempMapEntry.robIndex);
     }
     else if(is_conditional(tempMapEntry.instructionOpcode)){
       doBranchCommit= true;
@@ -3111,16 +3169,23 @@ void sim_ooo::branch_commit(unsigned thisDestination, unsigned thisValueToBeComm
 
 }
 void sim_ooo::commit_commit(bool isFloat, unsigned thisRegister,
-                            unsigned thisValue) {
+                            unsigned thisValue, unsigned thisRobIndex) {
 #ifdef PRINT_DBG
   cout << "Updating register value" << endl;
 #endif
 
   if (isFloat) {
     float fpValue = unsigned2float(thisValue);
+#ifdef REG_DBG
+    cout << "This register: " << thisRegister << endl;
+    cout << "Name: " << float_gp[thisRegister].name << endl;
+    cout << "Coming from rob index: " << thisRobIndex << endl;;
+    #endif
     float_gp[thisRegister].value = fpValue;
-    float_gp[thisRegister].busy = false;
-    float_gp[thisRegister].name = UNDEFINED;
+    if(thisRobIndex==float_gp[thisRegister].name){
+      float_gp[thisRegister].busy = false;
+      float_gp[thisRegister].name = UNDEFINED;
+    }
     // for(unsigned i = 0; i< rob.num_entries; i++){
     //   if(rob.entries[i].destination==(thisRegister+32)){
     //     float_gp[thisRegister].name=i;
@@ -3129,8 +3194,10 @@ void sim_ooo::commit_commit(bool isFloat, unsigned thisRegister,
     // }
   } else {
     int_gp[thisRegister].value = thisValue;
-    int_gp[thisRegister].busy = false;
-    int_gp[thisRegister].name = UNDEFINED;
+    if(thisRobIndex==int_gp[thisRegister].name){
+      int_gp[thisRegister].busy = false;
+      int_gp[thisRegister].name = UNDEFINED;
+    }
     // for(unsigned i = 0; i< rob.num_entries; i++){
     //   if(rob.entries[i].destination==thisRegister){
     //     int_gp[thisRegister].name=i;
@@ -3189,5 +3256,6 @@ void sim_ooo::post_process(){
     doBranchCommit = false;
     branchDestination = UNDEFINED;
     branchValue = UNDEFINED;
+    branchRobCorrect = true;
   }
 }

@@ -18,7 +18,8 @@
 //#define XOR_DBG
 //#define PRINT_DBG
 //#define BRANCH_DBG
-//#define STORE_DBG
+#define STORE_DBG
+#define CASE_8_DBG
 using namespace std;
 //global variable to access instruction memory in issue stage
 int instruction_index = 0;
@@ -764,10 +765,18 @@ void sim_ooo::run(unsigned cycles) {
     }
   }
   else{
+    #ifdef CASE_8_DBG
+    while((!programComplete)&&(clock_cycle<100)){
+      a_cycle();
+      clock_cycle++;
+    }
+    #endif
+    #ifndef CASE_8_DBG
     while(!programComplete){
       a_cycle();
       clock_cycle++;
     }
+    #endif
   }
 }
 
@@ -1580,6 +1589,9 @@ void sim_ooo::store_argument_tag_check(map_entry_t thisMapEntry){
 #endif
   if(setTag1==UNDEFINED){
     setVal1 = find_value_in_rob(source1);
+#ifdef STORE_DBG
+  cout << setVal1 << endl;
+#endif
 
   }
   //if in rob, set to tag value
@@ -1593,7 +1605,7 @@ void sim_ooo::store_argument_tag_check(map_entry_t thisMapEntry){
     //if sws convert float register to entry to unsigned value, add to res
     if(!intStoreInstruction){
       reservation_stations.entries[thisStationNumber].value1 =
-          float2unsigned(get_fp_register(source1));
+          float2unsigned(get_fp_register(source1-32));
     }
     //if sw, store unsigned int register value to res
     else{

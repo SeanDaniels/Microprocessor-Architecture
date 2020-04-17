@@ -238,6 +238,8 @@ class sim_ooo {
   queue<unsigned> res_stations_to_update;
 
   queue<unsigned> branch_instruction_map_keys;
+
+  queue<unsigned> memory_instruction_q;
   // link between rob, reservation station, and instruction window
   map<unsigned, map_entry_t> instruction_map;
 
@@ -383,6 +385,8 @@ public:
   bool is_conditional(opcode_t thisOpcode);
 
     void station_delay_check(res_station_t thisReservationStation);
+
+  void check_self_naming();
   ///////////////////
   // ROB FUNCTIONS //
   ///////////////////
@@ -428,7 +432,7 @@ public:
 
   unsigned find_value_in_rob(unsigned thisRobEntry);
 
-  unsigned find_tag_in_rob(unsigned thisRegister);
+  unsigned find_tag_in_rob(unsigned thisRegister,unsigned currentRobIndex);
 
   bool is_load_instruction(opcode_t thisOpcode);
 
@@ -520,6 +524,9 @@ public:
 
   void clear_rob_entry(unsigned thisRobEntry);
 
+  void store_commit();
+
+  void take_store_action(unsigned thisValue, unsigned thisDestination);
   /////////////////////////////
   // POST PROCESS FUNCTIONS  //
   /////////////////////////////

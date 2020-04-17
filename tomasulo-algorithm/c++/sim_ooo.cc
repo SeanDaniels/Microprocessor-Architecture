@@ -7,12 +7,18 @@
 #include <map>
 #include <string>
 
-#define TEST_NUM_CYCLES 4
-#define PRINT_EXECUTION_UNITS 0
-#define EARLY_COMMIT_DEBUG
-#define REG_DBG
+// #define TEST_NUM_CYCLES 4
+// #define PRINT_EXECUTION_UNITS 0
+// #define EARLY_COMMIT_DEBUG
+// #define REG_DBG
+// #define EXECUTE_DBG
+// #define IMM_DBG
+// #define BRANCH_EOP_DBG
+//#define SELF_NAMING_DBG
+//#define XOR_DBG
 //#define PRINT_DBG
 //#define BRANCH_DBG
+//#define STORE_DBG
 using namespace std;
 //global variable to access instruction memory in issue stage
 int instruction_index = 0;
@@ -24,9 +30,15 @@ bool eop_issued = false;
 bool branchTrigger = false;
 bool branchTriggerCleared = false;
 bool doBranchCommit = false;
+bool storeCommitLock = false;
+unsigned storeCommitTime = UNDEFINED;
+unsigned storeLatency = UNDEFINED;
 unsigned branchDestination = UNDEFINED;
 unsigned branchValue = UNDEFINED;
 unsigned eop_q_number = UNDEFINED;
+unsigned storeExecutionUnitNumber = UNDEFINED;
+unsigned storeValue = UNDEFINED;
+unsigned storeDestination = UNDEFINED;
 
 // used for debugging purposes
 static const char *stage_names[NUM_STAGES] = {"ISSUE", "EXE", "WR", "COMMIT"};
@@ -752,7 +764,7 @@ void sim_ooo::run(unsigned cycles) {
     }
   }
   else{
-    while(!programComplete&&clock_cycle<100){
+    while(!programComplete){
       a_cycle();
       clock_cycle++;
     }
@@ -760,7 +772,12 @@ void sim_ooo::run(unsigned cycles) {
 }
 
 void sim_ooo::a_cycle(){
-  commit();
+  if(!storeCommitLock){
+    commit();
+  }
+  else if(storeCommitLock){
+    store_commit();
+  }
   write_results();
   execute();
   for(unsigned i = 0; i< issue_width; i++){
@@ -897,7 +914,7 @@ void sim_ooo::issue_instruction(){
   static bool rob_buffer_full_stall = false;
   static instruction_t previousInstruction;
   if(branchTriggerCleared){
-#ifdef BRANCH_DBG
+#ifdef BRANCH_EOP_DBG
     cout << "Swapping to corrected value, index " << branchCorrectedValue << endl;
 #endif
     instructionIndex = branchCorrectedValue;
@@ -950,6 +967,12 @@ void sim_ooo::issue_instruction(){
 #endif
         branch_instruction_map_keys.push(keyValue);
       }
+      if(is_memory(currentInstruction.opcode)){
+        memory_instruction_q.push(keyValue);
+        #ifdef STORE_DBG
+        cout << "Adding instruction to memory q" << endl;
+        #endif
+      }
       newSet.instrMemoryIndex = instructionIndex;
       newSet.robIndex=robEntryNumber;
       //add res station index number to set
@@ -986,13 +1009,13 @@ void sim_ooo::issue_instruction(){
       instructionIndex = instructionIndex + 1;
       //set previous instruction marker
       if (is_branch(currentInstruction.opcode)) {
-#ifdef BRANCH_DBG
+#ifdef BRANCH_EOP_DBG
         cout << "Branch triggered" << endl;
         cout << "Branch predicted not taken" << endl;
         cout << "Branch predicted instruction: ";
         cout << instructionIndex*4 << endl;
-        branchPredictedValue = instructionIndex*4;
         #endif
+        branchPredictedValue = instructionIndex*4;
         branchTrigger = true;
       }
       previousInstruction = currentInstruction;
@@ -1048,6 +1071,70 @@ void sim_ooo::station_delay_check(res_station_t thisReservationStation){
 
 }
 
+void sim_ooo::check_self_naming(){
+  unsigned resStationIndex;
+  unsigned resStationDestination;
+  unsigned robIndex;
+  unsigned robDestination;
+  unsigned thisRegister;
+  unsigned pcOfInstruction;
+  unsigned instructionIndex;
+  bool fp = false;
+  instruction_t thisInstruction;
+  std::map<unsigned, map_entry_t>::iterator it;
+  it = instruction_map.begin();
+  while(it!=instruction_map.end()){
+    resStationIndex = it->second.resStationIndex;
+    robIndex = it->second.robIndex;
+    resStationDestination = reservation_stations.entries[resStationIndex].destination;
+    robDestination = rob.entries[robIndex].destination;
+    pcOfInstruction = rob.entries[robIndex].pc;
+    instructionIndex = pcOfInstruction/4;
+    thisInstruction = instr_memory[instructionIndex];
+    if(robDestination>32){
+      robDestination-=32;
+      fp = true;
+    }
+#ifdef SELF_NAMING_DBG
+    cout << "Register index: " << robDestination << endl;
+    cout << "Value in this register: " << int_gp[robDestination].value << endl;
+      #endif
+    if(thisInstruction.src1==robDestination){
+#ifdef SELF_NAMING_DBG
+      cout << "At res. station " << resStationIndex << endl;
+      cout << "Self naming conflict on source 1" << endl;
+      cout << "Swapping tag for value" << endl;
+      #endif
+      if(fp){
+        reservation_stations.entries[resStationIndex].value1 = float_gp[robDestination].value;
+      }
+      else{
+        reservation_stations.entries[resStationIndex].value1 = int_gp[robDestination].value;
+      }
+        reservation_stations.entries[resStationIndex].tag1= UNDEFINED;
+    }
+    if(thisInstruction.src2==robDestination){
+#ifdef SELF_NAMING_DBG
+      cout << "Self naming conflict on source 2" << endl;
+      cout << "Swapping tag for value" << endl;
+      #endif
+      if(fp){
+        reservation_stations.entries[resStationIndex].value2 = float_gp[robDestination].value;
+      }
+      else{
+        reservation_stations.entries[resStationIndex].value2 = int_gp[robDestination].value;
+      }
+        reservation_stations.entries[resStationIndex].tag2= UNDEFINED;
+    }
+#ifdef SELF_NAMING_DBG
+//    print_reservation_stations();
+      #endif
+
+    //if()
+    it++;
+  }
+}
+
 ///////////////////
 // ROB FUNCTIONS //
 ///////////////////
@@ -1090,7 +1177,7 @@ unsigned sim_ooo::rob_add(instruction_t &thisInstruction, unsigned thisPC){
   //for sw and sws, destination is not available until execution
   //for now, use immediate value
   if(thisInstruction.opcode==SW||thisInstruction.opcode==SWS){
-    rob.entries[robIndex].destination = thisInstruction.immediate;
+    rob.entries[robIndex].destination = UNDEFINED;
   }
   else {
     //fp instructions go into float registers, update float names
@@ -1211,7 +1298,6 @@ void sim_ooo::reservation_station_add(map_entry_t thisMapEntry, unsigned pcOfIns
     single_argument_tag_check(thisMapEntry);
   }
   else if(is_conditional(thisMapEntry.instructionOpcode)){
-
 #ifdef PRINT_DBG
     print_pc_to_instruction(pcOfInstruction);
   #endif
@@ -1225,6 +1311,8 @@ void sim_ooo::reservation_station_add(map_entry_t thisMapEntry, unsigned pcOfIns
     store_argument_tag_check(thisMapEntry);
   }
 
+//  check_self_naming();
+
 }
 
 void sim_ooo::two_argument_tag_check(map_entry_t thisMapEntry){
@@ -1233,6 +1321,7 @@ void sim_ooo::two_argument_tag_check(map_entry_t thisMapEntry){
   unsigned setVal1 = UNDEFINED;
   unsigned setVal2 = UNDEFINED;
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
+  unsigned thisRobIndex = thisMapEntry.robIndex;
   unsigned source1 = instr_memory[thisMapEntry.instrMemoryIndex].src1;
   unsigned source2 = instr_memory[thisMapEntry.instrMemoryIndex].src2;
   bool fpReg = is_fp_alu(thisMapEntry.instructionOpcode);
@@ -1253,11 +1342,11 @@ unsigned pcForMap = reservation_stations.entries[thisStationNumber].pc;
   setVal2 = find_value_in_rob(source2);
 
   if(setVal1 == UNDEFINED){
-    setTag1 = find_tag_in_rob(source1);
+    setTag1 = find_tag_in_rob(source1,thisRobIndex);
   }
 
   if(setVal2==UNDEFINED){
-    setTag2 = find_tag_in_rob(source2);
+    setTag2 = find_tag_in_rob(source2, thisRobIndex);
   }
 
   if(setVal1 != UNDEFINED){
@@ -1310,18 +1399,28 @@ unsigned pcForMap = reservation_stations.entries[thisStationNumber].pc;
 void sim_ooo::single_argument_tag_check(map_entry_t thisMapEntry){
   unsigned setTag = UNDEFINED;
   unsigned setVal = UNDEFINED;
-
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
-
+  unsigned thisRobIndex = thisMapEntry.robIndex;
   unsigned source1 = instr_memory[thisMapEntry.instrMemoryIndex].src1;
   bool waitOnValue = false;
   unsigned pcForMap = reservation_stations.entries[thisStationNumber].pc;
-
-  reservation_stations.entries[thisStationNumber].value2 =instr_memory[thisMapEntry.instrMemoryIndex].immediate;
+  if(is_int_imm(thisMapEntry.instructionOpcode)){
+    reservation_stations.entries[thisStationNumber].value2 = UNDEFINED;
+  }
+  else{
+    reservation_stations.entries[thisStationNumber].value2 =
+      instr_memory[thisMapEntry.instrMemoryIndex].immediate;
+  }
 
   setVal = find_value_in_rob(source1);
   if(setVal == UNDEFINED){
-    setTag = find_tag_in_rob(source1);
+    setTag = find_tag_in_rob(source1,thisRobIndex);
+    if(setTag == thisMapEntry.robIndex){
+#ifdef BRANCH_EOP_DBG
+      cout << "Self tag issue again" << endl;
+      #endif
+      setTag=UNDEFINED;
+    }
   }
   if(setVal!=UNDEFINED){
     reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
@@ -1335,13 +1434,23 @@ void sim_ooo::single_argument_tag_check(map_entry_t thisMapEntry){
   else {
     reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
     reservation_stations.entries[thisStationNumber].value1 =
-        get_int_register(source1);
+      int_gp[source1].value;
   }
+#ifdef BRANCH_EOP_DBG
+  if(thisMapEntry.instructionOpcode==SUBI){
+    cout << "Searching for this Value in ROB: " << source1 << endl;
+    cout << "Value deterimined to be: " << setVal << endl;
+    cout << "Tag determined to be: " << setTag << endl;
+  }
+  print_reservation_stations();
+  #endif
 }
 
 void sim_ooo::conditional_argument_tag_check(map_entry_t thisMapEntry){
   unsigned setTag = UNDEFINED;
   unsigned setVal = UNDEFINED;
+
+  unsigned thisRobIndex = thisMapEntry.robIndex;
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
   unsigned source1 = instr_memory[thisMapEntry.instrMemoryIndex].src1;
   bool waitOnValue = false;
@@ -1352,7 +1461,7 @@ void sim_ooo::conditional_argument_tag_check(map_entry_t thisMapEntry){
   setVal = find_value_in_rob(source1);
 
   if(setVal == UNDEFINED){
-    setTag = find_tag_in_rob(source1);
+    setTag = find_tag_in_rob(source1, thisRobIndex);
   }
   if(setVal!=UNDEFINED){
     reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
@@ -1372,6 +1481,7 @@ void sim_ooo::conditional_argument_tag_check(map_entry_t thisMapEntry){
 
 void sim_ooo::load_argument_tag_check(map_entry_t thisMapEntry){
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
+  unsigned thisRobIndex = thisMapEntry.robIndex;
   unsigned setTag = UNDEFINED;
   unsigned setVal = UNDEFINED;
   unsigned source = instr_memory[thisMapEntry.instrMemoryIndex].src1;
@@ -1394,7 +1504,7 @@ void sim_ooo::load_argument_tag_check(map_entry_t thisMapEntry){
   }
   setVal = find_value_in_rob(source);
   if(setVal == UNDEFINED){
-    setTag = find_tag_in_rob(source);
+    setTag = find_tag_in_rob(source,thisRobIndex);
   }
   // value  found in register
   if (setVal != UNDEFINED) {
@@ -1434,9 +1544,14 @@ void sim_ooo::store_argument_tag_check(map_entry_t thisMapEntry){
        *value2 = contents of r2
        */
   unsigned thisStationNumber = thisMapEntry.resStationIndex;
+  unsigned currentRobIndex = thisMapEntry.robIndex;
   unsigned setTag1;
+  unsigned setTag2;
+  unsigned setVal1;
+  unsigned setVal2;
   //value to be stored
   unsigned source1 = instr_memory[thisMapEntry.instrMemoryIndex].src1; ;
+
   //where the value will be stored
   unsigned source2 = instr_memory[thisMapEntry.instrMemoryIndex].src2;
   //check if sw or sws
@@ -1448,9 +1563,25 @@ void sim_ooo::store_argument_tag_check(map_entry_t thisMapEntry){
   //if sws, correct for fp register in rob
   if(!intStoreInstruction){
     source1 +=32;
+#ifdef STORE_DBG
+    cout << "Source 1: F" << source1-32 << endl;
+    #endif
   }
+#ifdef STORE_DBG
+  else{
+    cout << "Source 1: R" << source1 << endl;
+  }
+  cout << "Source 2: R" << source2 <<endl;
+#endif
   //handling value to be stored
-  setTag1 = find_value_in_rob(source1);
+  setTag1 = find_tag_in_rob(source1,currentRobIndex);
+#ifdef STORE_DBG
+  cout << setTag1 << endl;
+#endif
+  if(setTag1==UNDEFINED){
+    setVal1 = find_value_in_rob(source1);
+
+  }
   //if in rob, set to tag value
   if (setTag1 != UNDEFINED) {
     reservation_stations.entries[thisStationNumber].tag1 = setTag1;
@@ -1469,16 +1600,29 @@ void sim_ooo::store_argument_tag_check(map_entry_t thisMapEntry){
       reservation_stations.entries[thisStationNumber].value1 = get_int_register(source1);
     }
     //either way, set tag to undefined
-    reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
+    //reservation_stations.entries[thisStationNumber].tag1 = UNDEFINED;
   }
   //handling value where register will be stored
-  setTag1 = find_value_in_rob(source2);
-  if (setTag1 != UNDEFINED) {
+  setTag2 = find_tag_in_rob(source2,currentRobIndex);
+#ifdef STORE_DBG
+  cout << "Tag 2 Value: " << setTag2 << endl;
+#endif
+  if(setTag2==UNDEFINED){
+    setVal2=find_value_in_rob(source2);
+#ifdef STORE_DBG
+  cout << "Value 2 Value: " << setVal2 << endl;
+#endif
+    if(setVal2!=UNDEFINED){
+      reservation_stations.entries[thisStationNumber].tag2 = UNDEFINED;
+      reservation_stations.entries[thisStationNumber].value2 = setVal2;
+    }
+  }
+  if (setTag2 != UNDEFINED) {
     reservation_stations.entries[thisStationNumber].tag2 = setTag1;
     reservation_stations.entries[thisStationNumber].value2 = UNDEFINED;
     waitOnValue = true;
   }
-  else {
+  if((setVal2==UNDEFINED)&&(setTag2 == UNDEFINED)) {
     reservation_stations.entries[thisStationNumber].tag2 = UNDEFINED;
     reservation_stations.entries[thisStationNumber].value2 =
         get_int_register(source2);
@@ -1500,9 +1644,9 @@ unsigned sim_ooo::find_value_in_rob(unsigned int thisReg){
 
 }
 
-unsigned sim_ooo::find_tag_in_rob(unsigned int thisRegister){
+unsigned sim_ooo::find_tag_in_rob(unsigned int thisRegister, unsigned currentRobIndex){
   for(unsigned i = 0; i < rob.num_entries; i++){
-    if(rob.entries[i].destination==thisRegister){
+    if(rob.entries[i].destination==thisRegister&&(i!=currentRobIndex)){
       if(rob.entries[i].value==UNDEFINED){
 #ifdef PRINT_DBG
         cout << "Tag found in rob" << endl;
@@ -1672,6 +1816,9 @@ void print_instruction_type(opcode_t thisOpcode){
   if(is_int_imm(thisOpcode)){
     cout << "Int immediate instruction\n" << endl;
   }
+  if(thisOpcode==XOR){
+    cout << "XOR instruction" << endl;
+  }
 }
 
 void sim_ooo::print_pc_to_instruction(unsigned thisPC){
@@ -1699,19 +1846,28 @@ bool sim_ooo::arguments_ready_find(unsigned int thisPC) {
   tempMapEntry = instruction_map.find(thisPC);
   //get opcode
   instructionOpcode = pc_to_opcode_type(thisPC);
-  #ifdef PRINT_DBG
-  cout << "It is a ";
+  #ifdef EXECUTE_DBG
+  cout << "Instruction type: " << endl;
   print_instruction_type(instructionOpcode);
   #endif
   // get reservation station location
   res_station_index = tempMapEntry->second.resStationIndex;
   // error check, cant find instruction in reservation station
   if (res_station_index == UNDEFINED) {
+#ifdef EXECUTE_DBG
     cout << "Can't locate instruction in reservation station structure" << endl;
+    #endif
     return false;
   }
   // check double argument instruction
   if (is_int_r(instructionOpcode)||is_fp_alu(instructionOpcode)) {
+#ifdef EXECUTE_DBG
+    if(instructionOpcode == XOR)
+    cout << "Checking XOR instruction" << endl;
+      bool argsReady = arguments_ready_fp_alu(res_station_index);
+    cout << "Args ready: ";
+      cout << argsReady << endl;;
+    #endif
     return arguments_ready_fp_alu(res_station_index);
   }
   // check single argument instruction
@@ -1739,9 +1895,23 @@ bool sim_ooo::arguments_ready_find(unsigned int thisPC) {
 
 //check if load reservation stations are ready
 bool sim_ooo::arguments_ready_load(unsigned res_station_index){
-  map_entry_t tempMapEntry = instruction_map.find(reservation_stations.entries[res_station_index].pc)->second;
+  std::map<unsigned, map_entry_t>::iterator it;
+  it = instruction_map.find(reservation_stations.entries[res_station_index].pc);
+  map_entry_t tempMapEntry = it->second;
+  unsigned mapEntryPC = it->first;
   unsigned val1 = reservation_stations.entries[res_station_index].value1;
-       #ifdef PRINT_DBG
+  unsigned nextMemoryInstruction = memory_instruction_q.front();
+   #ifdef STORE_DBG
+  cout << "Next memory instruction in queue: " << nextMemoryInstruction << endl;
+  cout << "This instructions PC: " << mapEntryPC <<endl;
+    #endif
+  if(mapEntryPC!=nextMemoryInstruction){
+   #ifdef STORE_DBG
+    cout << "Out of order memory instruction" << endl;
+    #endif
+    return false;
+  }
+#ifdef PRINT_DBG
   cout<< "Checking LOAD instruction's arguments." << endl;
   print_map_entry(tempMapEntry);
 #endif
@@ -1773,6 +1943,7 @@ cout<< "current clock cycle: " << clock_cycle << endl;
   cout << "LOAD instruction's value1: " << val1 << endl;
         cout << "This instruction is ready.\n" << endl;
   #endif
+        //memory_instruction_q.pop();
         return true;
       }
 
@@ -1790,11 +1961,23 @@ cout<< "current clock cycle: " << clock_cycle << endl;
 
 //check if store reservation stations are ready
 bool sim_ooo::arguments_ready_store(unsigned res_station_index) {
-  map_entry_t tempMapEntry =
-      instruction_map.find(reservation_stations.entries[res_station_index].pc)
-          ->second;
+  std::map<unsigned, map_entry_t>::iterator it;
+  it = instruction_map.find(reservation_stations.entries[res_station_index].pc);
+  map_entry_t tempMapEntry = it->second;
+  unsigned mapEntryPC = it->first;
   unsigned val1 = reservation_stations.entries[res_station_index].value1;
   unsigned val2 = reservation_stations.entries[res_station_index].value2;
+  unsigned nextMemoryInstruction = memory_instruction_q.front();
+   #ifdef STORE_DBG
+  cout << "(store)Next memory instruction in queue: " << nextMemoryInstruction << endl;
+  cout << "This instructions PC: " << mapEntryPC <<endl;
+    #endif
+  if(mapEntryPC!=nextMemoryInstruction){
+   #ifdef STORE_DBG
+    cout << "Out of order memory instruction" << endl;
+    #endif
+    return false;
+  }
 
 #ifdef PRINT_DBG
   cout << "Checking STORE instruction's arguments." << endl;
@@ -1837,10 +2020,10 @@ bool sim_ooo::arguments_ready_store(unsigned res_station_index) {
 //check if single argument reservation stations are ready
 bool sim_ooo::arguments_ready_int_imm(unsigned res_station_index){
   map_entry_t tempMapEntry = instruction_map.find(reservation_stations.entries[res_station_index].pc)->second;
-  unsigned val1 = reservation_stations.entries[res_station_index].value1;
+  unsigned val1 = reservation_stations.entries[tempMapEntry.resStationIndex].value1;
   if (tempMapEntry.valuesAvailable == UNDEFINED) {
     #ifdef PRINT_DBG
-    cout << "Values not availabel" << endl;
+    cout << "Values not available" << endl;
     #endif
     return false;
   }
@@ -1881,9 +2064,22 @@ bool sim_ooo::arguments_ready_fp_alu(unsigned res_station_index){
   map_entry_t tempMapEntry = instruction_map.find(reservation_stations.entries[res_station_index].pc)->second;
   unsigned val1 = reservation_stations.entries[res_station_index].value1;
   unsigned val2 = reservation_stations.entries[res_station_index].value2;
+  unsigned tag1 = reservation_stations.entries[res_station_index].tag1;
+  unsigned tag2 = reservation_stations.entries[res_station_index].tag2;
+  if(tempMapEntry.instructionOpcode==XOR){
+#ifdef XOR_DBG
+      cout << "Clearing xor for execution" << endl;
+#endif
+      if (tag1==UNDEFINED && tag2==UNDEFINED) {
+#ifdef XOR_DBG
+        cout << "xor cleared!" << endl;
+#endif
+        return true;
+      }
+  }
   if (tempMapEntry.valuesAvailable == UNDEFINED) {
         #ifdef PRINT_DBG
-    cout << "Values not availabel" << endl;
+    cout << "Values not available" << endl;
     #endif
     return false;
   }
@@ -1917,21 +2113,25 @@ bool sim_ooo::arguments_ready_fp_alu(unsigned res_station_index){
 
 //check if conditional arguments ready
 bool sim_ooo::arguments_ready_conditional(unsigned int res_station_index){
-#ifdef PRINT_DBG
+#ifdef BRANCH_EOP_DBG
   cout<< "Checking conditional instruction's arguments." << endl;
   cout<< "Instruction's reservation station index: " << res_station_index<< endl;
   #endif
   map_entry_t tempMapEntry = instruction_map.find(reservation_stations.entries[res_station_index].pc)->second;
   unsigned val1 = reservation_stations.entries[res_station_index].value1;
+#ifdef BRANCH_EOP_DBG
+    cout << "Value1: " << val1 << endl;
+    print_reservation_stations();
+  #endif
   if (tempMapEntry.valuesAvailable == UNDEFINED) {
-#ifdef PRINT_DBG
+#ifdef BRANCH_EOP_DBG
     cout << "Values not available" << endl;
   #endif
     return false;
   }
   if(tempMapEntry.valuesAvailable!=UNDEFINED){
     if(clock_cycle<tempMapEntry.valuesAvailable){
-#ifdef PRINT_DBG
+#ifdef BRANCH_EOP_DBG
       cout << "Values not available until clock cycle ";
       cout << tempMapEntry.valuesAvailable << endl;
   #endif
@@ -1939,13 +2139,13 @@ bool sim_ooo::arguments_ready_conditional(unsigned int res_station_index){
     }
     else{
         if (val1 != UNDEFINED) {
-#ifdef PRINT_DBG
+#ifdef BRANCH_EOP_DBG
           cout << "This instruction is ready." << endl;
   #endif
           return true;
         }
 
-#ifdef PRINT_DBG
+#ifdef BRANCH_EOP_DBG
       cout << "Instruction is not ready to execute" << endl;
       cout << "Instruction's argmuents not available." << endl;
       cout << "Value1 is UNDEFINED" << endl;
@@ -1965,7 +2165,6 @@ void print_culprit(unsigned thisVal1, unsigned thisVal2){
 }
 
 void print_string_opcode(opcode_t thisOpcode) {
-  cout << "Printing opcode: " << endl;
   switch (thisOpcode) {
   case LW:
     cout << "Opcode is LW" << endl;
@@ -2054,7 +2253,7 @@ void sim_ooo::execute(){
 
 //locate instructions that haven't begun execution
 void sim_ooo::find_pending_execution_instructions() {
-#ifdef PRINT_DBG
+#ifdef EXECUTE_DBG
   cout << "****FINDING INSTRUCTIONS THAT ARE READY TO BEGIN EXECUTION****"
        << endl;
 #endif
@@ -2067,7 +2266,7 @@ void sim_ooo::find_pending_execution_instructions() {
         (pending_instructions.entries[i].issue != UNDEFINED)) {
       numPending++;
       pcOfInstruction = pending_instructions.entries[i].pc;
-#ifdef PRINT_DBG
+#ifdef EXECUTE_DBG
       cout << "The following instruction has not begun execution: " << endl;
       print_pc_to_instruction(pcOfInstruction);
       cout << "Attempting to begin execution." << endl;
@@ -2077,7 +2276,7 @@ void sim_ooo::find_pending_execution_instructions() {
         // if arguments are ready, find execution unit
         find_available_execution_unit(pcOfInstruction);
       } else {
-#ifdef PRINT_DBG
+#ifdef EXECUTE_DBG
         cout << "Execution did not begin." << endl;
         cout << "Arguments not ready." << endl;
 #endif
@@ -2085,7 +2284,7 @@ void sim_ooo::find_pending_execution_instructions() {
     }
   }
   if (!numPending) {
-#ifdef PRINT_DBG
+#ifdef EXECUTE_DBG
     cout << "No instructions are pending execution." << endl;
 #endif
   }
@@ -2102,6 +2301,14 @@ void sim_ooo::find_available_execution_unit(unsigned thisPC){
   unsigned execUnitNumber = get_free_unit(thisOpcode);
   if (execUnitNumber != UNDEFINED) {
     // claim execution unit
+    if(is_memory(thisOpcode)){
+#ifdef STORE_DBG
+    cout << "claiming execution unit" << endl;
+    cout << "Next memory instruction in q: " << memory_instruction_q.front() << endl;
+    cout << "This instruction: " << thisPC << endl;
+  #endif
+    memory_instruction_q.pop();
+    }
 
 #ifdef PRINT_DBG
     cout << "claiming execution unit" << endl;
@@ -2127,12 +2334,21 @@ void sim_ooo::find_available_execution_unit(unsigned thisPC){
     // change rob state to execute
     rob.entries[thisMapEntry->robIndex].state = EXECUTE;
     if(is_memory(thisOpcode)){
-      reservation_stations.entries[thisMapEntry->resStationIndex].address =
-          reservation_stations.entries[thisMapEntry->resStationIndex].value1 +
-          reservation_stations.entries[thisMapEntry->resStationIndex].address;
+      if(thisOpcode==LWS||thisOpcode==LW){
+        reservation_stations.entries[thisMapEntry->resStationIndex].address =
+            reservation_stations.entries[thisMapEntry->resStationIndex].value1 +
+            reservation_stations.entries[thisMapEntry->resStationIndex].address;
+      }
+      if(thisOpcode==SWS||thisOpcode==SW){
+        unsigned updatedAddress = reservation_stations.entries[thisMapEntry->resStationIndex].value2 + reservation_stations.entries[thisMapEntry->resStationIndex].address;
+        unsigned value = reservation_stations.entries[thisMapEntry->resStationIndex].value1;
+        reservation_stations.entries[thisMapEntry->resStationIndex].address = updatedAddress;
+        rob.entries[thisMapEntry->robIndex].destination=updatedAddress;
+        rob.entries[thisMapEntry->robIndex].value = value;
+      }
     }
   } else {
-    #ifdef PRINT_DBG
+    #ifdef EXECUTE_DBG
     cout << "Execution unit not available." << endl;
     #endif
   }
@@ -2148,7 +2364,7 @@ void sim_ooo::claim_execution_unit(unsigned int thisUnit, unsigned thisPC){
   exec_units[thisUnit].pc = thisPC;
   //set this execution unit's busy field to the latency of these types of units
 
-exec_units[thisUnit].busy = exec_units[thisUnit].latency;
+  exec_units[thisUnit].busy = exec_units[thisUnit].latency;
 #ifdef PRINT_DBG
   cout << "Beginning execution of this instruction at clock cycle: "
        << clock_cycle << endl;
@@ -2163,34 +2379,65 @@ void sim_ooo::cycle_execution_units(){
   cout<< "****CYCLING EXECUTION UNITS****" << endl;
   #endif
   unsigned execUnitNumber = UNDEFINED;
+  opcode_t thisOpcode;
   std::map<unsigned, map_entry_t>::iterator it;
   it=instruction_map.begin();
   while(it!=instruction_map.end()){
+    thisOpcode = it->second.instructionOpcode;
     execUnitNumber = it->second.executionUnitNumber;
     if(execUnitNumber!=UNDEFINED){
-      if(exec_units[execUnitNumber].busy>=0){
-       #ifdef PRINT_DBG
-        cout << "Cycling unit: " << execUnitNumber << endl;
-        cout << "Execution cycles remaining: ";
-        cout << exec_units[execUnitNumber].busy <<endl;
-        print_string_unit_type(exec_units[execUnitNumber].type);
+      if ((thisOpcode != SW) && (thisOpcode != SWS)) {
+        if (exec_units[execUnitNumber].busy >= 0) {
+#ifdef PRINT_DBG
+          cout << "Cycling unit: " << execUnitNumber << endl;
+          cout << "Execution cycles remaining: ";
+          cout << exec_units[execUnitNumber].busy << endl;
+          print_string_unit_type(exec_units[execUnitNumber].type);
 #endif
-        if(exec_units[execUnitNumber].busy==1){
-          it->second.readyToWrite=true;
+          if (exec_units[execUnitNumber].busy == 1) {
+            it->second.readyToWrite = true;
+          }
+          if (exec_units[execUnitNumber].busy == 0) {
+            it->second.executionUnitNumber = UNDEFINED;
+            exec_units[execUnitNumber].pc = UNDEFINED;
+          }
+          if (exec_units[execUnitNumber].busy > 0) {
+            exec_units[execUnitNumber].busy--;
+          }
         }
-        if(exec_units[execUnitNumber].busy==0){
-          it->second.executionUnitNumber=UNDEFINED;
-          exec_units[execUnitNumber].pc = UNDEFINED;
-        }
-        if(exec_units[execUnitNumber].busy>0){
-          exec_units[execUnitNumber].busy--;
+#ifdef PRINT_DBG
+        cout << "New execution cycles remaining: "
+             << exec_units[execUnitNumber].busy << "\n"
+             << endl;
+#endif
+      }
+      else {
+#ifdef STORE_DBG
+        cout << "Store execution unit found" << endl;
+#endif
+        unsigned writeTime = exec_units[execUnitNumber].latency;
+        if (exec_units[execUnitNumber].busy >= 0) {
+#ifdef PRINT_DBG
+          cout << "Cycling unit: " << execUnitNumber << endl;
+          cout << "Execution cycles remaining: ";
+          cout << exec_units[execUnitNumber].busy << endl;
+          print_string_unit_type(exec_units[execUnitNumber].type);
+#endif
+          if (exec_units[execUnitNumber].busy == writeTime) {
+#ifdef STORE_DBG
+            cout << "Signaling store instruction to move ahead to write result" << endl;
+            #endif
+            it->second.readyToWrite = true;
+          }
+          if (exec_units[execUnitNumber].busy == 0) {
+            it->second.executionUnitNumber = UNDEFINED;
+            exec_units[execUnitNumber].pc = UNDEFINED;
+          }
+          if (exec_units[execUnitNumber].busy > 0) {
+            exec_units[execUnitNumber].busy--;
+          }
         }
       }
-#ifdef PRINT_DBG
-      cout << "New execution cycles remaining: "
-           << exec_units[execUnitNumber].busy << "\n"
-           << endl;
-  #endif
     }
     it++;
   }
@@ -2219,6 +2466,14 @@ void sim_ooo::take_instruction_action(map_entry_t thisMapEntry){
       fp_instruction_action(thisMapEntry);
     }
     else if(is_int_imm(thisOpcode)){
+#ifdef BRANCH_EOP_DBG
+      if(thisOpcode==SUBI){
+        cout << "SUBI is making here" << endl;
+      }
+      if(thisOpcode==ADDI){
+        cout << "ADDI is making it here" << endl;
+      }
+#endif
       int_imm_instruction_action(thisMapEntry);
     }
     else if(is_int_r(thisOpcode)){
@@ -2233,6 +2488,9 @@ void sim_ooo::take_instruction_action(map_entry_t thisMapEntry){
       if(thisOpcode==LWS){
         lws_instruction_action(thisMapEntry);
     }
+      if(thisOpcode==SWS){
+        return;
+      }
   }
 
 #ifdef PRINT_DBG
@@ -2240,7 +2498,9 @@ void sim_ooo::take_instruction_action(map_entry_t thisMapEntry){
   #endif
   }
 }
-
+void sim_ooo::take_store_action(unsigned int thisValue, unsigned int thisDestination){
+  write_memory(thisDestination, thisValue);
+}
 void sim_ooo::fp_instruction_action(map_entry_t thisMapEntry){
   unsigned value1 =
       reservation_stations.entries[thisMapEntry.resStationIndex].value1;
@@ -2279,17 +2539,21 @@ void sim_ooo::int_instruction_action(map_entry_t thisMapEntry){
 }
 
 void sim_ooo::int_imm_instruction_action(map_entry_t thisMapEntry){
-  unsigned immediate =
-      reservation_stations.entries[thisMapEntry.resStationIndex].value1;
-  unsigned value2 =
-      reservation_stations.entries[thisMapEntry.resStationIndex].value2;
   unsigned thisPC =reservation_stations.entries[thisMapEntry.resStationIndex].pc;
-
+  unsigned instructionIndex = thisPC/4;
+  unsigned value1 =
+      reservation_stations.entries[thisMapEntry.resStationIndex].value1;
+  unsigned value2= instr_memory[instructionIndex].immediate;
 #ifdef PRINT_DBG
   cout << "Taking alu action" << endl;
   #endif
 
-  unsigned aluReturnValue = alu(thisMapEntry.instructionOpcode, UNDEFINED, value2, immediate, thisPC);
+  unsigned aluReturnValue = alu(thisMapEntry.instructionOpcode, value1, value2, UNDEFINED, thisPC);
+#ifdef IMM_DBG
+  cout << "Value 1: " << value1 << endl;
+  cout << "Value 2: " << value2 << endl;
+  cout << "ALU return value: " << aluReturnValue << endl;
+#endif
   rob.entries[thisMapEntry.robIndex].value = aluReturnValue;
   rob.entries[thisMapEntry.robIndex].ready = true;
   thisMapEntry.readyToWrite = true;
@@ -2429,48 +2693,83 @@ void sim_ooo::write_results(){
 void sim_ooo::find_ready_to_write(){
   std::map<unsigned, map_entry_t>::iterator it;
   bool noInstructionsReadyToWrite = true;
+  opcode_t thisOpcode;
   it = instruction_map.begin();
   while(it!=instruction_map.end()){
     unsigned key = it->first;
     map_entry_t* tempMapEntry = &it->second;
-    if(tempMapEntry->readyToWrite){
-        #ifdef PRINT_DBG
+    thisOpcode = tempMapEntry->instructionOpcode;
+    if((thisOpcode!=SW)&&(thisOpcode!=SWS)){
+      if (tempMapEntry->readyToWrite) {
+#ifdef PRINT_DBG
         cout << "Check clock cycle: " << clock_cycle << endl;
         print_write_status(tempMapEntry->readyToWrite);
         cout << "****WRITING RESULTS****" << endl;
-        #endif
+#endif
         noInstructionsReadyToWrite = false;
-        // update the reservation stations with matching tag value
-        #ifdef EARLY_COMMIT_DBG
-        if(tempMapEntry->instructionOpcode==SUBS){
+// update the reservation stations with matching tag value
+#ifdef EARLY_COMMIT_DBG
+        if (tempMapEntry->instructionOpcode == SUBS) {
           cout << "The SUBS writes now" << endl;
         }
-        #endif
+#endif
         take_instruction_action(*tempMapEntry);
         res_stations_to_update.push(tempMapEntry->resStationIndex);
         res_stations_to_clear.push(tempMapEntry->resStationIndex);
-        //      update_reservation_stations(*tempMapEntry);
-        #ifdef PRINT_DBG
+//      update_reservation_stations(*tempMapEntry);
+#ifdef PRINT_DBG
         cout << "****DONE WRITING RESULTS****" << endl;
         cout << "***RELEASING RESERVATION STATION OF THIS INSTRUCTION***"
              << endl;
-        #endif
+#endif
         // clear tag values, clear value values, clear destination,
         tempMapEntry->readyToWrite = false;
-        #ifdef PRINT_DBG
+#ifdef PRINT_DBG
         cout << "**reservation station release**" << endl;
         cout << "*approving commit*" << endl;
-        #endif
-tempMapEntry->readyToCommit = true;
-        #ifdef PRINT_DBG
+#endif
+        tempMapEntry->readyToCommit = true;
+#ifdef PRINT_DBG
         cout << "After approving commit, map entry: " << endl;
-        #endif
+#endif
         pending_instructions.entries[tempMapEntry->instrWindowIndex].wr =
             clock_cycle;
         rob.entries[tempMapEntry->robIndex].state = WRITE_RESULT;
 #ifdef PRINT_DBG
         print_map_entry(key);
-        #endif
+#endif
+      }
+    }
+    else{
+      if(tempMapEntry->readyToWrite){
+#ifdef STORE_DBG
+      cout << "Writing store instruction results" << endl;
+#endif
+        res_stations_to_update.push(tempMapEntry->resStationIndex);
+        res_stations_to_clear.push(tempMapEntry->resStationIndex);
+//      update_reservation_stations(*tempMapEntry);
+#ifdef PRINT_DBG
+        cout << "****DONE WRITING RESULTS****" << endl;
+        cout << "***RELEASING RESERVATION STATION OF THIS INSTRUCTION***"
+             << endl;
+#endif
+        // clear tag values, clear value values, clear destination,
+        tempMapEntry->readyToWrite = false;
+#ifdef PRINT_DBG
+        cout << "**reservation station release**" << endl;
+        cout << "*approving commit*" << endl;
+#endif
+        tempMapEntry->readyToCommit = true;
+#ifdef PRINT_DBG
+        cout << "After approving commit, map entry: " << endl;
+#endif
+        pending_instructions.entries[tempMapEntry->instrWindowIndex].wr =
+            clock_cycle;
+        rob.entries[tempMapEntry->robIndex].state = WRITE_RESULT;
+#ifdef PRINT_DBG
+        print_map_entry(key);
+#endif
+      }
     }
     it++;
   }
@@ -2544,7 +2843,9 @@ unsigned thisDestination = UNDEFINED;
 unsigned valueToBeCommitted = UNDEFINED;
 unsigned frontOfrobQueue = robq.front();
 unsigned queueToKey = frontOfrobQueue*4;
+static unsigned storeLatency = UNDEFINED;
 bool fpCommit = false;
+opcode_t thisOpcode;
 if(eop_issued&&robq.empty()){
 #ifdef PRINT_DBG
   cout << "Program complete " <<endl;
@@ -2562,6 +2863,7 @@ if(it==instruction_map.end()){
 }
 if(it!=instruction_map.end()){
   map_entry_t tempMapEntry = it->second;
+  thisOpcode = tempMapEntry.instructionOpcode;
 #ifdef PRINT_DBG
   cout << "Map entry does exist." << endl;
   cout << "Map entry: " << endl;
@@ -2570,7 +2872,7 @@ if(it!=instruction_map.end()){
   #endif
   // check if in order commit is ready
   if (tempMapEntry.readyToCommit) {
-    // if in order commit is ready
+    if((thisOpcode!=SW)&&(thisOpcode!=SWS)){
 #ifdef PRINT_DBG
     cout << "****THIS INSTRUCTION IS READY TO COMMIT****" << endl;
     // remove from commit queue
@@ -2623,16 +2925,76 @@ if(it!=instruction_map.end()){
     instruction_map.erase(it);
     instructions_executed++;
   }
+    else{
+    storeExecutionUnitNumber = tempMapEntry.executionUnitNumber;
+    pending_instructions.entries[tempMapEntry.instrWindowIndex].commit =
+        clock_cycle;
+    storeCommitLock = true;
+    storeCommitTime = exec_units[storeExecutionUnitNumber].latency;
+    storeLatency = storeCommitTime;
+    exec_units[storeExecutionUnitNumber].busy = 0;
+    exec_units[storeExecutionUnitNumber].pc = UNDEFINED;
+    storeValue = rob.entries[tempMapEntry.robIndex].value;
+    storeDestination = rob.entries[tempMapEntry.robIndex].destination;
+#ifdef STORE_DBG
+    cout << "Committing store instruction 1 at clock cycle: " << clock_cycle << endl;
+    cout << "Showing initial store latency: " << storeCommitTime<< endl;
+    cout << "Execution unit number: " << storeExecutionUnitNumber << endl;
+    cout << "Time until lock lifted: " << storeCommitTime << endl;
+#endif
+    robs_to_clear.push(tempMapEntry.robIndex);
+#ifdef STORE_DBG
+    cout << "Adding to instruction window clear queue" << endl;
+#endif
+    instr_windows_to_clear.push(tempMapEntry.instrWindowIndex);
+#ifdef STORE_DBG
+    cout << "Removing from instruction map" << endl;
+#endif
+    commit_to_log(pending_instructions.entries[tempMapEntry.instrWindowIndex]);
+    robq.pop();
+    instruction_map.erase(it);
+    instructions_executed++;
+    store_commit();
+  }
+  }
+  // if in order commit is ready
 }
 }
-
+void sim_ooo::store_commit(){
+  static bool firstRun = true;
+  static unsigned frontOfrobQueue;
+  static unsigned queueToKey;
+  static unsigned execUnitNumber;
+  std::map<unsigned, map_entry_t>::iterator it;
+#ifdef STORE_DBG
+        cout << "About to take action" << endl;
+        cout << firstRun << endl;
+#endif
+   storeCommitTime--;
+  if(storeCommitTime==1){
+#ifdef STORE_DBG
+        cout << "About to take action" << endl;
+#endif
+        take_store_action(storeValue, storeDestination);
+#ifdef STORE_DBG
+        cout << "Took action" << endl;
+#endif
+        storeCommitLock = false;
+  }
+}
 void sim_ooo::branch_commit(unsigned thisDestination, unsigned thisValueToBeCommitted){
-#ifdef BRANCH_DBG
+#ifdef BRANCH_EOP_DBG
       cout << "Branch info(destination,value) " << endl;
       cout << thisDestination << endl;
       cout << "PC determined by branch instruction: " << thisValueToBeCommitted << endl;
       cout << "Branch predicted PC: " << branchPredictedValue << endl;
 #endif
+      if(eop_issued){
+#ifdef BRANCH_EOP_DBG
+        cout << "EOP has been triggered and is in the instruction q" << endl;
+      #endif
+        eop_issued = false;
+      }
       if(branchPredictedValue!=thisValueToBeCommitted){
 #ifdef BRANCH_DBG
         cout << "test" << endl;
@@ -2703,12 +3065,12 @@ void sim_ooo::branch_commit(unsigned thisDestination, unsigned thisValueToBeComm
             instruction_window_remove(instrWindowIndex);
 #ifdef BRANCH_DBG
             cout << "After deletions:" << endl;
-#endif
             print_rob();
+#endif
 #ifdef BRANCH_DBG
             print_reservation_stations();
-#endif
             print_map_entry(tempMapEntry);
+#endif
 #ifdef BRANCH_DBG
             cout << "Removing instruction map entry." << endl;
 #endif
@@ -2718,6 +3080,9 @@ void sim_ooo::branch_commit(unsigned thisDestination, unsigned thisValueToBeComm
 #endif
             branch_instruction_map_keys.pop();
           }
+#ifdef BRANCH_EOP_DBG
+          cout << "Number of instructions removed: " << removalCount << endl;
+          #endif
           for(unsigned i = 0; i<removalCount; i++){
             robq.pop();
           }

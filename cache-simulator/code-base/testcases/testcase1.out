@@ -1,0 +1,148 @@
+CACHE CONFIGURATION
+size = 32 KB
+associativity = 4-way
+cache line size = 32 B
+write hit policy = write-back
+write miss policy = write-allocate
+cache hit time = 5 CLK
+cache miss penalty = 100 CLK
+memory address width = 48 bits
+
+
+Run 50 memory accesses...
+TAG ARRAY
+BLOCKS 0
+  index dirty         tag
+     20     1  0x574fbe187
+     52     1  0x574f4e930
+     54     1  0x574f4e930
+     58     1  0x574f4e930
+     66     1  0x574fbe33a
+     82     1  0x574fc0362
+    104     1  0x574fc0c49
+    106     1  0x574fc0c49
+    150     0  0x574fc0c49
+    154     1  0x574fbe2f5
+    170     0  0x574fc0c49
+    172     0  0x574fc0c49
+    220     1  0x574fc04a1
+BLOCKS 1
+  index dirty         tag
+BLOCKS 2
+  index dirty         tag
+BLOCKS 3
+  index dirty         tag
+
+
+Run 1000 memory accesses...
+TAG ARRAY
+BLOCKS 0
+  index dirty         tag
+      0     1  0x574fc0c4a
+      2     1  0x574fc0c4a
+      4     1  0x574fc0c4a
+      6     1  0x574fc0c4a
+      8     0  0x574fc0c4a
+     10     1  0x574fc0c4a
+     12     1  0x574fc0c4a
+     14     0  0x574fbe34d
+     16     1  0x574fbfa87
+     18     1  0x574fbe1d2
+     20     1  0x574fbe187
+     22     1  0x574fbf1c8
+     34     0  0x574fbe349
+     40     1  0x5747c63db
+     44     1  0x574fc0809
+     46     1  0x574f4e930
+     48     1  0x574fc03fa
+     50     1  0x574f4e930
+     52     1  0x574f4e930
+     54     1  0x574f4e930
+     56     0  0x574fc03fa
+     58     1  0x574f4e930
+     60     1  0x5747c63dc
+     66     1  0x574fbe33a
+     68     1  0x574fbe33a
+     76     0  0x574fc0362
+     78     1  0x574fc0362
+     80     1  0x574fc0362
+     82     1  0x574fc0362
+     88     1  0x574fbea7f
+     94     1  0x574fbe33a
+     96     1  0x574fbe33a
+     98     1  0x574fc0812
+    100     0  0x574fbe33a
+    104     1  0x574fc0c49
+    106     1  0x574fc0c49
+    130     0  0x574fbe335
+    132     0  0x574fc09fd
+    142     0  0x574fbf513
+    150     1  0x574fc0c49
+    152     1  0x574fbe2f5
+    154     1  0x574fbe2f5
+    156     1  0x574fc0c49
+    158     1  0x574fc0c49
+    170     1  0x574fc0c49
+    172     1  0x574fc0c49
+    180     1  0x5747c63dd
+    202     1  0x574fbe2f4
+    210     0  0x574fc075b
+    212     1  0x574fc075b
+    218     0  0x574fc04a1
+    220     1  0x574fc04a1
+    224     1  0x574fc0c48
+    230     1  0x574fbe350
+    232     1  0x5747c63da
+    234     1  0x574fc069a
+    240     1  0x5747c63da
+    244     1  0x5747c63db
+    246     1  0x574fbf4b9
+    252     1  0x574fc0c49
+BLOCKS 1
+  index dirty         tag
+      0     0  0x574fbf1c8
+      6     0  0x574fbe351
+      8     0  0x574fbe70e
+     14     1  0x574fbfa87
+     44     1  0x574fbe85e
+     46     1  0x574fc0809
+     48     1  0x574f4e930
+     54     1  0x574fc03fa
+     56     0  0x574f4e930
+     76     1  0x574fbf9f5
+    130     1  0x574fbe2f4
+    142     1  0x574fbfa2b
+    150     1  0x574fbf513
+    152     1  0x574fc0c49
+    154     1  0x574fbf513
+BLOCKS 2
+  index dirty         tag
+      6     1  0x574fbe70e
+     44     1  0x574f4e930
+     54     1  0x5747c667a
+     56     1  0x5747c667a
+    150     1  0x574fbfa2b
+BLOCKS 3
+  index dirty         tag
+
+STATISTICS
+memory accesses = 1050
+read = 656
+read misses = 50
+write = 394
+write misses = 30
+evictions = 0
+memory writes = 0
+average memory access time = 12.619
+
+
+Complete execution...
+STATISTICS
+memory accesses = 2000000
+read = 1251647
+read misses = 21142
+write = 748353
+write misses = 12659
+evictions = 33289
+memory writes = 30005
+average memory access time = 6.69005

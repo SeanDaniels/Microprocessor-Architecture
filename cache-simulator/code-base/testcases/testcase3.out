@@ -1,0 +1,92 @@
+WRITE-BACK/WRITE-ALLOCATE
+=========================
+
+CACHE CONFIGURATION
+size = 64 KB
+associativity = 1-way
+cache line size = 64 B
+write hit policy = write-back
+write miss policy = write-allocate
+cache hit time = 5 CLK
+cache miss penalty = 100 CLK
+memory address width = 48 bits
+
+STATISTICS
+memory accesses = 2000000
+read = 1251647
+read misses = 24795
+write = 748353
+write misses = 14805
+evictions = 38576
+memory writes = 34052
+average memory access time = 6.98
+
+WRITE-THROUGH/NO-WRITE-ALLOCATE
+===============================
+
+CACHE CONFIGURATION
+size = 64 KB
+associativity = 1-way
+cache line size = 64 B
+write hit policy = write-through
+write miss policy = no-write-allocate
+cache hit time = 5 CLK
+cache miss penalty = 100 CLK
+memory address width = 48 bits
+
+STATISTICS
+memory accesses = 2000000
+read = 1251647
+read misses = 37272
+write = 748353
+write misses = 22408
+evictions = 36248
+memory writes = 748353
+average memory access time = 7.984
+
+WRITE-BACK/NO-WRITE-ALLOCATE
+============================
+
+CACHE CONFIGURATION
+size = 64 KB
+associativity = 1-way
+cache line size = 64 B
+write hit policy = write-back
+write miss policy = no-write-allocate
+cache hit time = 5 CLK
+cache miss penalty = 100 CLK
+memory address width = 48 bits
+
+STATISTICS
+memory accesses = 2000000
+read = 1251647
+read misses = 37272
+write = 748353
+write misses = 22408
+evictions = 36248
+memory writes = 29678
+average memory access time = 7.984
+
+WRITE-THROUGH/WRITE-ALLOCATE
+============================
+
+CACHE CONFIGURATION
+size = 64 KB
+associativity = 1-way
+cache line size = 64 B
+write hit policy = write-through
+write miss policy = write-allocate
+cache hit time = 5 CLK
+cache miss penalty = 100 CLK
+memory address width = 48 bits
+
+STATISTICS
+memory accesses = 2000000
+read = 1251647
+read misses = 24795
+write = 748353
+write misses = 14805
+evictions = 38576
+memory writes = 748353
+average memory access time = 6.98
+

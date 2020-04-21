@@ -1,0 +1,269 @@
+FIRST CONFIGURATION
+------------------------
+
+CACHE CONFIGURATION
+size = 128 KB
+associativity = 2-way
+cache line size = 256 B
+write hit policy = write-back
+write miss policy = write-allocate
+cache hit time = 5 CLK
+cache miss penalty = 100 CLK
+memory address width = 32 bits
+
+ONE MEMORY ACCESS AT A TIME
+===========================
+MEMORY ACCESS #0
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+
+MEMORY ACCESS #1
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+
+MEMORY ACCESS #2
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+
+MEMORY ACCESS #3
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+
+MEMORY ACCESS #4
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+      0     0  0xefef
+
+MEMORY ACCESS #5
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+      0     1  0xefef
+
+MEMORY ACCESS #6
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+      0     1  0xefef
+
+MEMORY ACCESS #7
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+      0     0  0x1234
+
+MEMORY ACCESS #8
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+      0     1  0x1234
+
+MEMORY ACCESS #9
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+      0     1  0x1234
+
+MEMORY ACCESS #10
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+      0     1  0x1234
+
+MEMORY ACCESS #11
+TAG ARRAY
+BLOCKS 0
+  index dirty     tag
+      0     1  0xabcd
+      1     1  0xabcd
+BLOCKS 1
+  index dirty     tag
+      0     1  0x1234
+      1     1  0x1234
+
+STATISTICS
+memory accesses = 12
+read = 5
+read misses = 2
+write = 7
+write misses = 3
+evictions = 1
+memory writes = 1
+average memory access time = 46.6667
+
+=================================
+
+SECOND CONFIGURATION
+------------------------
+
+CACHE CONFIGURATION
+size = 128 KB
+associativity = 2-way
+cache line size = 256 B
+write hit policy = write-through
+write miss policy = no-write-allocate
+cache hit time = 5 CLK
+cache miss penalty = 100 CLK
+memory address width = 32 bits
+
+ONE MEMORY ACCESS AT A TIME
+MEMORY ACCESS #0
+TAG ARRAY
+BLOCKS 0
+  index     tag
+BLOCKS 1
+  index     tag
+
+MEMORY ACCESS #1
+TAG ARRAY
+BLOCKS 0
+  index     tag
+BLOCKS 1
+  index     tag
+
+MEMORY ACCESS #2
+TAG ARRAY
+BLOCKS 0
+  index     tag
+BLOCKS 1
+  index     tag
+
+MEMORY ACCESS #3
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+BLOCKS 1
+  index     tag
+
+MEMORY ACCESS #4
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+BLOCKS 1
+  index     tag
+      0  0xefef
+
+MEMORY ACCESS #5
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+BLOCKS 1
+  index     tag
+      0  0xefef
+
+MEMORY ACCESS #6
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+BLOCKS 1
+  index     tag
+      0  0xefef
+
+MEMORY ACCESS #7
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+BLOCKS 1
+  index     tag
+      0  0x1234
+
+MEMORY ACCESS #8
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+BLOCKS 1
+  index     tag
+      0  0x1234
+
+MEMORY ACCESS #9
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+BLOCKS 1
+  index     tag
+      0  0x1234
+
+MEMORY ACCESS #10
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+      1  0xabcd
+BLOCKS 1
+  index     tag
+      0  0x1234
+
+MEMORY ACCESS #11
+TAG ARRAY
+BLOCKS 0
+  index     tag
+      0  0xabcd
+      1  0xabcd
+BLOCKS 1
+  index     tag
+      0  0x1234
+
+STATISTICS
+memory accesses = 12
+read = 5
+read misses = 4
+write = 7
+write misses = 4
+evictions = 1
+memory writes = 7
+average memory access time = 71.6667
+

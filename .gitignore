@@ -6,5 +6,4 @@
 **/*.o
 ./cache-simulator/project3.pdf
 ./cache-simulator/project3_code.tar.gz
-./cache-simulator/asm
 ./cache-simulator/bin

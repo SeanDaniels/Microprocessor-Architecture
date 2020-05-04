@@ -1,0 +1,193 @@
+#+TITLE: Scratch
+* Array setup
+-
+  - all arrays have 1024 unsigned elements
+  - array 'a' stored at mem location 0xA0000
+  - array 'b' stored at mem location (0xA0000 + 1024*4) 0xA1000
+  - array 'c' stored at mem location (0xA0000 + 1024*8) 0xA2000
+* Cache Setup (testcase_vectoradd)
+** Configuration
+- Write back (doesn't ever write to memory)
+- Write allocate (on write miss, take a cache block)
+- 16 kb cache
+- n = 1 (one tag array)
+- block size = 16 B -> each block stores 4 array elements
+- number of sets = 1024
+** Blocks per Array
+- How many cache blocks will each array take to write? *256*
+  - Each block contains 4 array elements
+  - Each array has 1024 elements
+  - number of blocks needed = (number of elements)/(elements per block)
+    - For this array/cache config -> 1024/4 = 256
+** Arrays
+- While iterating through the arrays, when should the index change?
+- Is the tag always going to be the same for these arrays?
+- Are there more blocks than elements? *yes*
+  - Total number of elements = 1024 * 3 = 3072
+  - Number of blocks needed for all elements = (total number of elements)/(elements per block)
+    - For this array/cache config -> 3072/4 = 768
+** Process
+- cache read goes to index provided by tag, checks valid bit
+- if valid bit is 0, cache miss
+- if valid bit is 1, cache hit, eviction should happen
+* Tag Output
+- Number of tag bits
+  - 32 - 14 = 18
+- Number of index bits
+  - 10
+- Number of offset bits
+  - 4
+** Address 1 (A[0])
+- Address
+  - Decimal: 655360
+  - Hex: 0xa0000
+  - Binary: 0000 0000 0000 1010 0000 0000 0000 0000
+- Block Offset:
+  - Hex: 0
+  - Binary: 0000
+- Index:
+  - Hex: 0x00
+  - Binary: 00 0000 0000
+  - Decimal: 0
+- Tag:
+  - Hex: 0x0000000000028
+- Address sent from pipeline
+  - 4 byte - 655360
+  - in hex - a0000
+  - In binary:
+    - 1010 0000 0000 0000 0000
+  - In 32 bit binary
+    - 0000 0000 0000 1010 0000 0000 0000 0000
+- Next address
+  - Decimal: 659456
+  - Hex: 0xa1000
+  - Binary: 0000 0000 0000 1010 0001 0000 0000 0000
+** Address 2 (B[0])
+- Address:
+  - Decimal: 659456
+  - Hex: 0x000a1000
+  - Binary: 0000 0000 0000 1010 0001 0000 0000 0000
+- Block Offset:
+  - Hex: 0
+  - Binary: 0000
+- Index:
+  - Binary: 01 0000 0000
+  - Decimal: 256
+- Tag:
+  - Hex: 0x0000000000028
+** Address 3 (C[0])
+- Address:
+  - Decimal: 659456
+  - Hex: 0x000a2000
+  - Binary: 0000 0000 0000 1010 0010 0000 0000 0000
+- Block Offset:
+  - Hex: 0
+  - Binary: 0000
+- Index:
+  - Binary: 10 0000 0000
+  - Decimal: 512
+- Tag:
+  - Hex: 0x0000000000028
+* Matrix Multiplication Test Code
+- Name matmul.asm
+- 2 square matrices (n x n)
+- Laid out contiguously in memory, starting at address A
+- should be configurable from test case file
+** Matrix Multiplication Refresher
+- When multiplying matrices (row major)
+- Consider the following example:
+  -      Matrix 1               Matrix 2
+    | A(1,1) | A(1,2) | x | B(1,1) | B(1,2) |
+    | A(2,1) | A(2,2) | x | B(2,1) | B(2,2) |
+  - Product:
+    | A(1,1)*B(1,1)+A(1,2)*B(2,1) | A(1,1)*B(1,2)+A(1,2)*B(2,2) |
+    | A(2,1)*B(1,1)+A(2,2)*B(2,1) | A(2,1)*B(1,2)+A(1,2)*B(2,2) |
+  - matrix mult in c++
+    #+BEGIN_SRC C++
+#include <iostream>
+using namespace std;
+int main(){
+    int product[2][2];
+    int argOne[2][2];
+    int argTwo[2][2];
+    unsigned rowMax = 2;
+    unsigned colMax = 2;
+    for(unsigned i = 0; i< rowMax; ++i){
+        for(unsigned j = 0; j < colMax; ++j){
+            argOne[i][j] = 2;
+            argTwo[i][j] = 2;
+            product[i][j] = 0;
+        }
+    }
+    for(unsigned i = 0; i< rowMax; ++i){
+        for(unsigned j = 0; j< colMax; ++j){
+            for(unsigned k = 0; k < rowMax; ++k){
+                printf("Before dot product: Product[%d][%d] = %d\n",i,j,product[i][j]);
+                printf("Content of argOne: argOne[%d][%d] = %d\n",i,j,argOne[i][j]);
+                printf("Content of argTwo: argTwo[%d][%d] = %d\n",i,j,argTwo[i][j]);
+                product[i][j] += argOne[i][k]*argTwo[k][j];
+                printf("After dot product: Product[%d][%d] = %d\n",i,j,product[i][j]);
+            }
+        }
+    }
+    for(unsigned i = 0; i < rowMax; ++i){
+        for(unsigned j = 0; j < colMax; ++j){
+            //cout << product[i][j] << endl;
+        }
+    }
+}
+
+    #+END_SRC
+
+    #+RESULTS:
+    | Before  | dot | product: | Product[0][0] | = | 0 |
+    | Content | of  | argOne:  | argOne[0][0]  | = | 2 |
+    | Content | of  | argTwo:  | argTwo[0][0]  | = | 2 |
+    | After   | dot | product: | Product[0][0] | = | 4 |
+    | Before  | dot | product: | Product[0][0] | = | 4 |
+    | Content | of  | argOne:  | argOne[0][0]  | = | 2 |
+    | Content | of  | argTwo:  | argTwo[0][0]  | = | 2 |
+    | After   | dot | product: | Product[0][0] | = | 8 |
+    | Before  | dot | product: | Product[0][1] | = | 0 |
+    | Content | of  | argOne:  | argOne[0][1]  | = | 2 |
+    | Content | of  | argTwo:  | argTwo[0][1]  | = | 2 |
+    | After   | dot | product: | Product[0][1] | = | 4 |
+    | Before  | dot | product: | Product[0][1] | = | 4 |
+    | Content | of  | argOne:  | argOne[0][1]  | = | 2 |
+    | Content | of  | argTwo:  | argTwo[0][1]  | = | 2 |
+    | After   | dot | product: | Product[0][1] | = | 8 |
+    | Before  | dot | product: | Product[1][0] | = | 0 |
+    | Content | of  | argOne:  | argOne[1][0]  | = | 2 |
+    | Content | of  | argTwo:  | argTwo[1][0]  | = | 2 |
+    | After   | dot | product: | Product[1][0] | = | 4 |
+    | Before  | dot | product: | Product[1][0] | = | 4 |
+    | Content | of  | argOne:  | argOne[1][0]  | = | 2 |
+    | Content | of  | argTwo:  | argTwo[1][0]  | = | 2 |
+    | After   | dot | product: | Product[1][0] | = | 8 |
+    | Before  | dot | product: | Product[1][1] | = | 0 |
+    | Content | of  | argOne:  | argOne[1][1]  | = | 2 |
+    | Content | of  | argTwo:  | argTwo[1][1]  | = | 2 |
+    | After   | dot | product: | Product[1][1] | = | 4 |
+    | Before  | dot | product: | Product[1][1] | = | 4 |
+    | Content | of  | argOne:  | argOne[1][1]  | = | 2 |
+    | Content | of  | argTwo:  | argTwo[1][1]  | = | 2 |
+    | After   | dot | product: | Product[1][1] | = | 8 |
+  - Matrix add in c++
+    #+BEGIN_SRC C++
+#include <iostream>
+using namespace std;
+int main(){
+int argOne[2] = {2,2};
+int argTwo[2] = {2,2};
+int sum[2] = {0,0};
+unsigned maxIndex = 2;
+for(unsigned i = 0; i < maxIndex; ++i){
+    sum[i] = argOne[i]+argTwo[i];
+    printf("sum[%d] = %d\n", i, sum[i]);
+}
+}
+
+    #+END_SRC
+
+    #+RESULTS:
+    : sum[0] = 4sum[1] = 4

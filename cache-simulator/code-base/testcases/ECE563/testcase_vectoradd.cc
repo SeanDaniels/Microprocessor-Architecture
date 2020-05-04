@@ -22,26 +22,26 @@ int main(int argc, char **argv){
 	// instantiates the simulator with a 1MB data memory
 	sim_pipe *mips = new sim_pipe(1024*1024);
 
-        // instantiate the cache
-        cache *mycache = new cache(16*KB,                //size
-                                  1,                    //associativity
-                                  16,                   //cache line size
-                                  WRITE_BACK,           //write hit policy
-                                  WRITE_ALLOCATE,       //write miss policy
-                                  5,                    //hit time
-                                  100,                  //miss penalty
-                                  32                    //address width
-                                  );
+	// instantiate the cache
+	cache *mycache = new cache(16*KB,                //size
+							   1,                    //associativity
+							   16,                   //cache line size
+							   WRITE_BACK,           //write hit policy
+							   WRITE_ALLOCATE,       //write miss policy
+							   5,                    //hit time
+							   100,                  //miss penalty
+							   32                    //address width
+	);
 
 	mycache->print_configuration();
 
-        mips->set_cache(mycache);
+	mips->set_cache(mycache);
 
 	//loads program in instruction memory at address 0x10000000
 	mips->load_program("asm/vector_add.asm", 0x10000000);
 
 	// initialize registers
-        // Note: arrays A, B and C are laid out contiguously in memory starting from address 0xA0000
+	// Note: arrays A, B and C are laid out contiguously in memory starting from address 0xA0000
 	mips->set_gp_register(1, N); 		//number of elements in array	
 	mips->set_gp_register(2, 0xA0000); 	//address of array A
 	mips->set_gp_register(3, 0xA0000+N*4); 	//address of array B

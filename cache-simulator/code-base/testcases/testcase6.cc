@@ -1,4 +1,4 @@
-#include "cache.h"
+#include "../include/cache.h"
 #include <iostream>
 #include <stdlib.h>
 #include <sstream>
@@ -30,9 +30,9 @@ int main(int argc, char **argv){
 	for(int this_cache = 16 * KB; this_cache <= 256 * KB; this_cache = this_cache * 4){
 		for(int assoc = 1; assoc <= 16; ){
 			for(int this_block_size = 32; this_block_size <= 256; this_block_size = this_block_size * 2){
-				mycache = new cache(cache_size,		//size
-									associativity,			//associativity
-									block_size,			//cache line size
+				mycache = new cache(this_cache,		//size
+									assoc,			//associativity
+									this_block_size,			//cache line size
 									WRITE_BACK,		//write hit policy
 									WRITE_ALLOCATE, 	//write miss policy
 									5, 			//hit time
@@ -56,9 +56,9 @@ int main(int argc, char **argv){
 int assoc = 8;
 	for(int this_cache = 16 * KB; this_cache <= 256 * KB; this_cache = this_cache * 4){
 			for(int this_block_size = 32; this_block_size <= 256; this_block_size = this_block_size * 2){
-				mycache = new cache(cache_size,		//size
-									associativity,			//associativity
-									block_size,			//cache line size
+				mycache = new cache(this_cache,		//size
+									assoc,			//associativity
+									this_block_size,			//cache line size
 									WRITE_BACK,		//write hit policy
 									WRITE_ALLOCATE, 	//write miss policy
 									5, 			//hit time

@@ -1,4 +1,4 @@
-#include "sim_pipe.h"
+#include "../include/sim_pipe.h"
 //#include "cache.h"
 #include <cstring>
 #include <fstream>

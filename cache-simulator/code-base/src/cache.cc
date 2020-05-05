@@ -466,16 +466,24 @@ unsigned cache::evict_cache_entry(unsigned thisIndex){
 void cache::easier_output(){
     total_hits = num_instructions_rd + num_instructions_wr;
     //total miss for mem access time
-    total_miss = num_rd_miss + num_wr_miss;
+    float total_miss = num_rd_miss + num_wr_miss;
     //calculate current average
     float num = total_hits*hit_time_of_cache + total_miss*miss_penalty_of_cache;
     float den = number_memory_accesses;
+
+    float missRate = total_miss/number_memory_accesses;
+
+    total_miss = (unsigned) total_miss;
     
     current_average = num/den;
     //output statistics
     //output average w defined precision
-    cout << size_of_cache<< ", " << ln_sz_of_cache << ", " << assoc_of_cache<< ", ";
-    cout << number_memory_accesses << ", " << num_instructions_rd << ", " << num_rd_miss << ", " << num_instructions_wr << ", " << num_wr_miss;
-    cout << ", " << num_evictions << ", " << num_mem_wr << ", ";
-    cout <<  setprecision(6) << current_average << ",";
+    printf("%u,%u,%u,%u,%f,", size_of_cache,ln_sz_of_cache,assoc_of_cache,number_memory_accesses,missRate);
+
+    // cout << size_of_cache<< ", " << ln_sz_of_cache << ", " << assoc_of_cache<< ", ";
+    // cout << number_memory_accesses << ", " << total_miss << ',' << missRate;
+}
+
+void cache::increment_memory_accesses(){
+    number_memory_accesses++;
 }

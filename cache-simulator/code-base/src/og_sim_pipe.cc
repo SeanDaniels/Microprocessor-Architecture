@@ -838,19 +838,9 @@ void sim_pipe::memory() {
       pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
 
       if (currentOpcode == SW) {
-#ifdef CACHE_DBG
-        memory_cache->increment_memory_accesses();
-        cout << "Attempting cache write" << endl;
-        memory_cache->write(currentALUOutput);
-#endif
         memory_store(currentB, currentALUOutput);
       }
       if(currentOpcode == LW){
-#ifdef CACHE_DBG
-        cout << "Attempting cache read" << endl;
-        memory_cache->increment_memory_accesses();
-        memory_cache->read(currentALUOutput);
-#endif
         memory_load(currentALUOutput);
       }
     }
@@ -882,22 +872,8 @@ void sim_pipe::memory() {
       pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD]= UNDEFINED;
       pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
       if (currentInstruction.opcode == SW) {
-#ifdef CACHE_DBG
-        memory_cache->increment_memory_accesses();
-        memory_cache->write(currentALUOutput);
-        memory_cache->print_tag_array();
-#endif
         memory_store(currentB, currentALUOutput);
       } else if (currentInstruction.opcode == LW) {
-#ifdef CACHE_DBG
-        memory_cache->increment_memory_accesses();
-        memory_cache->read(currentALUOutput);
-        memory_cache->print_tag_array();
-#endif
-#ifdef CACHE_DBG
-        cout << "The ALU output is " << dec << currentALUOutput << endl;
-        cout << "The size of this ALU output is " << sizeof(currentALUOutput) << endl;
-  #endif
         memory_load(currentALUOutput);
       }
     }
@@ -995,7 +971,6 @@ void sim_pipe::memory_store(unsigned thisB, unsigned thisALUOutput){
 void sim_pipe::memory_load(unsigned thisALUOutput){
   static unsigned char* whatToLoad;
   static unsigned loadableData;
-  long long addrToPass = (long long) thisALUOutput;
   whatToLoad = &data_memory[thisALUOutput];
 #if PRINT_MEMORY
   print_memory(0,32);
@@ -1076,7 +1051,6 @@ void sim_pipe::run(unsigned cycles) {
       run_clock();
       if(!program_complete)
       clock_cycles++;
-      //memory_cache->print_tag_array();
     }
     break;
   default:
@@ -1336,8 +1310,4 @@ void sim_pipe::set_cache(cache *c){
 #ifdef CACHE_DBG
   memory_cache->print_configuration();
 #endif
-}
-
-unsigned sim_pipe::get_memory(unsigned int address){
-  return (char2int(&data_memory[address]));
 }

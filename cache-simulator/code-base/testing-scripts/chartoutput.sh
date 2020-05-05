@@ -2,4 +2,4 @@
 set -euo pipefail
 
 make
-../bin/testcase6 > ~/microprocessor-architecture/cache-simulator/code-base/outputs/myTraceResults
+~/microprocessor-architecture/cache-simulator/code-base/bin/testcase6 > ~/microprocessor-architecture/cache-simulator/code-base/outputs/myTraceResults

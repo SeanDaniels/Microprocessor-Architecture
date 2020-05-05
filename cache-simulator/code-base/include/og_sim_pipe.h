@@ -125,7 +125,7 @@ class sim_pipe {
        - initialize the registers to UNDEFINED value
        - initialize the data memory to all 0xFF values
     */
-    sim_pipe(unsigned data_mem_size, unsigned data_mem_latency=0);
+    sim_pipe(unsigned data_mem_size, unsigned data_mem_latency);
   
 
     // de-allocates the simulator
@@ -272,9 +272,6 @@ class sim_pipe {
     void insert_stall(pipeline_stage_t nextStage);
 
     void set_cache(cache *c);
-
-    unsigned get_memory(unsigned address);
-      
 
 
 };

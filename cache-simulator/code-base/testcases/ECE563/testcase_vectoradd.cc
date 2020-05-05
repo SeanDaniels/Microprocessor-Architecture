@@ -20,7 +20,7 @@ int main(int argc, char **argv){
 	unsigned i, j;
 
 	// instantiates the simulator with a 1MB data memory
-	sim_pipe *mips = new sim_pipe(1024*1024);
+	sim_pipe *mips = new sim_pipe(N*N);
 
 	// instantiate the cache
 	cache *mycache = new cache(16*KB,                //size

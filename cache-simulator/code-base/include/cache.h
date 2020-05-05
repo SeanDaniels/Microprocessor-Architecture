@@ -157,6 +157,9 @@ class cache {
     unsigned evict_cache_entry(unsigned thisIndex);
 
     void easier_output();;
+
+    void increment_memory_accesses();
+    
 };
 
 #endif /*CACHE_H_*/

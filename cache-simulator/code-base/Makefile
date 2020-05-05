@@ -6,7 +6,7 @@ CFLAGS = $(OPT) $(WARN)
 # List corresponding compiled object files here (.o files)
 SIM_OBJ = cache.o
 
-TESTCASES = testcase0 testcase1 testcase2 testcase3 testcase4 testcase5
+TESTCASES = testcase0 testcase1 testcase2 testcase3 testcase4 testcase5 testcase6
  
 #################################
 
@@ -39,6 +39,9 @@ testcase4: .cc.o testcase
 
 testcase5: .cc.o testcase 
 	$(CC) -o bin/testcase5 $(CFLAGS) $(SIM_OBJ) testcases/testcase5.o
+
+testcase6: .cc.o testcase
+	$(CC) -o bin/testcase6 $(CFLAGS) $(SIM_OBJ) testcases/testcase6.o
 
 # type "make clean" to remove all .o files plus the sim binary
 clean:

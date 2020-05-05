@@ -155,6 +155,8 @@ class cache {
     bool block_empty(unsigned thisIndex,unsigned thisWay);
 
     unsigned evict_cache_entry(unsigned thisIndex);
+
+    void easier_output();;
 };
 
 #endif /*CACHE_H_*/

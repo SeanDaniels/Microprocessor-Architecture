@@ -1,12 +1,4 @@
 #+TITLE: paper
-Submission instructions
-Report: Your report should be no longer than 4 pages (11 pt. Times New Roman font), including figures. The
-report should be typed. It should include the following information:
-
- Description of data structures used to model general purpose registers and pipeline registers;
- Description of your approach to handle data, control and structural hazards;
- Brief explanation of what works and what not in your implementation;
- If you modified the Makefile, indicate it in the report.
 * Purpose
 The purpose of this project is to simulate a 5-stage MIPS processor using C++.
 In order to accurately simulate a multi-stage processor, correct logic and data

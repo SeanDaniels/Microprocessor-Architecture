@@ -1,4 +1,3 @@
-#include "../include/cache.h"
 #include "../include/sim_pipe.h"
 #include <iostream>
 #include <math.h>
@@ -6,10 +5,11 @@
 #include <sstream>
 
 #define KB 1024
-#define N 1024 //array size
+#define N 16000//array size
 #define RUN_TWICE
 #define VECTOR_ADD
-
+//#define OG_VERSION
+//#define EIGHT_WAY
 using namespace std;
 
 /* Test case for cache simulator */ 
@@ -25,23 +25,26 @@ using namespace std;
   cache size.
 */
 int main(int argc, char **argv){
-	printf("Cache Size,Block Size,Associativity,Number of Memory Accesses,Miss Rate,\n");
+	printf("Cache Size,Block Size,Associativity,Number of Memory Accesses,Misses,Miss Rate,\n");
 #ifdef VECTOR_ADD
-	cache *mycache = NULL;
+	cout << "Vector Addition"<<endl;
 #ifdef RUN_TWICE
 	int runLimit = 16*pow(4, 1);
+	#else 
+	int runLimit = 256;
 #endif
 /*create cache at given size (loop)*/
 	for(int this_cache = 16 * KB; this_cache <= runLimit * KB; this_cache = this_cache * 4){
 /*create block size of cache at given size (loop)*/
+		for(int assoc = 1; assoc<=16;){
 		for(int this_block_size = 32; this_block_size <= 256; this_block_size = this_block_size * 2){
 			unsigned i, j;
-			sim_pipe *mips = new sim_pipe(N*N);
 
-			mycache = new cache(this_cache,		//size
-								1,			//associativity
+			sim_pipe *mips = new sim_pipe(N*N,0);
+			cache *mycache = new cache(this_cache,		//size
+								assoc,			//associativity
 								this_block_size,			//cache line size
-								WRITE_BACK,		//write hit policy
+									   WRITE_BACK,		//write hit policy
 								WRITE_ALLOCATE, 	//write miss policy
 								5, 			//hit time
 								100, 			//miss penalty
@@ -67,16 +70,25 @@ int main(int argc, char **argv){
 			//run pipeline
 			mips->run();
 			//print cache output
+//			mycache->print_statistics();
 			mycache->easier_output();
 			cout << "\n" ;
 			//delete cache
 			delete mycache;
+			delete mips;
 		}
+		if(assoc == 1){
+			assoc = assoc + 1;
+		}
+		else {
+			assoc = assoc*assoc;
+				}
+	}
 	}
 #endif
 #ifdef OG_VERSION
 	cache *mycache = NULL;
-	for(int this_cache = 16 * KB; this_cache <= 256 * KB; this_cache = this_cache * 4){
+	for(int this_cache = 512 * KB; this_cache <= 512 * KB; this_cache = this_cache * 4){
 		for(int assoc = 1; assoc <= 16; ){
 			for(int this_block_size = 32; this_block_size <= 256; this_block_size = this_block_size * 2){
 				mycache = new cache(this_cache,		//size
@@ -104,9 +116,9 @@ int main(int argc, char **argv){
 	}
 #endif
 #ifdef EIGHT_WAY
-	cache *mycache = NULL;
+	mycache = NULL;
 	int assoc = 8;
-	for(int this_cache = 16 * KB; this_cache <= 256 * KB; this_cache = this_cache * 4){
+	for(int this_cache = 512 * KB; this_cache <= 512 * KB; this_cache = this_cache * 4){
 		for(int this_block_size = 32; this_block_size <= 256; this_block_size = this_block_size * 2){
 			mycache = new cache(this_cache,		//size
 								assoc,			//associativity

@@ -3,7 +3,6 @@
 #ignore vscode files
 **/.vscode
 #ignore object files
-**/*.o
 ./cache-simulator/project3.pdf
 ./cache-simulator/project3_code.tar.gz
 ./cache-simulator/bin

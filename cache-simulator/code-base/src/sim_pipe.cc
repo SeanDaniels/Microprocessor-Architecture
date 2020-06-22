@@ -10,6 +10,7 @@
 
 //#define DEBUG
 #define CACHE_DBG
+#define LOAD_DBG
 #define PRINT_MEMORY 0
 
 #define SHOW_STALLS 0
@@ -61,8 +62,8 @@ static const char *reg_names[NUM_SP_REGISTERS] = {
     "PC", "NPC", "IR", "A", "B", "IMM", "COND", "ALU_OUTPUT", "LMD"};
 static const char *stage_names[NUM_STAGES] = {"IF", "ID", "EX", "MEM", "WB"};
 static const char *instr_names[NUM_OPCODES] = {
-    "LW",   "SW",   "ADD",  "ADDI", "SUB",  "SUBI", "XOR", "BEQZ",
-    "BNEZ", "BLTZ", "BGTZ", "BLEZ", "BGEZ", "JUMP", "EOP", "NOP"};
+    "LW","SW","ADD","ADDI", "SUB","MULT","SUBI", "XOR","BEQZ",
+    "BNEZ","BLTZ","BGTZ","BLEZ","BGEZ","JUMP","EOP","NOP"};
 
 /* =============================================================
 
@@ -97,6 +98,8 @@ unsigned alu(unsigned opcode, unsigned a, unsigned b, unsigned imm,
     return (a - imm);
   case XOR:
     return (a ^ b);
+  case MULT:
+    return (a * b);
   case LW:
   case SW:
     return (a + imm);
@@ -132,6 +135,9 @@ void sim_pipe::load_program(const char *filename, unsigned base_address) {
   for (int i = 0; i < NUM_OPCODES; i++)
     opcodes[string(instr_names[i])] = (opcode_t)i;
 
+#ifdef LOAD_DBG
+  printf("Opcodes Loaded\n");
+#endif
   /* opening the assembly file */
   ifstream fin(filename, ios::in | ios::binary);
   if (!fin.is_open()) {
@@ -166,6 +172,7 @@ void sim_pipe::load_program(const char *filename, unsigned base_address) {
     char *par2;
     char *par3;
     switch (instr_memory[instruction_nr].opcode) {
+    case MULT:
     case ADD:
     case SUB:
     case XOR:
@@ -222,6 +229,9 @@ void sim_pipe::load_program(const char *filename, unsigned base_address) {
     /* increment instruction number before moving to next line */
     instruction_nr++;
   }
+#ifdef LOAD_DBG
+  printf("Instructions Parsed\n");
+#endif
   // reconstructing the labels of the branch operations
   int i = 0;
   while (true) {
@@ -236,6 +246,9 @@ void sim_pipe::load_program(const char *filename, unsigned base_address) {
     i++;
   }
   pipeline.stage[PRE_FETCH].spRegisters[PIPELINE_PC] = instr_base_address;
+#ifdef LOAD_DBG
+  printf("Program Load Complete\n");
+#endif
 }
 
 /* writes an integer value to data memory at the specified address (use
@@ -838,19 +851,13 @@ void sim_pipe::memory() {
       pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
 
       if (currentOpcode == SW) {
-#ifdef CACHE_DBG
         memory_cache->increment_memory_accesses();
-        cout << "Attempting cache write" << endl;
         memory_cache->write(currentALUOutput);
-#endif
         memory_store(currentB, currentALUOutput);
       }
       if(currentOpcode == LW){
-#ifdef CACHE_DBG
-        cout << "Attempting cache read" << endl;
         memory_cache->increment_memory_accesses();
         memory_cache->read(currentALUOutput);
-#endif
         memory_load(currentALUOutput);
       }
     }
@@ -882,22 +889,12 @@ void sim_pipe::memory() {
       pipeline.stage[MEM_WB].spRegisters[MEM_WB_LMD]= UNDEFINED;
       pipeline.stage[MEM_WB].spRegisters[MEM_WB_ALU_OUT] = currentALUOutput;
       if (currentInstruction.opcode == SW) {
-#ifdef CACHE_DBG
         memory_cache->increment_memory_accesses();
         memory_cache->write(currentALUOutput);
-        memory_cache->print_tag_array();
-#endif
         memory_store(currentB, currentALUOutput);
       } else if (currentInstruction.opcode == LW) {
-#ifdef CACHE_DBG
         memory_cache->increment_memory_accesses();
         memory_cache->read(currentALUOutput);
-        memory_cache->print_tag_array();
-#endif
-#ifdef CACHE_DBG
-        cout << "The ALU output is " << dec << currentALUOutput << endl;
-        cout << "The size of this ALU output is " << sizeof(currentALUOutput) << endl;
-  #endif
         memory_load(currentALUOutput);
       }
     }
@@ -1072,7 +1069,10 @@ void sim_pipe::write_back() {
 void sim_pipe::run(unsigned cycles) {
   switch (cycles) {
   case CYCLES_NOT_DECLARED:
-    while (!program_complete) {
+    while (!program_complete && (clock_cycles<=70)) {
+      #ifdef LOAD_DBG
+      printf("Running, cycle = %f\n",clock_cycles);
+      #endif
       run_clock();
       if(!program_complete)
       clock_cycles++;
@@ -1095,7 +1095,7 @@ void sim_pipe::run_clock() {
   didLockDecode = false;
   didMemoryStall = false;
   processor_key_update();
-#if NEW_RUN_STRUCTURE
+  print_registers();
   write_back();
   memory();
   if (!structuralHazard) {
@@ -1105,33 +1105,6 @@ void sim_pipe::run_clock() {
       fetch();
     }
   }
-#else
-      if (doWriteBack) {
-        write_back();
-      }
-      if(doMemoryStall){
-        memory_stall();
-        didMemoryStall=true;
-      }
-      if (!didMemoryStall&&doMemory) {
-        memory();
-      }
-      if (doExecute) {
-        execute();
-      }
-      if (doLockDecode) {
-        lock_decode();
-        didLockDecode=true;
-        //clock_cycles++;
-
-      }
-      if (!didLockDecode&&doDecode) {
-        decode();
-      }
-      if (!immediateBreak) {
-        fetch();
-      }
- #endif
 }
 
 /* reset the state of the pipeline simulator */
@@ -1307,35 +1280,34 @@ void sim_pipe::insert_stall(pipeline_stage_t nextStage){
 kind_of_instruction_t
 sim_pipe::instruction_type_check(instruction_t checkedInstruction) {
   switch (checkedInstruction.opcode) {
-  case ADD:
-  case ADDI:
-  case SUB:
-  case SUBI:
-  case XOR:
-    return ARITH_INSTR;
-  case LW:
-  case SW:
-    return LWSW_INSTR;
-  case BEQZ:
-  case BNEZ:
-  case BGTZ:
-  case BGEZ:
-  case BLTZ:
-  case BLEZ:
-  case JUMP:
-    return COND_INSTR;
-  case EOP:
-  case NOP:
-    return NOPEOP_INSTR;
+    case ADD:
+    case ADDI:
+    case SUB:
+    case SUBI:
+    case XOR:
+      return ARITH_INSTR;
+    case LW:
+    case SW:
+      return LWSW_INSTR;
+    case MULT:
+      return MULT_INSTR;
+    case BEQZ:
+    case BNEZ:
+    case BGTZ:
+    case BGEZ:
+    case BLTZ:
+    case BLEZ:
+    case JUMP:
+      return COND_INSTR;
+    case EOP:
+    case NOP:
+      return NOPEOP_INSTR;
   }
   return NOPEOP_INSTR;
 }
 
 void sim_pipe::set_cache(cache *c){
   memory_cache = c;
-#ifdef CACHE_DBG
-  memory_cache->print_configuration();
-#endif
 }
 
 unsigned sim_pipe::get_memory(unsigned int address){

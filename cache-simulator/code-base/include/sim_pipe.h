@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <string>
-#include "cache.h"
+#include "../include/cache.h"
 
 using namespace std;
 
@@ -12,7 +12,7 @@ using namespace std;
 #define UNDEFINED 0xFFFFFFFF // used to initialize the registers
 #define NUM_SP_REGISTERS 9
 #define NUM_GP_REGISTERS 32
-#define NUM_OPCODES 16
+#define NUM_OPCODES 17
 #define NUM_STAGES 5
 #define MY_NUM_STAGES 6
 #define NUM_RUN_FUNCTIONS 8
@@ -30,6 +30,7 @@ ADD,
 ADDI,
 SUB,
 SUBI,
+MULT,
 XOR,
 BEQZ,
 BNEZ,
@@ -58,7 +59,7 @@ typedef enum {EXE_MEM_B, EXE_MEM_ALU_OUT, EXE_MEM_COND} execute_memory_stage_t;
 
 typedef enum {MEM_WB_ALU_OUT, MEM_WB_LMD} memory_writeback_stage_t;
 
-typedef enum {ARITH_INSTR, COND_INSTR, LWSW_INSTR, NOPEOP_INSTR} kind_of_instruction_t;
+typedef enum {ARITH_INSTR, MULT_INSTR, COND_INSTR, LWSW_INSTR, NOPEOP_INSTR} kind_of_instruction_t;
 
 typedef struct {
   opcode_t opcode; // opcode
